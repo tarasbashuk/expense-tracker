@@ -59,11 +59,6 @@ body {
   border: 0;
 }
 
-.navbar-user {
-  display: flex;
-  align-items: center;
-}
-
 h1 {
   letter-spacing: 1px;
   margin: 0;

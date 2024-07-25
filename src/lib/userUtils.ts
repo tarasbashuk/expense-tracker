@@ -27,13 +27,17 @@ export const getOrCreateUser = async (): Promise<User | null> => {
   if (dBuser) {
     return dBuser;
   }
+  const { id, imageUrl, firstName, lastName, emailAddresses } = clerkUser;
+  const fullName = `${firstName ?? ''} ${lastName ?? ''}`.trim();
 
   const newUser = db.user.create({
     data: {
-      clerkUserId: clerkUser.id,
-      name: `${clerkUser.firstName} ${clerkUser.lastName}`,
-      imageUrl: clerkUser.imageUrl,
-      email: clerkUser.emailAddresses[0].emailAddress,
+      clerkUserId: id,
+      firstName,
+      lastName,
+      fullName,
+      imageUrl,
+      email: emailAddresses[0].emailAddress,
     },
   });
 

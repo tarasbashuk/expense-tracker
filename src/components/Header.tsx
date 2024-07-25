@@ -1,9 +1,6 @@
-import { SignedIn, SignedOut, UserButton, SignInButton, UserProfile } from '@clerk/nextjs';
-import { getOrCreateUser } from '../../lib/userUtils';
+import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 
 const Header = async () => {
-  const user = await getOrCreateUser();
-  
   return (
     <nav className="navbar">
       <div className="navbar-container">
@@ -14,10 +11,7 @@ const Header = async () => {
           </SignedOut>
 
           <SignedIn>
-            <div className="navbar-user">
-            <UserButton />
-            {user?.name}
-            </div>
+            <UserButton showName />
           </SignedIn>
         </div>
       </div>
