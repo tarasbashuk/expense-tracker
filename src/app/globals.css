@@ -37,7 +37,7 @@ body {
   border-radius: 5px;
   background: rebeccapurple;
   color: #fff;
-  padding: 0.5rem 2rem;
+  padding: 0.5rem 1rem;
   cursor: pointer;
 }
 
@@ -57,6 +57,11 @@ body {
 .navbar .cl-button {
   background: transparent;
   border: 0;
+}
+
+.navbar-user {
+  display: flex;
+  align-items: center;
 }
 
 h1 {
