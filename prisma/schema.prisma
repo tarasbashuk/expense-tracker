@@ -29,7 +29,8 @@ model User {
 model Transaction {
   id String @id @default(uuid())
   text String
-  ammount Float
+  amount Float
+  category String
   currency Currency? @default(EUR)
   userId String
   user User @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
