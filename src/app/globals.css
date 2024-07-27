@@ -13,6 +13,10 @@ body {
   font-family: 'Lato', sans-serif;
 }
 
+a {
+  text-decoration: none;
+}
+
 .container {
   margin: 30px auto;
   width: 350px;
@@ -29,6 +33,10 @@ body {
 
 .navbar a {
   color: #fff;
+}
+
+.nav-link {
+  display: flex;
 }
 
 .navbar button,
@@ -51,7 +59,7 @@ body {
   align-items: center;
   max-width: 900px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0.5rem 2rem;
 }
 
 .navbar .cl-button {
@@ -64,7 +72,7 @@ h1 {
   margin: 0;
 }
 
-h3 {
+.transaction-header {
   border-bottom: 1px solid #bbb;
   padding-bottom: 10px;
   margin: 40px 0 10px;
