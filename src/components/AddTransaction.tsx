@@ -6,7 +6,7 @@ import { useRef } from 'react';
 const AddTransaction = () => {
   const formRef = useRef<HTMLFormElement>(null);
   const clientAction = async (formData: FormData) => {
-    const { data, error } = await addTransaction(formData);
+    const { error } = await addTransaction(formData);
 
     if (error) {
       toast.error(error);

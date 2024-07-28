@@ -45,7 +45,6 @@ async function addTransaction(formData: FormData): Promise<TransactionResult> {
       data: transacionData,
     };
   } catch (error: any) {
-    console.log('error', error);
     return { error: error?.response?.message || 'Unable to save transaction' };
   }
 }
