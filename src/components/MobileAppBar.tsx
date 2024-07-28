@@ -1,5 +1,6 @@
 'use client';
 import { useState, MouseEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import { styled } from '@mui/material/styles';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
@@ -12,8 +13,6 @@ import MenuItem from '@mui/material/MenuItem';
 import MenuIcon from '@mui/icons-material/Menu';
 import AddIcon from '@mui/icons-material/Add';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
-import { useSettings } from '@/context/SettingsContexts';
 
 const StyledFab = styled(Fab)({
   position: 'absolute',
@@ -27,9 +26,8 @@ const StyledFab = styled(Fab)({
 const MobileAppBar = () => {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const { settings } = useSettings();
-  console.log('settings', settings);
-  const open = Boolean(anchorEl);
+
+  const isOpen = Boolean(anchorEl);
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -57,7 +55,7 @@ const MobileAppBar = () => {
         <Menu
           id="basic-menu"
           anchorEl={anchorEl}
-          open={open}
+          open={isOpen}
           onClose={handleClose}
           MenuListProps={{
             'aria-labelledby': 'basic-button',
