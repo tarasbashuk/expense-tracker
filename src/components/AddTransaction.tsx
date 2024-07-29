@@ -12,32 +12,36 @@ import {
   ToggleButtonGroup,
   ToggleButton,
 } from '@mui/material';
+// TODO: check bundle size with alternative import
 import * as Icons from '@mui/icons-material';
 import {
   EXPENSE_CATEGORIES_LIST,
   INCOME_CATEGORIES_LIST,
 } from '@/constants/constants';
-import { TrasactionType } from '@/constants/types';
+import { Currency, TransactionType } from '@prisma/client';
+import { TranactionCategory } from '@/constants/types';
 
 const AddTransaction = () => {
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedType, setSelectedType] = useState<TrasactionType>(
-    TrasactionType.Expense,
+  const [category, setCategory] = useState<TranactionCategory | null>(null);
+  const [transactionType, setTranasctionType] = useState<TransactionType>(
+    TransactionType.Expense,
   );
+  const [currency, setcCurrency] = useState<Currency>(Currency.EUR);
 
   const handleTypeChange = (
-    event: React.MouseEvent<HTMLElement>,
-    newType: TrasactionType,
+    _event: React.MouseEvent<HTMLElement>,
+    newType: TransactionType,
   ) => {
-    setSelectedType(newType);
+    setTranasctionType(newType);
+    setCategory(null);
   };
 
   const handleCategoryChange = (event: SelectChangeEvent) => {
-    setSelectedCategory(event.target.value as string);
+    setCategory(event.target.value as TranactionCategory);
   };
 
   const categories =
-    selectedType === TrasactionType.Income
+    transactionType === TransactionType.Income
       ? INCOME_CATEGORIES_LIST
       : EXPENSE_CATEGORIES_LIST;
 
@@ -60,20 +64,20 @@ const AddTransaction = () => {
       <h3 className="transaction-header">Add Transaction</h3>
       <form ref={formRef} action={clientAction}>
         <ToggleButtonGroup
-          color="primary"
-          value={selectedType}
           exclusive
+          color="primary"
+          value={transactionType}
           onChange={handleTypeChange}
         >
-          <ToggleButton value={TrasactionType.Expense}>Expense</ToggleButton>
-          <ToggleButton value={TrasactionType.Income}>Income</ToggleButton>
+          <ToggleButton value={TransactionType.Expense}>Expense</ToggleButton>
+          <ToggleButton value={TransactionType.Income}>Income</ToggleButton>
         </ToggleButtonGroup>
 
         <FormControl variant="standard" fullWidth sx={{ minWidth: 250 }}>
           <InputLabel>Category</InputLabel>
           <Select
             name="category"
-            value={selectedCategory}
+            value={category as string}
             onChange={handleCategoryChange}
           >
             {categories.map(({ value, label, icon }) => {

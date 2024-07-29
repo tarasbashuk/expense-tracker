@@ -5,10 +5,10 @@ CREATE TYPE "Currency" AS ENUM ('EUR', 'PLN', 'UAH', 'USD');
 CREATE TYPE "Language" AS ENUM ('ENG', 'UKR');
 
 -- CreateEnum
-CREATE TYPE "Theme" AS ENUM ('LIGHT', 'DARK');
+CREATE TYPE "Theme" AS ENUM ('Light', 'Dark');
 
 -- CreateEnum
-CREATE TYPE "TransactionType" AS ENUM ('EXPENSE', 'INCOME');
+CREATE TYPE "TransactionType" AS ENUM ('Expense', 'Income');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -32,7 +32,7 @@ CREATE TABLE "Transaction" (
     "amount" DOUBLE PRECISION NOT NULL,
     "category" TEXT NOT NULL,
     "currency" "Currency" DEFAULT 'EUR',
-    "type" "TransactionType" NOT NULL DEFAULT 'EXPENSE',
+    "type" "TransactionType" NOT NULL DEFAULT 'Expense',
     "userId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE "Settings" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "language" "Language" NOT NULL DEFAULT 'ENG',
-    "theme" "Theme" NOT NULL DEFAULT 'LIGHT',
+    "theme" "Theme" NOT NULL DEFAULT 'Light',
     "defaultCurrency" "Currency" NOT NULL DEFAULT 'EUR',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,

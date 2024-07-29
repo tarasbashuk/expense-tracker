@@ -2,48 +2,48 @@ import { ExpenseCategory, IncomeCategory, UserSettings } from './types';
 
 export const DEFAULT_SETTINGS: UserSettings = {
   language: 'ENG',
-  theme: 'LIGHT',
+  theme: 'Light',
   defaultCurrency: 'EUR',
 };
 
 export const INCOME_CATEGORIES: {
   [key in IncomeCategory]: { label: string; icon: string };
 } = {
-  [IncomeCategory.SALARY]: { label: 'Salary', icon: 'AttachMoney' },
-  [IncomeCategory.INVESTMENTS]: { label: 'Investments', icon: 'TrendingUp' },
-  [IncomeCategory.GIFTS]: { label: 'Gifts', icon: 'CardGiftcard' },
+  [IncomeCategory.Salary]: { label: 'Salary', icon: 'AttachMoney' },
+  [IncomeCategory.Investments]: { label: 'Investments', icon: 'TrendingUp' },
+  [IncomeCategory.Gifts]: { label: 'Gifts', icon: 'CardGiftcard' },
 };
 
 export const EXPENSE_CATEGORIES: {
   [key in ExpenseCategory]: { label: string; icon: string };
 } = {
-  [ExpenseCategory.GROCERIES]: { label: 'Groceries', icon: 'ShoppingCart' },
-  [ExpenseCategory.DINING]: { label: 'Bar and Restaurant', icon: 'Restaurant' },
-  [ExpenseCategory.RENT]: { label: 'House Rent', icon: 'Home' },
-  [ExpenseCategory.UTILITIES]: { label: 'Utility Bills', icon: 'Receipt' },
-  [ExpenseCategory.HOME]: { label: 'Home Stuff', icon: 'HomeRepairService' },
-  [ExpenseCategory.AUTO]: { label: 'Auto', icon: 'DirectionsCar' },
-  [ExpenseCategory.SHOPPING]: { label: 'Shopping', icon: 'ShoppingBag' },
-  [ExpenseCategory.SUBSCRIPTIONS]: {
+  [ExpenseCategory.Groceries]: { label: 'Groceries', icon: 'ShoppingCart' },
+  [ExpenseCategory.Dining]: { label: 'Bar and Restaurant', icon: 'Restaurant' },
+  [ExpenseCategory.Rent]: { label: 'House Rent', icon: 'Home' },
+  [ExpenseCategory.Utilities]: { label: 'Utility Bills', icon: 'Receipt' },
+  [ExpenseCategory.Home]: { label: 'Home Stuff', icon: 'HomeRepairService' },
+  [ExpenseCategory.Auto]: { label: 'Auto', icon: 'DirectionsCar' },
+  [ExpenseCategory.Shopping]: { label: 'Shopping', icon: 'ShoppingBag' },
+  [ExpenseCategory.Subscriptions]: {
     label: 'Mobile & App Subscriptions',
     icon: 'PhoneIphone',
   },
-  [ExpenseCategory.PETS]: { label: 'Pets', icon: 'Pets' },
-  [ExpenseCategory.DONATIONS]: { label: 'Donations', icon: 'Favorite' },
-  [ExpenseCategory.EDUCATION]: { label: 'Education', icon: 'School' },
-  [ExpenseCategory.SPORTS]: { label: 'Sports Activity', icon: 'Sports' },
-  [ExpenseCategory.ENTERTAINMENT]: {
+  [ExpenseCategory.Pets]: { label: 'Pets', icon: 'Pets' },
+  [ExpenseCategory.Donations]: { label: 'Donations', icon: 'Favorite' },
+  [ExpenseCategory.Education]: { label: 'Education', icon: 'School' },
+  [ExpenseCategory.Sports]: { label: 'Sports Activity', icon: 'Sports' },
+  [ExpenseCategory.Entertainment]: {
     label: 'Entertainment',
     icon: 'LocalMovies',
   },
-  [ExpenseCategory.BEAUTY]: { label: 'Beauty Services & Goods', icon: 'Spa' },
-  [ExpenseCategory.HEALTHCARE]: {
+  [ExpenseCategory.Beauty]: { label: 'Beauty Services & Goods', icon: 'Spa' },
+  [ExpenseCategory.Healthcare]: {
     label: 'Healthcare and Drugs',
     icon: 'LocalPharmacy',
   },
-  [ExpenseCategory.GIFTS]: { label: 'Gifts', icon: 'CardGiftcard' },
-  [ExpenseCategory.SAVINGS]: { label: 'Savings', icon: 'Savings' },
-  [ExpenseCategory.OTHERS]: { label: 'Others', icon: 'MoreHoriz' },
+  [ExpenseCategory.Gifts]: { label: 'Gifts', icon: 'CardGiftcard' },
+  [ExpenseCategory.Savings]: { label: 'Savings', icon: 'Savings' },
+  [ExpenseCategory.Others]: { label: 'Others', icon: 'MoreHoriz' },
 };
 
 export const INCOME_CATEGORIES_LIST = Object.entries(INCOME_CATEGORIES).map(

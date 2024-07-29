@@ -5,34 +5,31 @@ export type UserSettings = Pick<
   'theme' | 'language' | 'defaultCurrency'
 >;
 
-export enum TrasactionType {
-  Expense = 'EXPENSE',
-  Income = 'INCOME',
-}
-
 export enum IncomeCategory {
-  SALARY = 'salary',
-  INVESTMENTS = 'investments',
-  GIFTS = 'gifts',
+  Salary = 'salary',
+  Investments = 'investments',
+  Gifts = 'gifts',
 }
 
 export enum ExpenseCategory {
-  GROCERIES = 'groceries',
-  DINING = 'dining',
-  RENT = 'rent',
-  UTILITIES = 'utilities',
-  HOME = 'home',
-  AUTO = 'auto',
-  SHOPPING = 'shopping',
-  SUBSCRIPTIONS = 'subscriptions',
-  PETS = 'pets',
-  DONATIONS = 'donations',
-  EDUCATION = 'education',
-  SPORTS = 'sports',
-  ENTERTAINMENT = 'entertainment',
-  BEAUTY = 'beauty',
-  HEALTHCARE = 'healthcare',
-  GIFTS = 'gifts',
-  SAVINGS = 'savings',
-  OTHERS = 'others',
+  Groceries = 'groceries',
+  Dining = 'dining',
+  Rent = 'rent',
+  Utilities = 'utilities',
+  Home = 'home',
+  Auto = 'auto',
+  Shopping = 'shopping',
+  Subscriptions = 'subscriptions',
+  Pets = 'pets',
+  Donations = 'donations',
+  Education = 'education',
+  Sports = 'sports',
+  Entertainment = 'entertainment',
+  Beauty = 'beauty',
+  Healthcare = 'healthcare',
+  Gifts = 'gifts',
+  Savings = 'savings',
+  Others = 'others',
 }
+
+export type TranactionCategory = IncomeCategory | ExpenseCategory;
