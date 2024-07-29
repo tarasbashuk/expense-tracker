@@ -1,5 +1,5 @@
-'use client';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import HomeIcon from '@mui/icons-material/Home';
@@ -23,7 +23,7 @@ const Header = async () => {
               <ReceiptIcon />
             </Link>
           </Stack>
-          <div>
+          <Suspense fallback={<Box sx={{ height: 44 }} />}>
             <SignedOut>
               <SignInButton />
             </SignedOut>
@@ -31,7 +31,7 @@ const Header = async () => {
             <SignedIn>
               <UserButton showName />
             </SignedIn>
-          </div>
+          </Suspense>
         </div>
       </nav>
     </Box>

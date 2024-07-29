@@ -2,6 +2,7 @@
 import { revalidatePath } from 'next/cache';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
+import { Currency, TransactionType } from '@prisma/client';
 
 interface TransactionFormValues {
   text: string;
@@ -13,13 +14,22 @@ interface TransactionResult {
   error?: string;
 }
 
-async function addTransaction(formData: FormData): Promise<TransactionResult> {
+async function addTransaction(
+  formData: FormData,
+  transacionType: TransactionType,
+): Promise<TransactionResult> {
   const textValue = formData.get('text');
   const amountValue = formData.get('amount');
+  const categoryValue = formData.get('category');
+  const currencyValue = formData.get('currency');
+  console.log('textValue', textValue);
+  console.log('amountValue', amountValue);
+  console.log('categoryValue', categoryValue);
+  console.log('currencyValue', currencyValue);
   const { userId } = auth();
 
-  if (!textValue || !amountValue) {
-    return { error: 'Text or amount is missing' };
+  if (!textValue || !amountValue || !categoryValue || !currencyValue) {
+    return { error: 'Category, text or amount is missing' };
   }
 
   if (!userId) {
@@ -27,6 +37,8 @@ async function addTransaction(formData: FormData): Promise<TransactionResult> {
   }
 
   const text = textValue.toString();
+  const category = categoryValue.toString();
+  const currency = currencyValue.toString() as Currency;
   const amount = parseFloat(amountValue.toString());
 
   try {
@@ -34,8 +46,10 @@ async function addTransaction(formData: FormData): Promise<TransactionResult> {
       data: {
         text,
         amount,
+        currency,
         userId,
-        category: 'misc',
+        category,
+        type: transacionType,
       },
     });
 

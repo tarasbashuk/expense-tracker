@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import addTransaction from '@/app/actions/addTransaction';
 import { useRef, useState } from 'react';
 import {
+  Button,
   Select,
   MenuItem,
   FormControl,
@@ -11,6 +12,9 @@ import {
   SelectChangeEvent,
   ToggleButtonGroup,
   ToggleButton,
+  Input,
+  InputAdornment,
+  TextField,
 } from '@mui/material';
 // TODO: check bundle size with alternative import
 import * as Icons from '@mui/icons-material';
@@ -22,7 +26,7 @@ import { Currency, TransactionType } from '@prisma/client';
 import { TranactionCategory } from '@/constants/types';
 
 const AddTransaction = () => {
-  const [category, setCategory] = useState<TranactionCategory | null>(null);
+  const [category, setCategory] = useState<TranactionCategory | ''>('');
   const [transactionType, setTranasctionType] = useState<TransactionType>(
     TransactionType.Expense,
   );
@@ -33,7 +37,11 @@ const AddTransaction = () => {
     newType: TransactionType,
   ) => {
     setTranasctionType(newType);
-    setCategory(null);
+    setCategory('');
+  };
+
+  const handleCurrencyChange = (event: SelectChangeEvent) => {
+    setcCurrency(event.target.value as Currency);
   };
 
   const handleCategoryChange = (event: SelectChangeEvent) => {
@@ -47,10 +55,8 @@ const AddTransaction = () => {
 
   const formRef = useRef<HTMLFormElement>(null);
   const clientAction = async (formData: FormData) => {
-    const categoryValue = formData.get('category');
-    console.log('categoryValue', categoryValue);
-    const { error } = await addTransaction(formData);
-
+    const { error, data } = await addTransaction(formData, transactionType);
+    console.log('data', data);
     if (error) {
       toast.error(error);
     } else {
@@ -65,6 +71,7 @@ const AddTransaction = () => {
       <form ref={formRef} action={clientAction}>
         <ToggleButtonGroup
           exclusive
+          size="small"
           color="primary"
           value={transactionType}
           onChange={handleTypeChange}
@@ -72,6 +79,23 @@ const AddTransaction = () => {
           <ToggleButton value={TransactionType.Expense}>Expense</ToggleButton>
           <ToggleButton value={TransactionType.Income}>Income</ToggleButton>
         </ToggleButtonGroup>
+
+        <FormControl variant="standard" fullWidth sx={{ minWidth: 150 }}>
+          <InputLabel>Currency</InputLabel>
+          <Select
+            name="currency"
+            value={currency as string}
+            onChange={handleCurrencyChange}
+          >
+            {Object.values(Currency).map((value) => {
+              return (
+                <MenuItem key={value} value={value}>
+                  {value}
+                </MenuItem>
+              );
+            })}
+          </Select>
+        </FormControl>
 
         <FormControl variant="standard" fullWidth sx={{ minWidth: 250 }}>
           <InputLabel>Category</InputLabel>
@@ -94,27 +118,27 @@ const AddTransaction = () => {
             })}
           </Select>
         </FormControl>
-        {/* <div className="from-control">
-          <label htmlFor="text">Text</label>
-          <input
-            type="text"
-            id="text"
-            name="text"
-            placeholder="Enter text..."
-          />
-        </div>
 
-        <div className="from-control">
-          <label htmlFor="amount">Amount</label>
-          <input
-            type="number"
+        <FormControl fullWidth variant="standard">
+          <InputLabel htmlFor="amount">Amount</InputLabel>
+          <Input
             id="amount"
             name="amount"
-            placeholder="Enter amount..."
-            step="0.01"
+            type="number"
+            startAdornment={<InputAdornment position="start">$</InputAdornment>}
           />
-        </div> */}
-        <button className="btn">Add transaction</button>
+        </FormControl>
+
+        <TextField
+          fullWidth
+          label="Text"
+          name="text"
+          type="text"
+          variant="standard"
+        />
+        <Button fullWidth variant="contained" type="submit">
+          Add transaction
+        </Button>
       </form>
     </>
   );
