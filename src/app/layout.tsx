@@ -6,6 +6,8 @@ import getSettings from './actions/getSettings';
 import { SettingsProvider } from '@/context/SettingsContexts';
 import Header from '@/components/Header';
 import MobileAppBar from '@/components/MobileAppBar';
+import { DEFAULT_SETTINGS } from '@/constants/constants';
+import { getOrCreateUser } from '@/lib/userUtils';
 
 import './globals.css';
 
@@ -16,22 +18,17 @@ export const metadata: Metadata = {
   description: 'Track your expenses and create a budget',
 };
 
-const defaultSettings = {
-  language: 'en',
-  theme: 'light',
-  transactions: [],
-};
-
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  await getOrCreateUser();
   const { settings } = await getSettings();
 
   return (
     <ClerkProvider>
-      <SettingsProvider initialSettings={settings || defaultSettings}>
+      <SettingsProvider initialSettings={settings || DEFAULT_SETTINGS}>
         <html lang="en">
           <body className={roboto.className}>
             <Header />

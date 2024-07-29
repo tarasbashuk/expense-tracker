@@ -1,16 +1,10 @@
 'use client';
 import { createContext, useContext, ReactNode, useState } from 'react';
-import { Transaction } from '@prisma/client';
-
-interface Settings {
-  theme: string;
-  language: string;
-  transactions?: Transaction[]; // change to transactionTypes
-}
+import { UserSettings } from '@/constants/types';
 
 interface SettingsContextType {
-  settings: Settings;
-  setSettings: (settings: Settings) => void;
+  settings: UserSettings;
+  setSettings: (settings: UserSettings) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(
@@ -22,9 +16,9 @@ export const SettingsProvider = ({
   initialSettings,
 }: {
   children: ReactNode;
-  initialSettings: Settings;
+  initialSettings: UserSettings;
 }) => {
-  const [settings, setSettings] = useState<Settings>(initialSettings);
+  const [settings, setSettings] = useState<UserSettings>(initialSettings);
 
   return (
     <SettingsContext.Provider value={{ settings, setSettings }}>

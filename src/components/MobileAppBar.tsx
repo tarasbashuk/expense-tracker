@@ -13,6 +13,7 @@ import MenuItem from '@mui/material/MenuItem';
 import MenuIcon from '@mui/icons-material/Menu';
 import AddIcon from '@mui/icons-material/Add';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
+import { useSettings } from '@/context/SettingsContexts';
 
 const StyledFab = styled(Fab)({
   position: 'absolute',
@@ -24,6 +25,8 @@ const StyledFab = styled(Fab)({
 });
 
 const MobileAppBar = () => {
+  const { settings } = useSettings();
+  console.log('settings', settings);
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 

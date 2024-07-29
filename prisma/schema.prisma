@@ -14,29 +14,42 @@ datasource db {
 }
 
 model User {
-  id String @id @default(uuid())
-  clerkUserId String @unique
-  email String @unique
+  id            String       @id @default(uuid())
+  clerkUserId   String       @unique
+  email         String       @unique
   firstName     String?
   lastName      String?
   fullName      String?
-  imageUrl String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  transactions Transaction[]
+  imageUrl      String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  transactions  Transaction[]
+  settings      Settings?
 }
 
 model Transaction {
+  id        String    @id @default(uuid())
+  text      String
+  amount    Float
+  category  String
+  currency  Currency? @default(EUR)
+  type      TransactionType @default(EXPENSE)
+  userId    String
+  user      User      @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  @@index([userId])
+}
+
+model Settings {
   id String @id @default(uuid())
-  text String
-  amount Float
-  category String
-  currency Currency? @default(EUR)
-  userId String
-  user User @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
+  userId String @unique
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  language Language @default(ENG)
+  theme Theme @default(LIGHT)
+  defaultCurrency Currency @default(EUR)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  @@index([userId])
 }
 
 enum Currency {
@@ -44,5 +57,19 @@ enum Currency {
   PLN
   UAH
   USD
-  MDL
+}
+
+enum Language {
+  ENG
+  UKR
+}
+
+enum Theme {
+  LIGHT
+  DARK
+}
+
+enum TransactionType {
+  EXPENSE
+  INCOME
 }

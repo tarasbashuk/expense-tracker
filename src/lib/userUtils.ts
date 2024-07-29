@@ -2,6 +2,7 @@ import { currentUser, User as ClerkUser } from '@clerk/nextjs/server';
 import { db } from './db';
 
 import type { User } from '@prisma/client';
+import { DEFAULT_SETTINGS } from '@/constants/constants';
 
 const getClerkUser = async () => {
   const user = await currentUser();
@@ -38,6 +39,9 @@ export const getOrCreateUser = async (): Promise<User | null> => {
       fullName,
       imageUrl,
       email: emailAddresses[0].emailAddress,
+      settings: {
+        create: DEFAULT_SETTINGS,
+      },
     },
   });
 

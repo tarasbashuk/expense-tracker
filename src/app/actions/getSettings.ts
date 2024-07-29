@@ -1,14 +1,10 @@
 'use server';
 import { db } from '@/lib/db';
 import { auth } from '@clerk/nextjs/server';
-import { Transaction } from '@prisma/client';
+import { UserSettings } from '@/constants/types';
 
 async function getSettings(): Promise<{
-  settings?: {
-    language: string;
-    theme: string;
-    transactions?: Transaction[];
-  };
+  settings?: UserSettings | null;
   error?: string;
 }> {
   const { userId } = auth();
@@ -18,18 +14,14 @@ async function getSettings(): Promise<{
   }
 
   try {
-    const transactions = await db.transaction.findMany({
+    const settings = await db.settings.findUnique({
       where: { userId },
-      orderBy: {
-        createdAt: 'desc',
+      select: {
+        language: true,
+        theme: true,
+        defaultCurrency: true,
       },
     });
-
-    const settings = {
-      transactions,
-      language: 'en',
-      theme: 'light',
-    };
 
     return { settings };
   } catch (error) {
