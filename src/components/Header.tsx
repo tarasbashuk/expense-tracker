@@ -18,10 +18,11 @@ const Header = async () => {
                 <h3>Expense Tracker</h3>
               </Stack>
             </Link>
-
-            <Link href="/transactions" className="nav-link">
-              <ReceiptIcon />
-            </Link>
+            <SignedIn>
+              <Link href="/transactions" className="nav-link">
+                <ReceiptIcon />
+              </Link>
+            </SignedIn>
           </Stack>
           <Suspense fallback={<Box sx={{ height: 44 }} />}>
             <SignedOut>

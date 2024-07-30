@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ClerkProvider } from '@clerk/nextjs';
+import { ClerkProvider, SignedIn } from '@clerk/nextjs';
 import { Roboto } from 'next/font/google';
 import { ToastContainer } from 'react-toastify';
 
@@ -37,7 +37,9 @@ export default async function RootLayout({
             <CssBaseline />
             <Header />
             <main className="container">{children}</main>
-            <MobileAppBar />
+            <SignedIn>
+              <MobileAppBar />
+            </SignedIn>
             <ToastContainer />
           </body>
         </html>
