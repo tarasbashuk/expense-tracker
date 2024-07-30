@@ -40,7 +40,7 @@ interface Props {
 
 const style = {
   position: 'absolute',
-  top: { xs: '10%', sm: '50%' },
+  top: { xs: '7%', sm: '50%' },
   left: '50%',
   transform: { xs: 'translate(-50%, 0%)', sm: 'translate(-50%, -50%)' },
   width: { xs: '90%', sm: 550 },
@@ -81,6 +81,8 @@ const AddTransaction: React.FC<Props> = ({ isOpen, handleClose }) => {
       : EXPENSE_CATEGORIES_LIST;
 
   const formRef = useRef<HTMLFormElement>(null);
+  // This is a legacy implementaions from Brad Traversy cource,
+  // TODO: rework to react-hook-form
   const clientAction = async (formData: FormData) => {
     const { error } = await addTransaction(formData, transactionType);
 
@@ -89,6 +91,7 @@ const AddTransaction: React.FC<Props> = ({ isOpen, handleClose }) => {
     } else {
       toast.success('Added!');
       formRef.current?.reset();
+      handleClose();
     }
   };
 
