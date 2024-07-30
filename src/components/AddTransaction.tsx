@@ -19,7 +19,9 @@ import {
   Modal,
   Box,
   Grid,
+  IconButton,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 // TODO: check bundle size with alternative import
 import * as Icons from '@mui/icons-material';
 import {
@@ -99,9 +101,23 @@ const AddTransaction: React.FC<Props> = ({ isOpen, handleClose }) => {
         aria-describedby="modal-modal-description"
       >
         <Box sx={style}>
-          <Typography variant="h4" component="h3" marginBottom={3}>
-            Add transaction
-          </Typography>
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={2}
+            marginBottom={3}
+          >
+            <Typography variant="h4" component="h3" flexGrow={1}>
+              Add transaction
+            </Typography>
+            <IconButton
+              aria-label="close"
+              onClick={handleClose}
+              sx={{ position: 'absolute', top: 8, right: 8 }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Stack>
           <form ref={formRef} action={clientAction}>
             <Grid container spacing={2} justifyContent="flex-end">
               <Grid marginTop={2} paddingLeft={2} xs={12}>

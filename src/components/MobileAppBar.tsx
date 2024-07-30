@@ -1,7 +1,6 @@
 'use client';
 import { useState, MouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { styled } from '@mui/material/styles';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Fab from '@mui/material/Fab';
@@ -15,14 +14,14 @@ import AddIcon from '@mui/icons-material/Add';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 import AddTransaction from './AddTransaction';
 
-const StyledFab = styled(Fab)({
-  position: 'absolute',
-  zIndex: 1,
-  top: -30,
-  left: 0,
-  right: 0,
+const fabStyles = {
+  position: 'fixed',
+  zIndex: 1200,
+  left: { xs: 0, sm: 'unset' },
+  right: { xs: 0, sm: 20 },
+  bottom: { xs: 30, sm: 15 },
   margin: '0 auto',
-});
+};
 
 const MobileAppBar = () => {
   const router = useRouter();
@@ -76,13 +75,6 @@ const MobileAppBar = () => {
           >
             <MenuIcon />
           </IconButton>
-          <StyledFab
-            color="primary"
-            aria-label="add"
-            onClick={handleOpenTransactionModal}
-          >
-            <AddIcon />
-          </StyledFab>
           <Box sx={{ flexGrow: 1 }} />
           <Stack>
             <SignedOut>
@@ -95,6 +87,14 @@ const MobileAppBar = () => {
           </Stack>
         </Toolbar>
       </AppBar>
+      <Fab
+        color="primary"
+        aria-label="add"
+        sx={fabStyles}
+        onClick={handleOpenTransactionModal}
+      >
+        <AddIcon />
+      </Fab>
       <AddTransaction
         isOpen={isTransactionModalOpen}
         handleClose={handleCloseTransactionModal}
