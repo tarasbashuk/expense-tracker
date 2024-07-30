@@ -1,6 +1,6 @@
 'use client';
 import { toast } from 'react-toastify';
-import { Transaction } from '@prisma/client';
+import { Transaction, TransactionType } from '@prisma/client';
 
 import deleteTransaction from '@/app/actions/deleteTransaction';
 
@@ -24,7 +24,11 @@ const TransactionItem = ({ transaction }: { transaction: Transaction }) => {
   };
 
   return (
-    <li className={transaction.amount < 0 ? 'minus' : 'plus'}>
+    <li
+      className={
+        transaction.type === TransactionType.Expense ? 'minus' : 'plus'
+      }
+    >
       {transaction.text}
       <span>
         {sign} {Math.abs(transaction.amount)}

@@ -1,13 +1,17 @@
 import getUserBalance from '@/app/actions/getUserBalance';
-// import { addCommas } from '@/lib/utils';
+import { Typography } from '@mui/material';
 
 const Balance = async () => {
   const { balance } = await getUserBalance();
 
   return (
     <>
-      <h4>Your Balance</h4>
-      <h1>{balance ?? 0}</h1>
+      <Typography variant="h5" component="p">
+        Your Balance
+      </Typography>
+      <Typography variant="h4" component="p" gutterBottom>
+        {balance ?? 0}
+      </Typography>
     </>
   );
 };

@@ -1,6 +1,7 @@
 'use server';
 import { db } from '@/lib/db';
 import { auth } from '@clerk/nextjs/server';
+import { TransactionType } from '@prisma/client';
 
 async function getIncomeExpense(): Promise<{
   income?: number;
@@ -18,15 +19,13 @@ async function getIncomeExpense(): Promise<{
       where: { userId },
     });
 
-    const amounts = transactions.map((transaction) => transaction.amount);
+    const income = transactions
+      .filter((item) => item.type === TransactionType.Income)
+      .reduce((acc, item) => acc + item.amount, 0);
 
-    const income = amounts
-      .filter((item) => item > 0)
-      .reduce((acc, item) => acc + item, 0);
-
-    const expense = amounts
-      .filter((item) => item < 0)
-      .reduce((acc, item) => acc + item, 0);
+    const expense = transactions
+      .filter((item) => item.type === TransactionType.Expense)
+      .reduce((acc, item) => acc + item.amount, 0);
 
     return { income, expense: Math.abs(expense) };
   } catch (error) {

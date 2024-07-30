@@ -1,12 +1,19 @@
 import { SignInButton } from '@clerk/nextjs';
+import { Button, Stack, Typography } from '@mui/material';
 
 const Guest = () => {
   return (
-    <div className="guest">
-      <h1>Welcome</h1>
-      <p>Please Sign In to manage your transactions</p>
-      <SignInButton />
-    </div>
+    <Stack>
+      <Typography variant="h4">Welcome</Typography>
+      <Typography variant="body1" gutterBottom>
+        Please Sign In to manage your transactions
+      </Typography>
+      <SignInButton>
+        <Button variant="contained" sx={{ textTransform: 'none' }}>
+          Sign In
+        </Button>
+      </SignInButton>
+    </Stack>
   );
 };
 

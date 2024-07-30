@@ -5,6 +5,7 @@ import Stack from '@mui/material/Stack';
 import HomeIcon from '@mui/icons-material/Home';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
+import { Button } from '@mui/material';
 
 const Header = async () => {
   return (
@@ -26,7 +27,11 @@ const Header = async () => {
           </Stack>
           <Suspense fallback={<Box sx={{ height: 44 }} />}>
             <SignedOut>
-              <SignInButton />
+              <SignInButton>
+                <Button variant="contained" sx={{ textTransform: 'none' }}>
+                  Sign In
+                </Button>
+              </SignInButton>
             </SignedOut>
 
             <SignedIn>
