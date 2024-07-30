@@ -13,6 +13,7 @@ import MenuItem from '@mui/material/MenuItem';
 import MenuIcon from '@mui/icons-material/Menu';
 import AddIcon from '@mui/icons-material/Add';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
+import AddTransaction from './AddTransaction';
 
 const StyledFab = styled(Fab)({
   position: 'absolute',
@@ -26,6 +27,9 @@ const StyledFab = styled(Fab)({
 const MobileAppBar = () => {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const handleOpenTransactionModal = () => setIsTransactionModalOpen(true);
+  const handleCloseTransactionModal = () => setIsTransactionModalOpen(false);
 
   const isOpen = Boolean(anchorEl);
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
@@ -46,46 +50,56 @@ const MobileAppBar = () => {
   };
 
   return (
-    <AppBar
-      position="fixed"
-      color="info"
-      sx={{ top: 'auto', bottom: 0, display: { xs: 'block', sm: 'none' } }}
-    >
-      <Toolbar>
-        <Menu
-          id="basic-menu"
-          anchorEl={anchorEl}
-          open={isOpen}
-          onClose={handleClose}
-          MenuListProps={{
-            'aria-labelledby': 'basic-button',
-          }}
-        >
-          <MenuItem onClick={goToHome}>Home</MenuItem>
-          <MenuItem onClick={goToTransactions}>Transactions</MenuItem>
-        </Menu>
-        <IconButton
-          color="inherit"
-          aria-label="open drawer"
-          onClick={handleClick}
-        >
-          <MenuIcon />
-        </IconButton>
-        <StyledFab color="primary" aria-label="add">
-          <AddIcon />
-        </StyledFab>
-        <Box sx={{ flexGrow: 1 }} />
-        <Stack>
-          <SignedOut>
-            <SignInButton />
-          </SignedOut>
+    <>
+      <AppBar
+        position="fixed"
+        color="info"
+        sx={{ top: 'auto', bottom: 0, display: { xs: 'block', sm: 'none' } }}
+      >
+        <Toolbar>
+          <Menu
+            id="basic-menu"
+            anchorEl={anchorEl}
+            open={isOpen}
+            onClose={handleClose}
+            MenuListProps={{
+              'aria-labelledby': 'basic-button',
+            }}
+          >
+            <MenuItem onClick={goToHome}>Home</MenuItem>
+            <MenuItem onClick={goToTransactions}>Transactions</MenuItem>
+          </Menu>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            onClick={handleClick}
+          >
+            <MenuIcon />
+          </IconButton>
+          <StyledFab
+            color="primary"
+            aria-label="add"
+            onClick={handleOpenTransactionModal}
+          >
+            <AddIcon />
+          </StyledFab>
+          <Box sx={{ flexGrow: 1 }} />
+          <Stack>
+            <SignedOut>
+              <SignInButton />
+            </SignedOut>
 
-          <SignedIn>
-            <UserButton />
-          </SignedIn>
-        </Stack>
-      </Toolbar>
-    </AppBar>
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+          </Stack>
+        </Toolbar>
+      </AppBar>
+      <AddTransaction
+        isOpen={isTransactionModalOpen}
+        handleClose={handleCloseTransactionModal}
+      />
+    </>
   );
 };
 

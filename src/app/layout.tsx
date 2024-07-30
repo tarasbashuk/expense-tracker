@@ -12,7 +12,7 @@ import { getOrCreateUser } from '@/lib/userUtils';
 import CssBaseline from '@mui/material/CssBaseline';
 
 import './globals.css';
-import 'react-toastify/dist/ReactToastify.css';
+// import 'react-toastify/dist/ReactToastify.css';
 
 const roboto = Roboto({ weight: '400', subsets: ['latin'] });
 

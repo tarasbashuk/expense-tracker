@@ -1,3 +1,6 @@
+/* eslint-disable no-unused-vars */
+/* lint is complaining about unused vars for ts type definitions */
+import { Currency } from '@prisma/client';
 import { ExpenseCategory, IncomeCategory, UserSettings } from './types';
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -9,41 +12,41 @@ export const DEFAULT_SETTINGS: UserSettings = {
 export const INCOME_CATEGORIES: {
   [key in IncomeCategory]: { label: string; icon: string };
 } = {
-  [IncomeCategory.Salary]: { label: 'Salary', icon: 'AttachMoney' },
-  [IncomeCategory.Investments]: { label: 'Investments', icon: 'TrendingUp' },
-  [IncomeCategory.Gifts]: { label: 'Gifts', icon: 'CardGiftcard' },
+  salary: { label: 'Salary', icon: 'AttachMoney' },
+  investments: { label: 'Investments', icon: 'TrendingUp' },
+  gifts: { label: 'Gifts', icon: 'CardGiftcard' },
 };
 
 export const EXPENSE_CATEGORIES: {
   [key in ExpenseCategory]: { label: string; icon: string };
 } = {
-  [ExpenseCategory.Groceries]: { label: 'Groceries', icon: 'ShoppingCart' },
-  [ExpenseCategory.Dining]: { label: 'Bar and Restaurant', icon: 'Restaurant' },
-  [ExpenseCategory.Rent]: { label: 'House Rent', icon: 'Home' },
-  [ExpenseCategory.Utilities]: { label: 'Utility Bills', icon: 'Receipt' },
-  [ExpenseCategory.Home]: { label: 'Home Stuff', icon: 'HomeRepairService' },
-  [ExpenseCategory.Auto]: { label: 'Auto', icon: 'DirectionsCar' },
-  [ExpenseCategory.Shopping]: { label: 'Shopping', icon: 'ShoppingBag' },
-  [ExpenseCategory.Subscriptions]: {
+  groceries: { label: 'Groceries', icon: 'ShoppingCart' },
+  dining: { label: 'Bar and Restaurant', icon: 'Restaurant' },
+  rent: { label: 'House Rent', icon: 'Home' },
+  utilities: { label: 'Utility Bills', icon: 'Receipt' },
+  home: { label: 'Home Stuff', icon: 'HomeRepairService' },
+  auto: { label: 'Auto', icon: 'DirectionsCar' },
+  shopping: { label: 'Shopping', icon: 'ShoppingBag' },
+  subscriptions: {
     label: 'Mobile & App Subscriptions',
     icon: 'PhoneIphone',
   },
-  [ExpenseCategory.Pets]: { label: 'Pets', icon: 'Pets' },
-  [ExpenseCategory.Donations]: { label: 'Donations', icon: 'Favorite' },
-  [ExpenseCategory.Education]: { label: 'Education', icon: 'School' },
-  [ExpenseCategory.Sports]: { label: 'Sports Activity', icon: 'Sports' },
-  [ExpenseCategory.Entertainment]: {
+  pets: { label: 'Pets', icon: 'Pets' },
+  donations: { label: 'Donations', icon: 'Favorite' },
+  education: { label: 'Education', icon: 'School' },
+  sports: { label: 'Sports Activity', icon: 'Sports' },
+  entertainment: {
     label: 'Entertainment',
     icon: 'LocalMovies',
   },
-  [ExpenseCategory.Beauty]: { label: 'Beauty Services & Goods', icon: 'Spa' },
-  [ExpenseCategory.Healthcare]: {
+  beauty: { label: 'Beauty Services & Goods', icon: 'Spa' },
+  healthcare: {
     label: 'Healthcare and Drugs',
     icon: 'LocalPharmacy',
   },
-  [ExpenseCategory.Gifts]: { label: 'Gifts', icon: 'CardGiftcard' },
-  [ExpenseCategory.Savings]: { label: 'Savings', icon: 'Savings' },
-  [ExpenseCategory.Others]: { label: 'Others', icon: 'MoreHoriz' },
+  gifts: { label: 'Gifts', icon: 'CardGiftcard' },
+  savings: { label: 'Savings', icon: 'Savings' },
+  others: { label: 'Others', icon: 'MoreHoriz' },
 };
 
 export const INCOME_CATEGORIES_LIST = Object.entries(INCOME_CATEGORIES).map(
@@ -61,3 +64,10 @@ export const EXPENSE_CATEGORIES_LIST = Object.entries(EXPENSE_CATEGORIES).map(
     icon: value.icon,
   }),
 );
+
+export const CURRENCY_SYMBOL_MAP: Record<Currency, string> = {
+  UAH: '₴',
+  EUR: '€',
+  USD: '$',
+  PLN: 'zł',
+};
