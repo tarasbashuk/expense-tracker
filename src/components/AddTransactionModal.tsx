@@ -34,6 +34,7 @@ import { TranactionCategory } from '@/constants/types';
 import { useSettings } from '@/context/SettingsContexts';
 import { getIconByName } from '@/lib/getCategoryIcon';
 import { useTransactions } from '@/context/TranasctionsContext';
+import { DatePicker } from '@mui/x-date-pickers';
 
 interface Props {
   handleClose: () => void;
@@ -127,23 +128,32 @@ const AddTransactionModal: React.FC<Props> = ({ handleClose }) => {
             </IconButton>
           </Stack>
           <form ref={formRef} action={clientAction}>
-            <Grid container spacing={2} justifyContent="flex-end">
-              <Grid marginTop={2} paddingLeft={2} xs={12}>
+            <Grid container spacing={2} justifyContent="space-between">
+              <Grid item xs={4} sm={7}>
                 <ToggleButtonGroup
                   exclusive
                   fullWidth
-                  size="small"
+                  size="large"
                   color="primary"
                   value={transactionType}
                   onChange={handleTypeChange}
                 >
-                  <ToggleButton value={TransactionType.Expense}>
+                  <ToggleButton
+                    sx={{ paddingTop: '13.875px', paddingBottom: '13.875px' }}
+                    value={TransactionType.Expense}
+                  >
                     Expense
                   </ToggleButton>
-                  <ToggleButton value={TransactionType.Income}>
+                  <ToggleButton
+                    sx={{ paddingTop: '13.875px', paddingBottom: '13.875px' }}
+                    value={TransactionType.Income}
+                  >
                     Income
                   </ToggleButton>
                 </ToggleButtonGroup>
+              </Grid>
+              <Grid item xs={5} sm={5}>
+                <DatePicker />
               </Grid>
 
               <Grid item xs={8}>

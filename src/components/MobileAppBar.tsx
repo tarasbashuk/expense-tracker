@@ -12,6 +12,9 @@ import MenuItem from '@mui/material/MenuItem';
 import MenuIcon from '@mui/icons-material/Menu';
 import AddIcon from '@mui/icons-material/Add';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
+
 import AddTransactionModal from './AddTransactionModal';
 
 const fabStyles = {
@@ -50,56 +53,58 @@ const MobileAppBar = () => {
 
   return (
     <>
-      <AppBar
-        position="fixed"
-        color="info"
-        sx={{ top: 'auto', bottom: 0, display: { xs: 'block', sm: 'none' } }}
-      >
-        <Toolbar>
-          <Menu
-            id="basic-menu"
-            anchorEl={anchorEl}
-            open={isOpen}
-            onClose={handleClose}
-            MenuListProps={{
-              'aria-labelledby': 'basic-button',
-            }}
-          >
-            <MenuItem onClick={goToHome}>Home</MenuItem>
-            <MenuItem onClick={goToTransactions}>Transactions</MenuItem>
-          </Menu>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleClick}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Box sx={{ flexGrow: 1 }} />
-          <Stack>
-            <SignedOut>
-              <SignInButton />
-            </SignedOut>
-
-            <SignedIn>
-              <UserButton />
-            </SignedIn>
-          </Stack>
-        </Toolbar>
-      </AppBar>
-      <SignedIn>
-        <Fab
-          color="primary"
-          aria-label="add"
-          sx={fabStyles}
-          onClick={handleOpenTransactionModal}
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <AppBar
+          position="fixed"
+          color="info"
+          sx={{ top: 'auto', bottom: 0, display: { xs: 'block', sm: 'none' } }}
         >
-          <AddIcon />
-        </Fab>
-      </SignedIn>
-      {isTransactionModalOpen && (
-        <AddTransactionModal handleClose={handleCloseTransactionModal} />
-      )}
+          <Toolbar>
+            <Menu
+              id="basic-menu"
+              anchorEl={anchorEl}
+              open={isOpen}
+              onClose={handleClose}
+              MenuListProps={{
+                'aria-labelledby': 'basic-button',
+              }}
+            >
+              <MenuItem onClick={goToHome}>Home</MenuItem>
+              <MenuItem onClick={goToTransactions}>Transactions</MenuItem>
+            </Menu>
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              onClick={handleClick}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Box sx={{ flexGrow: 1 }} />
+            <Stack>
+              <SignedOut>
+                <SignInButton />
+              </SignedOut>
+
+              <SignedIn>
+                <UserButton />
+              </SignedIn>
+            </Stack>
+          </Toolbar>
+        </AppBar>
+        <SignedIn>
+          <Fab
+            color="primary"
+            aria-label="add"
+            sx={fabStyles}
+            onClick={handleOpenTransactionModal}
+          >
+            <AddIcon />
+          </Fab>
+        </SignedIn>
+        {isTransactionModalOpen && (
+          <AddTransactionModal handleClose={handleCloseTransactionModal} />
+        )}
+      </LocalizationProvider>
     </>
   );
 };
