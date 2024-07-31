@@ -2,8 +2,7 @@
 import { revalidatePath } from 'next/cache';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
-import { Currency, TransactionType } from '@prisma/client';
-// import { useRouter } from 'next/router';
+import { Currency, Transaction, TransactionType } from '@prisma/client';
 
 interface TransactionFormValues {
   text: string;
@@ -11,7 +10,7 @@ interface TransactionFormValues {
 }
 
 interface TransactionResult {
-  data?: TransactionFormValues;
+  data?: Transaction;
   error?: string;
 }
 

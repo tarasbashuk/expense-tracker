@@ -1,7 +1,7 @@
 'use client';
-import { toast } from 'react-toastify';
-import addTransaction from '@/app/actions/addTransaction';
 import { useRef, useState } from 'react';
+import { toast } from 'react-toastify';
+import { useRouter } from 'next/navigation';
 import {
   Button,
   Select,
@@ -22,6 +22,8 @@ import {
   IconButton,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+
+import addTransaction from '@/app/actions/addTransaction';
 import {
   CURRENCY_SYMBOL_MAP,
   EXPENSE_CATEGORIES_LIST,
@@ -31,7 +33,7 @@ import { Currency, TransactionType } from '@prisma/client';
 import { TranactionCategory } from '@/constants/types';
 import { useSettings } from '@/context/SettingsContexts';
 import { getIconByName } from '@/lib/getCategoryIcon';
-import { useRouter } from 'next/navigation';
+import { useTransactions } from '@/context/TranasctionsContext';
 
 interface Props {
   handleClose: () => void;
@@ -53,6 +55,7 @@ const style = {
 const AddTransactionModal: React.FC<Props> = ({ handleClose }) => {
   const router = useRouter();
   const { settings } = useSettings();
+  const { setTransactions } = useTransactions();
   const [category, setCategory] = useState<TranactionCategory | ''>('');
   const [transactionType, setTranasctionType] = useState<TransactionType>(
     TransactionType.Expense,
@@ -84,14 +87,15 @@ const AddTransactionModal: React.FC<Props> = ({ handleClose }) => {
   // This is a legacy implementaions from Brad Traversy cource,
   // TODO: rework to react-hook-form
   const clientAction = async (formData: FormData) => {
-    const { error } = await addTransaction(formData, transactionType);
+    const { data, error } = await addTransaction(formData, transactionType);
 
     if (error) {
       toast.error(error);
-    } else {
+    } else if (data) {
       toast.success('Added!');
       formRef.current?.reset();
       router.refresh();
+      setTransactions((transactions) => [data, ...transactions]);
       handleClose();
     }
   };

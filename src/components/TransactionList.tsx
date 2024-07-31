@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import getTransactions from '@/app/actions/getTransactions';
-import TransactionItem from './TransactionItem';
+import { toast } from 'react-toastify';
 import { Transaction } from '@prisma/client';
 import {
   FormControl,
@@ -17,7 +16,12 @@ import {
 } from '@mui/material';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import ArrowForward from '@mui/icons-material/ArrowForward';
+
+import TransactionItem from './TransactionItem';
 import { MONTH_LIST } from '@/constants/constants';
+import getTransactions from '@/app/actions/getTransactions';
+import deleteTransaction from '@/app/actions/deleteTransaction';
+import { useTransactions } from '@/context/TranasctionsContext';
 
 const JANUARY = '0';
 const DECEMBER = '11';
@@ -26,7 +30,7 @@ const currentMonth = today.getMonth().toString();
 const currentYear = today.getFullYear();
 
 const TransactionList = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const { transactions, setTransactions } = useTransactions();
   const [error, setError] = useState<string>('');
   const [month, setMonth] = useState(currentMonth);
   const [isLoading, setIsloading] = useState(false);
@@ -67,6 +71,29 @@ const TransactionList = () => {
     setIsloading(true);
     fetchTrans();
   }, [month, currentYear]);
+
+  const handleDeleteTransaction = async (transactionId: string) => {
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this transaction?',
+    );
+
+    if (!confirmed) return;
+
+    const { message, error } = await deleteTransaction(transactionId);
+
+    if (error) {
+      toast.error(error);
+    }
+
+    toast.success(message);
+    setTransactions((prevTrans: Transaction[]) => {
+      const updatedTransactions = prevTrans.filter(
+        (trans) => trans.id !== transactionId,
+      );
+
+      return updatedTransactions;
+    });
+  };
 
   if (error) {
     return (
@@ -114,7 +141,7 @@ const TransactionList = () => {
         </IconButton>
       </Stack>
 
-      {isLoading && <CircularProgress />}
+      {isLoading && <CircularProgress sx={{ my: 5 }} />}
 
       {!transactions.length && !isLoading && (
         <Typography variant="h5" component="p" gutterBottom mt={4}>
@@ -125,7 +152,11 @@ const TransactionList = () => {
       {!isLoading && (
         <List sx={{ mt: 4 }}>
           {transactions?.map((transaction: Transaction) => (
-            <TransactionItem key={transaction.id} transaction={transaction} />
+            <TransactionItem
+              key={transaction.id}
+              transaction={transaction}
+              handleDelete={handleDeleteTransaction}
+            />
           ))}
         </List>
       )}
