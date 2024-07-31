@@ -9,59 +9,44 @@ export const DEFAULT_SETTINGS: UserSettings = {
   defaultCurrency: 'EUR',
 };
 
-export const INCOME_CATEGORIES: {
-  [key in IncomeCategory]: { label: string; icon: string };
-} = {
-  salary: { label: 'Salary', icon: 'AttachMoney' },
-  investments: { label: 'Investments', icon: 'TrendingUp' },
-  gifts: { label: 'Gifts', icon: 'CardGiftcard' },
+export const INCOME_CATEGORIES: { [key in IncomeCategory]: string } = {
+  salary: 'Salary',
+  investments: 'Investments',
+  gifts: 'Gifts',
 };
 
-export const EXPENSE_CATEGORIES: {
-  [key in ExpenseCategory]: { label: string; icon: string };
-} = {
-  groceries: { label: 'Groceries', icon: 'ShoppingCart' },
-  dining: { label: 'Bar and Restaurant', icon: 'Restaurant' },
-  rent: { label: 'House Rent', icon: 'Home' },
-  utilities: { label: 'Utility Bills', icon: 'Receipt' },
-  home: { label: 'Home Stuff', icon: 'HomeRepairService' },
-  auto: { label: 'Auto', icon: 'DirectionsCar' },
-  shopping: { label: 'Shopping', icon: 'ShoppingBag' },
-  subscriptions: {
-    label: 'Mobile & App Subscriptions',
-    icon: 'PhoneIphone',
-  },
-  pets: { label: 'Pets', icon: 'Pets' },
-  donations: { label: 'Donations', icon: 'Favorite' },
-  education: { label: 'Education', icon: 'School' },
-  sports: { label: 'Sports Activity', icon: 'Sports' },
-  entertainment: {
-    label: 'Entertainment',
-    icon: 'LocalMovies',
-  },
-  beauty: { label: 'Beauty Services & Goods', icon: 'Spa' },
-  healthcare: {
-    label: 'Healthcare and Drugs',
-    icon: 'LocalPharmacy',
-  },
-  gifts: { label: 'Gifts', icon: 'CardGiftcard' },
-  savings: { label: 'Savings', icon: 'Savings' },
-  others: { label: 'Others', icon: 'MoreHoriz' },
+export const EXPENSE_CATEGORIES: { [key in ExpenseCategory]: string } = {
+  groceries: 'Groceries',
+  dining: 'Bar and Restaurant',
+  rent: 'House Rent',
+  utilities: 'Utility Bills',
+  home: 'Home Stuff',
+  auto: 'Auto',
+  shopping: 'Shopping',
+  subscriptions: 'Mobile & App Subscriptions',
+  pets: 'Pets',
+  donations: 'Donations',
+  education: 'Education',
+  sports: 'Sports Activity',
+  entertainment: 'Entertainment',
+  beauty: 'Beauty Services & Goods',
+  healthcare: 'Healthcare and Drugs',
+  gifts: 'Gifts',
+  savings: 'Savings',
+  others: 'Others',
 };
 
 export const INCOME_CATEGORIES_LIST = Object.entries(INCOME_CATEGORIES).map(
   ([key, value]) => ({
     value: key,
-    label: value.label,
-    icon: value.icon,
+    label: value,
   }),
 );
 
 export const EXPENSE_CATEGORIES_LIST = Object.entries(EXPENSE_CATEGORIES).map(
   ([key, value]) => ({
     value: key,
-    label: value.label,
-    icon: value.icon,
+    label: value,
   }),
 );
 

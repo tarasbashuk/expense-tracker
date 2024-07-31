@@ -56,16 +56,16 @@ a {
   border: 0;
 }
 
-h1 {
+/* h1 {
   letter-spacing: 1px;
   margin: 0;
-}
-
+} */
+/* 
 .transaction-header {
   border-bottom: 1px solid #bbb;
   padding-bottom: 10px;
   margin: 40px 0 10px;
-}
+} */
 
 .guest {
   text-align: center;
@@ -100,14 +100,14 @@ h1 {
   letter-spacing: 1px;
   margin: 5px 0;
 }
-
+/* 
 .money.plus {
   color: #2ecc71;
 }
 
 .money.minus {
   color: #c0392b;
-}
+} */
 
 /* label {
   display: inline-block;
@@ -158,7 +158,7 @@ input[type='number'] {
   margin-bottom: 40px;
 }
 
-.list li {
+/* .list li {
   background-color: #fff;
   box-shadow: var(--box-shadow);
   color: #333;
@@ -167,7 +167,7 @@ input[type='number'] {
   position: relative;
   padding: 10px;
   margin: 10px 0;
-}
+} */
 
 .list li.plus {
   border-right: 5px solid #2ecc71;

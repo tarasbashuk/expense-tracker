@@ -30,7 +30,8 @@ import {
 import { Currency, TransactionType } from '@prisma/client';
 import { TranactionCategory } from '@/constants/types';
 import { useSettings } from '@/context/SettingsContexts';
-import { getIconByName, IconName } from '@/lib/getCategoryIcon';
+import { getIconByName } from '@/lib/getCategoryIcon';
+import { useRouter } from 'next/navigation';
 
 interface Props {
   handleClose: () => void;
@@ -50,6 +51,7 @@ const style = {
 };
 
 const AddTransactionModal: React.FC<Props> = ({ handleClose }) => {
+  const router = useRouter();
   const { settings } = useSettings();
   const [category, setCategory] = useState<TranactionCategory | ''>('');
   const [transactionType, setTranasctionType] = useState<TransactionType>(
@@ -89,6 +91,7 @@ const AddTransactionModal: React.FC<Props> = ({ handleClose }) => {
     } else {
       toast.success('Added!');
       formRef.current?.reset();
+      router.refresh();
       handleClose();
     }
   };
@@ -182,8 +185,10 @@ const AddTransactionModal: React.FC<Props> = ({ handleClose }) => {
                     value={category as string}
                     onChange={handleCategoryChange}
                   >
-                    {categories.map(({ value, label, icon }) => {
-                      const IconComponent = getIconByName(icon as IconName);
+                    {categories.map(({ value, label }) => {
+                      const IconComponent = getIconByName(
+                        value as TranactionCategory,
+                      );
 
                       return (
                         <MenuItem key={value} value={value}>

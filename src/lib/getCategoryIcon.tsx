@@ -18,32 +18,38 @@ import SpaIcon from '@mui/icons-material/Spa';
 import LocalPharmacyIcon from '@mui/icons-material/LocalPharmacy';
 import SavingsIcon from '@mui/icons-material/Savings';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import { TranactionCategory } from '@/constants/types';
+import { OverridableComponent } from '@mui/material/OverridableComponent';
+import { SvgIconTypeMap } from '@mui/material';
 
-const ICON_MAP = {
-  AttachMoney: AttachMoneyIcon,
-  TrendingUp: TrendingUpIcon,
-  CardGiftcard: CardGiftcardIcon,
-  ShoppingCart: ShoppingCartIcon,
-  Restaurant: RestaurantIcon,
-  Home: HomeIcon,
-  Receipt: ReceiptIcon,
-  HomeRepairService: HomeRepairServiceIcon,
-  DirectionsCar: DirectionsCarIcon,
-  ShoppingBag: ShoppingBagIcon,
-  PhoneIphone: PhoneIphoneIcon,
-  Pets: PetsIcon,
-  Favorite: FavoriteIcon,
-  School: SchoolIcon,
-  Sports: SportsIcon,
-  LocalMovies: LocalMoviesIcon,
-  Spa: SpaIcon,
-  LocalPharmacy: LocalPharmacyIcon,
-  Savings: SavingsIcon,
-  MoreHoriz: MoreHorizIcon,
+export const ICON_MAP: Record<
+  TranactionCategory,
+  OverridableComponent<SvgIconTypeMap<{}, 'svg'>> & {
+    muiName: string;
+  }
+> = {
+  groceries: ShoppingCartIcon,
+  dining: RestaurantIcon,
+  rent: HomeIcon,
+  utilities: ReceiptIcon,
+  home: HomeRepairServiceIcon,
+  auto: DirectionsCarIcon,
+  shopping: ShoppingBagIcon,
+  subscriptions: PhoneIphoneIcon,
+  pets: PetsIcon,
+  donations: FavoriteIcon,
+  education: SchoolIcon,
+  sports: SportsIcon,
+  entertainment: LocalMoviesIcon,
+  beauty: SpaIcon,
+  healthcare: LocalPharmacyIcon,
+  gifts: CardGiftcardIcon,
+  savings: SavingsIcon,
+  others: MoreHorizIcon,
+  salary: AttachMoneyIcon,
+  investments: TrendingUpIcon,
 };
 
-export type IconName = keyof typeof ICON_MAP;
-
-export const getIconByName = (iconName: IconName) => {
+export const getIconByName = (iconName: TranactionCategory) => {
   return ICON_MAP[iconName] || null;
 };

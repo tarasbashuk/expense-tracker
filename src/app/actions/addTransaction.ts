@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { Currency, TransactionType } from '@prisma/client';
+// import { useRouter } from 'next/router';
 
 interface TransactionFormValues {
   text: string;
@@ -22,11 +23,8 @@ async function addTransaction(
   const amountValue = formData.get('amount');
   const categoryValue = formData.get('category');
   const currencyValue = formData.get('currency');
-  console.log('textValue', textValue);
-  console.log('amountValue', amountValue);
-  console.log('categoryValue', categoryValue);
-  console.log('currencyValue', currencyValue);
   const { userId } = auth();
+  // const router = useRouter();
 
   if (!textValue || !amountValue || !categoryValue || !currencyValue) {
     return { error: 'Category, text or amount is missing' };
@@ -54,6 +52,9 @@ async function addTransaction(
     });
 
     revalidatePath('/');
+    revalidatePath('transactions');
+    revalidatePath('/transactions');
+    revalidatePath('*');
 
     return {
       data: transacionData,

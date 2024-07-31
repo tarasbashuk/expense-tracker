@@ -13,6 +13,7 @@ import {
   CircularProgress,
   Stack,
   IconButton,
+  List,
 } from '@mui/material';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import ArrowForward from '@mui/icons-material/ArrowForward';
@@ -121,11 +122,13 @@ const TransactionList = () => {
         </Typography>
       )}
 
-      <ul className="list">
-        {transactions?.map((transaction: Transaction) => (
-          <TransactionItem key={transaction.id} transaction={transaction} />
-        ))}
-      </ul>
+      {!isLoading && (
+        <List sx={{ mt: 4 }}>
+          {transactions?.map((transaction: Transaction) => (
+            <TransactionItem key={transaction.id} transaction={transaction} />
+          ))}
+        </List>
+      )}
     </>
   );
 };
