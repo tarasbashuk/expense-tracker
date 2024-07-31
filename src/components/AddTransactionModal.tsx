@@ -22,8 +22,6 @@ import {
   IconButton,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-// TODO: check bundle size with alternative import
-import * as Icons from '@mui/icons-material';
 import {
   CURRENCY_SYMBOL_MAP,
   EXPENSE_CATEGORIES_LIST,
@@ -32,9 +30,9 @@ import {
 import { Currency, TransactionType } from '@prisma/client';
 import { TranactionCategory } from '@/constants/types';
 import { useSettings } from '@/context/SettingsContexts';
+import { getIconByName, IconName } from '@/lib/getCategoryIcon';
 
 interface Props {
-  isOpen: boolean;
   handleClose: () => void;
 }
 
@@ -51,7 +49,7 @@ const style = {
   p: { xs: 3, sm: 4 },
 };
 
-const AddTransaction: React.FC<Props> = ({ isOpen, handleClose }) => {
+const AddTransactionModal: React.FC<Props> = ({ handleClose }) => {
   const { settings } = useSettings();
   const [category, setCategory] = useState<TranactionCategory | ''>('');
   const [transactionType, setTranasctionType] = useState<TransactionType>(
@@ -98,7 +96,7 @@ const AddTransaction: React.FC<Props> = ({ isOpen, handleClose }) => {
   return (
     <>
       <Modal
-        open={isOpen}
+        open
         onClose={handleClose}
         aria-labelledby="modal-modal-title"
         aria-describedby="modal-modal-description"
@@ -156,6 +154,7 @@ const AddTransaction: React.FC<Props> = ({ isOpen, handleClose }) => {
                   />
                 </FormControl>
               </Grid>
+
               <Grid item xs={4}>
                 <FormControl variant="standard" fullWidth>
                   <InputLabel>Currency</InputLabel>
@@ -174,6 +173,7 @@ const AddTransaction: React.FC<Props> = ({ isOpen, handleClose }) => {
                   </Select>
                 </FormControl>
               </Grid>
+
               <Grid item xs={12}>
                 <FormControl fullWidth variant="standard">
                   <InputLabel>Category</InputLabel>
@@ -183,7 +183,7 @@ const AddTransaction: React.FC<Props> = ({ isOpen, handleClose }) => {
                     onChange={handleCategoryChange}
                   >
                     {categories.map(({ value, label, icon }) => {
-                      const IconComponent = Icons[icon as keyof typeof Icons];
+                      const IconComponent = getIconByName(icon as IconName);
 
                       return (
                         <MenuItem key={value} value={value}>
@@ -197,6 +197,7 @@ const AddTransaction: React.FC<Props> = ({ isOpen, handleClose }) => {
                   </Select>
                 </FormControl>
               </Grid>
+
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -206,6 +207,7 @@ const AddTransaction: React.FC<Props> = ({ isOpen, handleClose }) => {
                   variant="standard"
                 />
               </Grid>
+
               <Grid item xs={12} sm={5} marginTop={2}>
                 <Button fullWidth variant="contained" type="submit">
                   Add transaction
@@ -219,4 +221,4 @@ const AddTransaction: React.FC<Props> = ({ isOpen, handleClose }) => {
   );
 };
 
-export default AddTransaction;
+export default AddTransactionModal;

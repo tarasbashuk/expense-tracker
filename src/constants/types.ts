@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* lint is complaining about unused vars for ts type definitions */
 import { Settings } from '@prisma/client';
+import { EXPENSE_CATEGORIES } from './constants';
 
 export type UserSettings = Pick<
   Settings,

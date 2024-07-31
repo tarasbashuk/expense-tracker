@@ -12,7 +12,7 @@ import MenuItem from '@mui/material/MenuItem';
 import MenuIcon from '@mui/icons-material/Menu';
 import AddIcon from '@mui/icons-material/Add';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
-import AddTransaction from './AddTransaction';
+import AddTransactionModal from './AddTransactionModal';
 
 const fabStyles = {
   position: 'fixed',
@@ -87,18 +87,19 @@ const MobileAppBar = () => {
           </Stack>
         </Toolbar>
       </AppBar>
-      <Fab
-        color="primary"
-        aria-label="add"
-        sx={fabStyles}
-        onClick={handleOpenTransactionModal}
-      >
-        <AddIcon />
-      </Fab>
-      <AddTransaction
-        isOpen={isTransactionModalOpen}
-        handleClose={handleCloseTransactionModal}
-      />
+      <SignedIn>
+        <Fab
+          color="primary"
+          aria-label="add"
+          sx={fabStyles}
+          onClick={handleOpenTransactionModal}
+        >
+          <AddIcon />
+        </Fab>
+      </SignedIn>
+      {isTransactionModalOpen && (
+        <AddTransactionModal handleClose={handleCloseTransactionModal} />
+      )}
     </>
   );
 };
