@@ -70,7 +70,7 @@ const TransactionList = () => {
 
     setIsloading(true);
     fetchTrans();
-  }, [month, currentYear]);
+  }, [month, setTransactions]);
 
   const handleDeleteTransaction = async (transactionId: string) => {
     const confirmed = window.confirm(

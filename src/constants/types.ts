@@ -5,7 +5,7 @@ import { EXPENSE_CATEGORIES } from './constants';
 
 export type UserSettings = Pick<
   Settings,
-  'theme' | 'language' | 'defaultCurrency'
+  'theme' | 'language' | 'defaultCurrency' | 'initialAmount'
 >;
 
 export enum IncomeCategory {

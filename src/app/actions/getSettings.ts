@@ -20,6 +20,7 @@ async function getSettings(): Promise<{
         language: true,
         theme: true,
         defaultCurrency: true,
+        initialAmount: true,
       },
     });
 

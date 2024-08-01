@@ -41,6 +41,7 @@ const TransactionItem: FC<Props> = ({ transaction, handleDelete }) => {
   const IconComponent = getIconByName(category as TranactionCategory);
   const labelColor = type === TransactionType.Expense ? red[500] : green[500];
   const formattedDate = format(date, 'PP');
+  const isSecondaryAmountShown = currency !== settings.defaultCurrency;
 
   return (
     <>
@@ -72,7 +73,10 @@ const TransactionItem: FC<Props> = ({ transaction, handleDelete }) => {
             width: { xs: '100px', sm: '150px' },
           }}
           primary={`${sign} ${Math.abs(amountDefaultCurrency!)} ${CURRENCY_SYMBOL_MAP[settings.defaultCurrency]}`}
-          secondary={`${sign} ${Math.abs(amount)} ${CURRENCY_SYMBOL_MAP[currency]}`}
+          secondary={
+            isSecondaryAmountShown &&
+            `${sign} ${Math.abs(amount)} ${CURRENCY_SYMBOL_MAP[currency]}`
+          }
         />
         <ListItemSecondaryAction>
           <IconButton
