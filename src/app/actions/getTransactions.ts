@@ -29,9 +29,14 @@ async function getTransactions(
           lte: endDate,
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: [
+        {
+          date: 'desc',
+        },
+        {
+          createdAt: 'desc',
+        },
+      ],
     });
 
     return { transactions };
