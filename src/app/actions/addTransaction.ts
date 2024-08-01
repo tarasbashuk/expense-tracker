@@ -4,11 +4,6 @@ import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { Currency, Transaction, TransactionType } from '@prisma/client';
 
-interface TransactionFormValues {
-  text: string;
-  amount: number;
-}
-
 interface TransactionResult {
   data?: Transaction;
   error?: string;
@@ -17,15 +12,25 @@ interface TransactionResult {
 async function addTransaction(
   formData: FormData,
   transacionType: TransactionType,
+  isDefaultAmmountRequired: boolean,
 ): Promise<TransactionResult> {
   const textValue = formData.get('text');
+  const dateValue = formData.get('date');
   const amountValue = formData.get('amount');
   const categoryValue = formData.get('category');
   const currencyValue = formData.get('currency');
-  const { userId } = auth();
-  // const router = useRouter();
+  const amountDefaultCurrencyValue = formData.get('amountDefaultCurrency');
 
-  if (!textValue || !amountValue || !categoryValue || !currencyValue) {
+  const { userId } = auth();
+
+  if (
+    !textValue ||
+    !amountValue ||
+    !categoryValue ||
+    !currencyValue ||
+    !dateValue ||
+    (isDefaultAmmountRequired && !amountDefaultCurrencyValue)
+  ) {
     return { error: 'Category, text or amount is missing' };
   }
 
@@ -34,9 +39,13 @@ async function addTransaction(
   }
 
   const text = textValue.toString();
+  const date = dateValue.toString();
   const category = categoryValue.toString();
   const currency = currencyValue.toString() as Currency;
   const amount = parseFloat(amountValue.toString());
+  const amountDefaultCurrency = amountDefaultCurrencyValue
+    ? parseFloat(amountDefaultCurrencyValue.toString())
+    : amount;
 
   try {
     const transacionData = await db.transaction.create({
@@ -46,7 +55,9 @@ async function addTransaction(
         currency,
         userId,
         category,
+        date: new Date(date),
         type: transacionType,
+        amountDefaultCurrency,
       },
     });
 

@@ -71,3 +71,7 @@ export const MONTH_LIST = [
   { value: '10', label: 'November' },
   { value: '11', label: 'December' },
 ];
+
+export const DATE_FORMATS = {
+  YYYY_MM_DD: 'yyyy-MM-dd',
+};

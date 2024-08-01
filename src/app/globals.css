@@ -21,7 +21,7 @@ a {
 
 .container {
   margin: 30px auto;
-  width: 350px;
+  /* width: 350px; */
   display: flex;
   flex-direction: column;
   align-items: center;

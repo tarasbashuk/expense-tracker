@@ -24,7 +24,7 @@ async function getTransactions(
     const transactions = await db.transaction.findMany({
       where: {
         userId,
-        createdAt: {
+        date: {
           gte: startDate,
           lte: endDate,
         },

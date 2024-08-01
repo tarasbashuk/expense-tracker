@@ -17,6 +17,8 @@ import { getIconByName } from '@/lib/getCategoryIcon';
 import { green, red } from '@mui/material/colors';
 
 import { TranactionCategory } from '@/constants/types';
+import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
+import { useSettings } from '@/context/SettingsContexts';
 
 interface Props {
   transaction: Transaction;
@@ -24,11 +26,21 @@ interface Props {
 }
 
 const TransactionItem: FC<Props> = ({ transaction, handleDelete }) => {
-  const { id, createdAt, type, text, amount, category } = transaction;
+  const { settings } = useSettings();
+  const {
+    id,
+    date,
+    type,
+    text,
+    amount,
+    category,
+    currency,
+    amountDefaultCurrency,
+  } = transaction;
   const sign = type === TransactionType.Expense ? '-' : '+';
   const IconComponent = getIconByName(category as TranactionCategory);
   const labelColor = type === TransactionType.Expense ? red[500] : green[500];
-  const formattedDate = format(createdAt, 'PP');
+  const formattedDate = format(date, 'PP');
 
   return (
     <>
@@ -54,9 +66,14 @@ const TransactionItem: FC<Props> = ({ transaction, handleDelete }) => {
           }
           secondary={formattedDate}
         />
-        <Typography variant="body1" sx={{ marginX: 2, textWrap: 'nowrap' }}>
-          {sign} {Math.abs(amount)}
-        </Typography>
+        <ListItemText
+          sx={{
+            textAlign: 'right',
+            width: { xs: '100px', sm: '150px' },
+          }}
+          primary={`${sign} ${Math.abs(amountDefaultCurrency!)} ${CURRENCY_SYMBOL_MAP[settings.defaultCurrency]}`}
+          secondary={`${sign} ${Math.abs(amount)} ${CURRENCY_SYMBOL_MAP[currency]}`}
+        />
         <ListItemSecondaryAction>
           <IconButton
             edge="end"

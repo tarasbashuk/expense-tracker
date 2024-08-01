@@ -26,6 +26,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import addTransaction from '@/app/actions/addTransaction';
 import {
   CURRENCY_SYMBOL_MAP,
+  DATE_FORMATS,
   EXPENSE_CATEGORIES_LIST,
   INCOME_CATEGORIES_LIST,
 } from '@/constants/constants';
@@ -50,18 +51,21 @@ const style = {
   border: 'none',
   borderRadius: 4,
   boxShadow: 24,
-  p: { xs: 3, sm: 4 },
+  p: { xs: '18px', sm: 4 },
 };
 
 const AddTransactionModal: React.FC<Props> = ({ handleClose }) => {
   const router = useRouter();
-  const { settings } = useSettings();
+  const {
+    settings: { defaultCurrency },
+  } = useSettings();
   const { setTransactions } = useTransactions();
   const [category, setCategory] = useState<TranactionCategory | ''>('');
   const [transactionType, setTranasctionType] = useState<TransactionType>(
     TransactionType.Expense,
   );
-  const [currency, setcCurrency] = useState<Currency>(settings.defaultCurrency);
+  const [currency, setcCurrency] = useState<Currency>(defaultCurrency);
+  const isBaseAmmountShown = currency !== defaultCurrency;
 
   const handleTypeChange = (
     _event: React.MouseEvent<HTMLElement>,
@@ -88,7 +92,11 @@ const AddTransactionModal: React.FC<Props> = ({ handleClose }) => {
   // This is a legacy implementaions from Brad Traversy cource,
   // TODO: rework to react-hook-form
   const clientAction = async (formData: FormData) => {
-    const { data, error } = await addTransaction(formData, transactionType);
+    const { data, error } = await addTransaction(
+      formData,
+      transactionType,
+      isBaseAmmountShown,
+    );
 
     if (error) {
       toast.error(error);
@@ -129,7 +137,7 @@ const AddTransactionModal: React.FC<Props> = ({ handleClose }) => {
           </Stack>
           <form ref={formRef} action={clientAction}>
             <Grid container spacing={2} justifyContent="space-between">
-              <Grid item xs={4} sm={7}>
+              <Grid item xs={4} sm={8}>
                 <ToggleButtonGroup
                   exclusive
                   fullWidth
@@ -152,8 +160,13 @@ const AddTransactionModal: React.FC<Props> = ({ handleClose }) => {
                   </ToggleButton>
                 </ToggleButtonGroup>
               </Grid>
-              <Grid item xs={5} sm={5}>
-                <DatePicker />
+              <Grid item xs={5} sm={4}>
+                <DatePicker
+                  label="Date"
+                  name="date"
+                  defaultValue={new Date()}
+                  format={DATE_FORMATS.YYYY_MM_DD}
+                />
               </Grid>
 
               <Grid item xs={8}>
@@ -190,6 +203,38 @@ const AddTransactionModal: React.FC<Props> = ({ handleClose }) => {
                   </Select>
                 </FormControl>
               </Grid>
+
+              {isBaseAmmountShown && (
+                <>
+                  <Grid item xs={8}>
+                    <FormControl fullWidth variant="standard">
+                      <InputLabel htmlFor="amount">
+                        Amount in base currency
+                      </InputLabel>
+                      <Input
+                        name="amountDefaultCurrency"
+                        type="number"
+                        startAdornment={
+                          <InputAdornment position="start">
+                            {CURRENCY_SYMBOL_MAP.EUR}
+                          </InputAdornment>
+                        }
+                      />
+                    </FormControl>
+                  </Grid>
+
+                  <Grid item xs={4}>
+                    <FormControl variant="standard" fullWidth>
+                      <InputLabel>Base currency</InputLabel>
+                      <Select disabled value={CURRENCY_SYMBOL_MAP.EUR}>
+                        <MenuItem value={CURRENCY_SYMBOL_MAP.EUR}>
+                          {CURRENCY_SYMBOL_MAP.EUR}
+                        </MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </>
+              )}
 
               <Grid item xs={12}>
                 <FormControl fullWidth variant="standard">
