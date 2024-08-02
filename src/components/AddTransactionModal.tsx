@@ -176,6 +176,10 @@ const AddTransactionModal: React.FC<Props> = ({ handleClose }) => {
                     id="amount"
                     name="amount"
                     type="number"
+                    inputProps={{
+                      min: 0,
+                      step: '0.01',
+                    }}
                     startAdornment={
                       <InputAdornment position="start">
                         {CURRENCY_SYMBOL_MAP[currency]}
@@ -214,6 +218,10 @@ const AddTransactionModal: React.FC<Props> = ({ handleClose }) => {
                       <Input
                         name="amountDefaultCurrency"
                         type="number"
+                        inputProps={{
+                          min: 0,
+                          step: '0.01',
+                        }}
                         startAdornment={
                           <InputAdornment position="start">
                             {CURRENCY_SYMBOL_MAP.EUR}

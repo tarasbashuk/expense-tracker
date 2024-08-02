@@ -2,7 +2,8 @@
 import { db } from '@/lib/db';
 import { auth } from '@clerk/nextjs/server';
 import { Transaction } from '@prisma/client';
-import { endOfMonth, startOfMonth } from 'date-fns';
+import { endOfMonth, startOfMonth, format } from 'date-fns';
+import { DATE_FORMATS } from '@/constants/constants';
 
 async function getTransactions(
   year: number,
@@ -19,14 +20,16 @@ async function getTransactions(
 
   const startDate = startOfMonth(new Date(year, month));
   const endDate = endOfMonth(new Date(year, month));
+  const formattedStart = new Date(format(startDate, DATE_FORMATS.YYYY_MM_DD));
+  const formattedEnd = new Date(format(endDate, DATE_FORMATS.YYYY_MM_DD));
 
   try {
     const transactions = await db.transaction.findMany({
       where: {
         userId,
         date: {
-          gte: startDate,
-          lte: endDate,
+          gte: formattedStart,
+          lte: formattedEnd,
         },
       },
       orderBy: [
