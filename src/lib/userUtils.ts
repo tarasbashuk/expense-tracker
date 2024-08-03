@@ -31,7 +31,7 @@ export const getOrCreateUser = async (): Promise<User | null> => {
   const { id, imageUrl, firstName, lastName, emailAddresses } = clerkUser;
   const fullName = `${firstName ?? ''} ${lastName ?? ''}`.trim();
 
-  const newUser = db.user.create({
+  const newUser = await db.user.create({
     data: {
       clerkUserId: id,
       firstName,

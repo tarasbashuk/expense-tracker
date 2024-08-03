@@ -1,8 +1,10 @@
-import getUserBalance from '@/app/actions/getUserBalance';
 import { Typography } from '@mui/material';
 
+import getUserBalance from '@/app/actions/getUserBalance';
+import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
+
 const Balance = async () => {
-  const { balance } = await getUserBalance();
+  const { balance, defaultCurrency } = await getUserBalance();
 
   return (
     <>
@@ -10,7 +12,7 @@ const Balance = async () => {
         Your Balance
       </Typography>
       <Typography variant="h4" component="p" gutterBottom>
-        {balance ?? 0}
+        {balance ?? 0} {CURRENCY_SYMBOL_MAP[defaultCurrency!]}
       </Typography>
     </>
   );

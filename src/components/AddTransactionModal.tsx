@@ -170,7 +170,7 @@ const AddTransactionModal: React.FC<Props> = ({ handleClose }) => {
               </Grid>
 
               <Grid item xs={8}>
-                <FormControl fullWidth variant="standard">
+                <FormControl required fullWidth variant="standard">
                   <InputLabel htmlFor="amount">Amount</InputLabel>
                   <Input
                     id="amount"
@@ -211,7 +211,7 @@ const AddTransactionModal: React.FC<Props> = ({ handleClose }) => {
               {isBaseAmmountShown && (
                 <>
                   <Grid item xs={8}>
-                    <FormControl fullWidth variant="standard">
+                    <FormControl required fullWidth variant="standard">
                       <InputLabel htmlFor="amount">
                         Amount in base currency
                       </InputLabel>
@@ -272,6 +272,7 @@ const AddTransactionModal: React.FC<Props> = ({ handleClose }) => {
 
               <Grid item xs={12}>
                 <TextField
+                  required
                   fullWidth
                   label="Text"
                   name="text"

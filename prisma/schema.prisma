@@ -31,7 +31,7 @@ model Transaction {
   id                     String    @id @default(uuid())
   text                   String
   amount                 Float
-  amountDefaultCurrency  Float?
+  amountDefaultCurrency  Float
   date                   DateTime  @db.Date
   category               String
   currency               Currency  @default(EUR)
@@ -45,14 +45,15 @@ model Transaction {
 
 model Settings {
   id              String   @id @default(uuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clerkUserId     String   @unique
+  user            User     @relation(fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
   language        Language @default(ENG)
   theme           Theme    @default(Light)
   defaultCurrency Currency @default(EUR)
   initialAmount   Float
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  @@index([clerkUserId])
 }
 
 enum Currency {
