@@ -15,7 +15,7 @@ async function getSettings(): Promise<{
 
   try {
     const settings = await db.settings.findUnique({
-      where: { userId },
+      where: { clerkUserId: userId },
       select: {
         language: true,
         theme: true,
