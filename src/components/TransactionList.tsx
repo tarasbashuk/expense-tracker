@@ -30,12 +30,21 @@ const currentMonth = today.getMonth().toString();
 const currentYear = today.getFullYear();
 
 const TransactionList = () => {
-  const { transactions, setTransactions } = useTransactions();
+  const {
+    transactions,
+    setTransactions,
+    setTransactionId,
+    setIsTransactionModalOpen,
+  } = useTransactions();
   const [error, setError] = useState<string>('');
   const [month, setMonth] = useState(currentMonth);
   const [isLoading, setIsloading] = useState(false);
 
-  const handleChange = (event: SelectChangeEvent) => {
+  const handleEditTransaction = (transactionId: string) => {
+    setTransactionId(transactionId);
+    setIsTransactionModalOpen(true);
+  };
+  const handleMonthChange = (event: SelectChangeEvent) => {
     setMonth(event.target.value);
   };
 
@@ -122,7 +131,7 @@ const TransactionList = () => {
             labelId="month-select-label"
             id="month-select"
             value={month}
-            onChange={handleChange}
+            onChange={handleMonthChange}
             label="Month"
           >
             {MONTH_LIST.map((m) => (
@@ -155,6 +164,7 @@ const TransactionList = () => {
             <TransactionItem
               key={transaction.id}
               transaction={transaction}
+              handleEdit={handleEditTransaction}
               handleDelete={handleDeleteTransaction}
             />
           ))}

@@ -1,7 +1,6 @@
 /* eslint-disable no-unused-vars */
 /* lint is complaining about unused vars for ts type definitions */
-import { Settings } from '@prisma/client';
-import { EXPENSE_CATEGORIES } from './constants';
+import { Currency, Settings, TransactionType } from '@prisma/client';
 
 export type UserSettings = Pick<
   Settings,
@@ -36,3 +35,13 @@ export enum ExpenseCategory {
 }
 
 export type TranactionCategory = IncomeCategory | ExpenseCategory;
+
+export interface TransactionFormData {
+  date: Date;
+  text: string;
+  amount: number;
+  category: string;
+  currency: Currency;
+  type: TransactionType;
+  amountDefaultCurrency?: number;
+}

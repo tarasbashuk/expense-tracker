@@ -15,7 +15,8 @@ import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 
-import AddTransactionModal from './AddTransactionModal';
+import AddTransactionModal from './AddTransactionModal/AddTransactionModal';
+import { useTransactions } from '@/context/TranasctionsContext';
 
 const fabStyles = {
   position: 'fixed',
@@ -29,9 +30,9 @@ const fabStyles = {
 const MobileAppBar = () => {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const { isTransactionModalOpen, setIsTransactionModalOpen } =
+    useTransactions();
   const handleOpenTransactionModal = () => setIsTransactionModalOpen(true);
-  const handleCloseTransactionModal = () => setIsTransactionModalOpen(false);
 
   const isOpen = Boolean(anchorEl);
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
@@ -101,9 +102,7 @@ const MobileAppBar = () => {
             <AddIcon />
           </Fab>
         </SignedIn>
-        {isTransactionModalOpen && (
-          <AddTransactionModal handleClose={handleCloseTransactionModal} />
-        )}
+        {isTransactionModalOpen && <AddTransactionModal />}
       </LocalizationProvider>
     </>
   );

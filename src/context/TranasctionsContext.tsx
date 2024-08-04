@@ -12,6 +12,10 @@ import { Transaction } from '@prisma/client';
 interface TransactionsContextType {
   transactions: Transaction[];
   setTransactions: Dispatch<SetStateAction<Transaction[]>>;
+  isTransactionModalOpen: boolean;
+  setIsTransactionModalOpen: Dispatch<SetStateAction<boolean>>;
+  transactionId: string | null;
+  setTransactionId: Dispatch<SetStateAction<string | null>>;
 }
 
 const TransactionsContext = createContext<TransactionsContextType | undefined>(
@@ -27,9 +31,20 @@ export const TransactionsProvider = ({
 }) => {
   const [transactions, setTransactions] =
     useState<Transaction[]>(initialSettings);
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [transactionId, setTransactionId] = useState<string | null>(null);
 
   return (
-    <TransactionsContext.Provider value={{ transactions, setTransactions }}>
+    <TransactionsContext.Provider
+      value={{
+        transactions,
+        setTransactions,
+        isTransactionModalOpen,
+        setIsTransactionModalOpen,
+        transactionId,
+        setTransactionId,
+      }}
+    >
       {children}
     </TransactionsContext.Provider>
   );

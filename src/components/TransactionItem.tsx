@@ -22,10 +22,15 @@ import { useSettings } from '@/context/SettingsContexts';
 
 interface Props {
   transaction: Transaction;
+  handleEdit: (id: string) => void;
   handleDelete: (id: string) => void;
 }
 
-const TransactionItem: FC<Props> = ({ transaction, handleDelete }) => {
+const TransactionItem: FC<Props> = ({
+  transaction,
+  handleEdit,
+  handleDelete,
+}) => {
   const { settings } = useSettings();
   const {
     id,
@@ -46,7 +51,15 @@ const TransactionItem: FC<Props> = ({ transaction, handleDelete }) => {
   return (
     <>
       <ListItem sx={{ mt: 1, backgroundColor: 'background.paper' }}>
-        <ListItemAvatar>
+        <ListItemAvatar
+          onClick={() => handleEdit(id)}
+          sx={{
+            cursor: 'pointer',
+            '&:hover': {
+              opacity: '0.7',
+            },
+          }}
+        >
           <Avatar sx={{ bgcolor: labelColor }}>
             {IconComponent && <IconComponent />}
           </Avatar>
