@@ -98,14 +98,15 @@ const AddTransactionModal: React.FC = () => {
   };
 
   const handleAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Number(event.target.value);
+    // to prevent passing 0 value if the event.target.value is an empty string
+    const value = Number(event.target.value) || undefined;
     setAmount(value);
   };
 
   const handleAmountDefaultCurrencyChange = (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    const value = Number(event.target.value);
+    const value = Number(event.target.value) || undefined;
     setAmountDefaultCurrency(value);
   };
 
