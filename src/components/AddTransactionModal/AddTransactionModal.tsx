@@ -178,20 +178,21 @@ const AddTransactionModal: React.FC = () => {
   return (
     <AddTransactionModalView
       text={text}
-      amount={amount}
-      isBaseAmmountShown={isBaseAmmountShown}
       date={date}
+      amount={amount}
       category={category}
       currency={currency}
-      isEditMode={!!selectedTransaction}
       transactionType={transactionType}
-      handleClose={handleClose}
+      isEditMode={!!selectedTransaction}
+      isBaseAmmountShown={isBaseAmmountShown}
+      amountDefaultCurrency={amountDefaultCurrency}
       onSubmit={clientAction}
+      handleClose={handleClose}
       handleTypeChange={handleTypeChange}
       handleDateChange={handleDateChange}
+      handleTextChange={handleTextChange}
       handleAmountChange={handleAmountChange}
       handleCurrencyChange={handleCurrencyChange}
-      handleTextChange={handleTextChange}
       handleCategoryChange={handleCategoryChange}
       handleAmountDefaultCurrencyChange={handleAmountDefaultCurrencyChange}
     />
