@@ -8,9 +8,10 @@ export type UserSettings = Pick<
 >;
 
 export enum IncomeCategory {
+  ROI = 'ROI',
   Salary = 'salary',
-  Investments = 'investments',
   Gifts = 'gifts',
+  Others = 'others',
 }
 
 export enum ExpenseCategory {
@@ -31,6 +32,7 @@ export enum ExpenseCategory {
   Healthcare = 'healthcare',
   Gifts = 'gifts',
   Savings = 'savings',
+  Investments = 'investments',
   Others = 'others',
 }
 

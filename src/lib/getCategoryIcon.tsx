@@ -48,6 +48,7 @@ export const ICON_MAP: Record<
   others: MoreHorizIcon,
   salary: AttachMoneyIcon,
   investments: TrendingUpIcon,
+  ROI: TrendingUpIcon,
 };
 
 export const getIconByName = (iconName: TranactionCategory) => {
