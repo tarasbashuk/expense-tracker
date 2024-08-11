@@ -7,7 +7,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   language: 'ENG',
   theme: 'Light',
   defaultCurrency: 'EUR',
-  initialAmount: 0,
+  initialAmount: null,
 };
 
 export const INCOME_CATEGORIES: { [key in IncomeCategory]: string } = {
@@ -24,6 +24,7 @@ export const EXPENSE_CATEGORIES: { [key in ExpenseCategory]: string } = {
   utilities: 'Utility Bills',
   home: 'Home Stuff',
   auto: 'Auto',
+  transport: 'Taxi and Public transport',
   shopping: 'Shopping',
   subscriptions: 'Mobile & App Subscriptions',
   pets: 'Pets',

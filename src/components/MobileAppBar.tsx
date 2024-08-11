@@ -17,6 +17,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 
 import AddTransactionModal from './AddTransactionModal/AddTransactionModal';
 import { useTransactions } from '@/context/TranasctionsContext';
+import WelcomeModal from './AddTransactionModal/WelcomeModal';
 
 const fabStyles = {
   position: 'fixed',
@@ -102,6 +103,7 @@ const MobileAppBar = () => {
             <AddIcon />
           </Fab>
         </SignedIn>
+        <WelcomeModal />
         {isTransactionModalOpen && <AddTransactionModal />}
       </LocalizationProvider>
     </>

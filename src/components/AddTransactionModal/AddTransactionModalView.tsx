@@ -30,6 +30,7 @@ import { Currency, TransactionType } from '@prisma/client';
 import { TranactionCategory } from '@/constants/types';
 import { getIconByName } from '@/lib/getCategoryIcon';
 import { DatePicker } from '@mui/x-date-pickers';
+import CurrencySelect from '../CurrencySelect';
 
 const style = {
   position: 'absolute',
@@ -51,6 +52,7 @@ interface Props {
   category: string;
   currency: Currency;
   isEditMode: boolean;
+  isSubmitDisabled: boolean;
   isBaseAmmountShown: boolean;
   amountDefaultCurrency?: number;
   transactionType: TransactionType;
@@ -78,6 +80,7 @@ const AddTransactionModalView: React.FC<Props> = ({
   currency,
   isEditMode,
   transactionType,
+  isSubmitDisabled,
   isBaseAmmountShown,
   amountDefaultCurrency,
   onSubmit,
@@ -173,22 +176,10 @@ const AddTransactionModalView: React.FC<Props> = ({
             </Grid>
 
             <Grid item xs={4}>
-              <FormControl variant="standard" fullWidth>
-                <InputLabel>Currency</InputLabel>
-                <Select
-                  name="currency"
-                  value={currency as string}
-                  onChange={handleCurrencyChange}
-                >
-                  {Object.values(Currency).map((value) => {
-                    return (
-                      <MenuItem key={value} value={value}>
-                        {value}
-                      </MenuItem>
-                    );
-                  })}
-                </Select>
-              </FormControl>
+              <CurrencySelect
+                value={currency}
+                onChange={handleCurrencyChange}
+              />
             </Grid>
 
             {isBaseAmmountShown && (
@@ -269,7 +260,12 @@ const AddTransactionModalView: React.FC<Props> = ({
             </Grid>
 
             <Grid item xs={12} sm={5} marginTop={2} sx={{ marginLeft: 'auto' }}>
-              <Button fullWidth variant="contained" type="submit">
+              <Button
+                fullWidth
+                type="submit"
+                variant="contained"
+                disabled={isSubmitDisabled}
+              >
                 {isEditMode ? 'Save' : 'Add transaction'}
               </Button>
             </Grid>

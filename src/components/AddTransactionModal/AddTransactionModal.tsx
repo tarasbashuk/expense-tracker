@@ -4,10 +4,6 @@ import { toast } from 'react-toastify';
 import { SelectChangeEvent } from '@mui/material';
 
 import addUpdateTransaction from '@/app/actions/addUpdateTransaction';
-import {
-  EXPENSE_CATEGORIES_LIST,
-  INCOME_CATEGORIES_LIST,
-} from '@/constants/constants';
 import { Currency, TransactionType } from '@prisma/client';
 import { TranactionCategory, TransactionFormData } from '@/constants/types';
 import { useSettings } from '@/context/SettingsContexts';
@@ -71,6 +67,9 @@ const AddTransactionModal: React.FC = () => {
   const [transactionType, setTranasctionType] =
     useState<TransactionType>(initialType);
   const [currency, setCurrency] = useState<Currency>(initialCurrency);
+
+  const [isSaving, setIsSaving] = useState(false);
+
   const isBaseAmmountShown = currency !== defaultCurrency;
 
   const handleClose = () => {
@@ -118,11 +117,6 @@ const AddTransactionModal: React.FC = () => {
     setCategory(event.target.value as TranactionCategory);
   };
 
-  const categories =
-    transactionType === TransactionType.Income
-      ? INCOME_CATEGORIES_LIST
-      : EXPENSE_CATEGORIES_LIST;
-
   // This is a rework of legacy implementaions from Brad Traversy cource,
   // TODO: think about using react-hook-form
   const clientAction = async () => {
@@ -135,6 +129,8 @@ const AddTransactionModal: React.FC = () => {
       amount: amount as number,
       amountDefaultCurrency: amountDefaultCurrency as number,
     };
+    setIsSaving(true);
+
     const { data, error } = await addUpdateTransaction(
       formData,
       isBaseAmmountShown,
@@ -174,6 +170,7 @@ const AddTransactionModal: React.FC = () => {
       });
       handleClose();
     }
+    setIsSaving(false);
   };
 
   return (
@@ -183,6 +180,7 @@ const AddTransactionModal: React.FC = () => {
       amount={amount}
       category={category}
       currency={currency}
+      isSubmitDisabled={isSaving}
       transactionType={transactionType}
       isEditMode={!!selectedTransaction}
       isBaseAmmountShown={isBaseAmmountShown}

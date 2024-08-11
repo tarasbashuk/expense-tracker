@@ -50,7 +50,7 @@ model Settings {
   language        Language @default(ENG)
   theme           Theme    @default(Light)
   defaultCurrency Currency @default(EUR)
-  initialAmount   Float
+  initialAmount   Float?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   @@index([clerkUserId])

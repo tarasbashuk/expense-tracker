@@ -26,7 +26,7 @@ async function getUserBalance(): Promise<{
     const transactions = await db.transaction.findMany({
       where: { userId },
     });
-    const initialAmount = new Decimal(Number(settings?.initialAmount));
+    const initialAmount = new Decimal(Number(settings?.initialAmount || 0));
     const defaultCurrency = settings?.defaultCurrency;
 
     const balance = transactions.reduce((sum, transaction) => {

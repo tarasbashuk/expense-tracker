@@ -18,6 +18,7 @@ import SpaIcon from '@mui/icons-material/Spa';
 import LocalPharmacyIcon from '@mui/icons-material/LocalPharmacy';
 import SavingsIcon from '@mui/icons-material/Savings';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import AirportShuttleIcon from '@mui/icons-material/AirportShuttle';
 import { TranactionCategory } from '@/constants/types';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import { SvgIconTypeMap } from '@mui/material';
@@ -34,6 +35,7 @@ export const ICON_MAP: Record<
   utilities: ReceiptIcon,
   home: HomeRepairServiceIcon,
   auto: DirectionsCarIcon,
+  transport: AirportShuttleIcon,
   shopping: ShoppingBagIcon,
   subscriptions: PhoneIphoneIcon,
   pets: PetsIcon,
