@@ -76,26 +76,20 @@ const WelcomeModal = () => {
       toast.error(error);
     } else if (settings) {
       toast.success('Changes were saved');
-      setIsSaving(false);
       setIsModalOpen(false);
     }
+    setIsSaving(false);
   };
 
   return (
     <Modal
       disableEscapeKeyDown
       open={isModalOpen}
-      //   onClose={handleClose}
       aria-labelledby="modal-modal-title"
       aria-describedby="modal-modal-description"
     >
       <Box sx={style}>
-        <Stack
-          direction="column"
-          //   alignItems="center"
-          spacing={2}
-          marginBottom={3}
-        >
+        <Stack spacing={2} marginBottom={3} direction="column">
           <Typography variant="h4">
             Welcome to the Expense Tracker App!
           </Typography>

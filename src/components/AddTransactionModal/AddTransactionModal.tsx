@@ -120,6 +120,7 @@ const AddTransactionModal: React.FC = () => {
   // This is a rework of legacy implementaions from Brad Traversy cource,
   // TODO: think about using react-hook-form
   const clientAction = async () => {
+    setIsSaving(true);
     const formData: TransactionFormData = {
       date,
       currency,
@@ -129,7 +130,6 @@ const AddTransactionModal: React.FC = () => {
       amount: amount as number,
       amountDefaultCurrency: amountDefaultCurrency as number,
     };
-    setIsSaving(true);
 
     const { data, error } = await addUpdateTransaction(
       formData,

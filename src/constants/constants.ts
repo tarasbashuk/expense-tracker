@@ -3,6 +3,8 @@
 import { Currency } from '@prisma/client';
 import { ExpenseCategory, IncomeCategory, UserSettings } from './types';
 
+export const TRANSACTIONS_URL = '/transactions';
+
 export const DEFAULT_SETTINGS: UserSettings = {
   language: 'ENG',
   theme: 'Light',
