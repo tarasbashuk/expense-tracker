@@ -58,6 +58,7 @@ interface Props {
   transactionType: TransactionType;
   handleClose: () => void;
   onSubmit: () => void;
+  /* eslint-disable no-unused-vars*/
   handleTypeChange: (
     event: React.MouseEvent<HTMLElement>,
     newType: TransactionType,
@@ -70,6 +71,7 @@ interface Props {
   handleAmountDefaultCurrencyChange: (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => void;
+  /* eslint-enable */
 }
 
 const AddTransactionModalView: React.FC<Props> = ({

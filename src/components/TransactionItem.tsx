@@ -22,8 +22,10 @@ import { useSettings } from '@/context/SettingsContexts';
 
 interface Props {
   transaction: Transaction;
+  /* eslint-disable no-unused-vars*/
   handleEdit: (id: string) => void;
   handleDelete: (id: string) => void;
+  /* eslint-enable */
 }
 
 const TransactionItem: FC<Props> = ({

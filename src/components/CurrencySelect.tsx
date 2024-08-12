@@ -11,6 +11,7 @@ import {
 interface Props {
   value: Currency;
   label?: string;
+  /* eslint-disable-next-line no-unused-vars*/
   onChange: (event: SelectChangeEvent) => void;
 }
 

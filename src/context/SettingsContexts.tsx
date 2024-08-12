@@ -4,6 +4,7 @@ import { UserSettings } from '@/constants/types';
 
 interface SettingsContextType {
   settings: UserSettings;
+  /* eslint-disable-next-line no-unused-vars*/
   setSettings: (settings: UserSettings) => void;
 }
 
