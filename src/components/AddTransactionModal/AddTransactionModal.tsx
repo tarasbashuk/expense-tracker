@@ -5,7 +5,7 @@ import { SelectChangeEvent } from '@mui/material';
 
 import addUpdateTransaction from '@/app/actions/addUpdateTransaction';
 import { Currency, TransactionType } from '@prisma/client';
-import { TranactionCategory, TransactionFormData } from '@/constants/types';
+import { TransactionCategory, TransactionFormData } from '@/constants/types';
 import { useSettings } from '@/context/SettingsContexts';
 import { useTransactions } from '@/context/TranasctionsContext';
 import AddTransactionModalView from './AddTransactionModalView';
@@ -61,7 +61,7 @@ const AddTransactionModal: React.FC = () => {
   >(initialAmountDefaultCurrency);
 
   const [date, setDate] = useState<Date>(initialDate);
-  const [category, setCategory] = useState<TranactionCategory | string>(
+  const [category, setCategory] = useState<TransactionCategory | string>(
     initialCategory,
   );
   const [transactionType, setTranasctionType] =
@@ -81,6 +81,9 @@ const AddTransactionModal: React.FC = () => {
     _event: React.MouseEvent<HTMLElement>,
     newType: TransactionType,
   ) => {
+    // If a user click on already selected type button, the newTypes cames as null
+    if (!newType) return;
+
     setTranasctionType(newType);
     setCategory('');
   };
@@ -114,7 +117,7 @@ const AddTransactionModal: React.FC = () => {
   };
 
   const handleCategoryChange = (event: SelectChangeEvent) => {
-    setCategory(event.target.value as TranactionCategory);
+    setCategory(event.target.value as TransactionCategory);
   };
 
   // This is a rework of legacy implementaions from Brad Traversy cource,

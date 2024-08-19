@@ -19,12 +19,12 @@ import LocalPharmacyIcon from '@mui/icons-material/LocalPharmacy';
 import SavingsIcon from '@mui/icons-material/Savings';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import AirportShuttleIcon from '@mui/icons-material/AirportShuttle';
-import { TranactionCategory } from '@/constants/types';
+import { TransactionCategory } from '@/constants/types';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import { SvgIconTypeMap } from '@mui/material';
 
 export const ICON_MAP: Record<
-  TranactionCategory,
+  TransactionCategory,
   OverridableComponent<SvgIconTypeMap<{}, 'svg'>> & {
     muiName: string;
   }
@@ -53,6 +53,6 @@ export const ICON_MAP: Record<
   ROI: TrendingUpIcon,
 };
 
-export const getIconByName = (iconName: TranactionCategory) => {
+export const getIconByName = (iconName: TransactionCategory) => {
   return ICON_MAP[iconName] || null;
 };

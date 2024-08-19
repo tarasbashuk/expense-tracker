@@ -37,7 +37,7 @@ export enum ExpenseCategory {
   Others = 'others',
 }
 
-export type TranactionCategory = IncomeCategory | ExpenseCategory;
+export type TransactionCategory = IncomeCategory | ExpenseCategory;
 
 export interface TransactionFormData {
   date: Date;

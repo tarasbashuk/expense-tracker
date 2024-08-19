@@ -27,7 +27,7 @@ import {
   INCOME_CATEGORIES_LIST,
 } from '@/constants/constants';
 import { Currency, TransactionType } from '@prisma/client';
-import { TranactionCategory } from '@/constants/types';
+import { TransactionCategory } from '@/constants/types';
 import { getIconByName } from '@/lib/getCategoryIcon';
 import { DatePicker } from '@mui/x-date-pickers';
 import CurrencySelect from '../CurrencySelect';
@@ -232,7 +232,7 @@ const AddTransactionModalView: React.FC<Props> = ({
                 >
                   {categories.map(({ value, label }) => {
                     const IconComponent = getIconByName(
-                      value as TranactionCategory,
+                      value as TransactionCategory,
                     );
 
                     return (

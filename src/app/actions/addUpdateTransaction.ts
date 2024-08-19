@@ -42,9 +42,12 @@ async function addUpdateTransaction(
     return { error: 'User not found' };
   }
 
-  let amountDefaultCurrencyValue = amountDefaultCurrency
-    ? amountDefaultCurrency
-    : amount;
+  let amountDefaultCurrencyValue = amountDefaultCurrency || amount;
+
+  // When editing transaction in the default amount we need to set value manually
+  if (!isDefaultAmmountRequired && transacionId) {
+    amountDefaultCurrencyValue = amount;
+  }
 
   if (shouldEncrypt && encryptKey) {
     formData.amount = encryptFloat(formData.amount, encryptKey);

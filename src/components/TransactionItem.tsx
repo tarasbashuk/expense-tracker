@@ -16,7 +16,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { getIconByName } from '@/lib/getCategoryIcon';
 import { green, red } from '@mui/material/colors';
 
-import { TranactionCategory } from '@/constants/types';
+import { TransactionCategory } from '@/constants/types';
 import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
 import { useSettings } from '@/context/SettingsContexts';
 
@@ -45,7 +45,7 @@ const TransactionItem: FC<Props> = ({
     amountDefaultCurrency,
   } = transaction;
   const sign = type === TransactionType.Expense ? '-' : '+';
-  const IconComponent = getIconByName(category as TranactionCategory);
+  const IconComponent = getIconByName(category as TransactionCategory);
   const labelColor = type === TransactionType.Expense ? red[500] : green[500];
   const formattedDate = format(date, 'PP');
   const isSecondaryAmountShown = currency !== settings.defaultCurrency;
