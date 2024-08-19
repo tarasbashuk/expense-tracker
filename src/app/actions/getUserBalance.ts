@@ -1,6 +1,8 @@
 'use server';
+import { DO_NOT_ENCRYPT_LIST } from '@/constants/constants';
+import { decryptFloat } from '@/lib/crypto';
 import { db } from '@/lib/db';
-import { auth } from '@clerk/nextjs/server';
+import { currentUser } from '@clerk/nextjs/server';
 import { Currency, TransactionType } from '@prisma/client';
 import Decimal from 'decimal.js';
 
@@ -9,7 +11,12 @@ async function getUserBalance(): Promise<{
   defaultCurrency?: Currency;
   error?: string;
 }> {
-  const { userId } = auth();
+  // const { userId } = auth();
+  const user = await currentUser();
+  const userId = user?.id;
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
+  const decryptKey = user?.primaryEmailAddressId;
+  const shouldDecrypt = !DO_NOT_ENCRYPT_LIST.includes(userEmail!);
 
   if (!userId) {
     return { error: 'User not found' };
@@ -30,7 +37,12 @@ async function getUserBalance(): Promise<{
     const defaultCurrency = settings?.defaultCurrency;
 
     const balance = transactions.reduce((sum, transaction) => {
-      const amount = new Decimal(transaction.amountDefaultCurrency);
+      const amountDefaultCurrency =
+        shouldDecrypt && decryptKey
+          ? decryptFloat(transaction.amountDefaultCurrency, decryptKey)
+          : transaction.amountDefaultCurrency;
+
+      const amount = new Decimal(amountDefaultCurrency);
 
       if (transaction.type === TransactionType.Income) {
         return sum.plus(amount);

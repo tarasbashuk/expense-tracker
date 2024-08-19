@@ -1,9 +1,11 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { auth } from '@clerk/nextjs/server';
+import { currentUser } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { Transaction } from '@prisma/client';
 import { TransactionFormData } from '@/constants/types';
+import { DO_NOT_ENCRYPT_LIST } from '@/constants/constants';
+import { decrypt, decryptFloat, encrypt, encryptFloat } from '@/lib/crypto';
 
 interface TransactionResult {
   data?: Transaction;
@@ -18,7 +20,12 @@ async function addUpdateTransaction(
   const { text, date, amount, category, currency, amountDefaultCurrency } =
     formData;
 
-  const { userId } = auth();
+  // const { userId } = auth();
+  const user = await currentUser();
+  const userId = user?.id;
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
+  const encryptKey = user?.primaryEmailAddressId;
+  const shouldEncrypt = !DO_NOT_ENCRYPT_LIST.includes(userEmail!);
 
   if (
     !text ||
@@ -35,9 +42,18 @@ async function addUpdateTransaction(
     return { error: 'User not found' };
   }
 
-  const amountDefaultCurrencyValue = amountDefaultCurrency
+  let amountDefaultCurrencyValue = amountDefaultCurrency
     ? amountDefaultCurrency
     : amount;
+
+  if (shouldEncrypt && encryptKey) {
+    formData.amount = encryptFloat(formData.amount, encryptKey);
+    formData.text = encrypt(formData.text, encryptKey);
+    amountDefaultCurrencyValue = encryptFloat(
+      amountDefaultCurrencyValue,
+      encryptKey,
+    );
+  }
 
   try {
     let transacionData;
@@ -63,12 +79,21 @@ async function addUpdateTransaction(
     }
 
     revalidatePath('/');
-    revalidatePath('transactions');
     revalidatePath('/transactions');
-    revalidatePath('*');
 
     return {
-      data: transacionData,
+      data:
+        shouldEncrypt && encryptKey
+          ? {
+              ...transacionData,
+              text: decrypt(transacionData.text, encryptKey),
+              amount: decryptFloat(transacionData.amount, encryptKey),
+              amountDefaultCurrency: decryptFloat(
+                transacionData.amountDefaultCurrency,
+                encryptKey,
+              ),
+            }
+          : transacionData,
     };
   } catch (error: any) {
     console.log('error', error);

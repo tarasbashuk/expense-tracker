@@ -1,9 +1,11 @@
 'use server';
 import { db } from '@/lib/db';
-import { auth } from '@clerk/nextjs/server';
+import { currentUser } from '@clerk/nextjs/server';
 import { UserSettings } from '@/constants/types';
 import { Currency } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
+import { DO_NOT_ENCRYPT_LIST } from '@/constants/constants';
+import { encryptFloat } from '@/lib/crypto';
 
 async function updateSettings({
   initialAmount,
@@ -15,17 +17,27 @@ async function updateSettings({
   settings?: UserSettings | null;
   error?: string;
 }> {
-  const { userId } = auth();
+  // const { userId } = auth();
+  const user = await currentUser();
+  const userId = user?.id;
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
+  const encryptKey = user?.primaryEmailAddressId;
+  const shouldDecrypt = !DO_NOT_ENCRYPT_LIST.includes(userEmail!);
 
   if (!userId) {
     return { error: 'User not found' };
   }
 
+  const initialAmountVal =
+    encryptKey && shouldDecrypt
+      ? encryptFloat(initialAmount, encryptKey)
+      : initialAmount;
+
   try {
     const settings = await db.settings.update({
       where: { clerkUserId: userId },
       data: {
-        initialAmount,
+        initialAmount: initialAmountVal,
         defaultCurrency,
       },
     });

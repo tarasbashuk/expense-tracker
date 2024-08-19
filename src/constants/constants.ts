@@ -81,3 +81,8 @@ export const MONTH_LIST = [
 export const DATE_FORMATS = {
   YYYY_MM_DD: 'yyyy-MM-dd',
 };
+
+export const DO_NOT_ENCRYPT_LIST = [
+  'bashuk.taras@gmail.com',
+  'bashuk.mariia@gmail.com',
+];
