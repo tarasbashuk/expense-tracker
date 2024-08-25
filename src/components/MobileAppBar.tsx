@@ -17,7 +17,8 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 
 import AddTransactionModal from './AddTransactionModal/AddTransactionModal';
 import { useTransactions } from '@/context/TranasctionsContext';
-import WelcomeModal from './AddTransactionModal/WelcomeModal';
+import WelcomeModal from './WelcomeModal/WelcomeModal';
+import { NavigationPath } from '@/constants/types';
 
 const fabStyles = {
   position: 'fixed',
@@ -43,13 +44,8 @@ const MobileAppBar = () => {
     setAnchorEl(null);
   };
 
-  const goToHome = () => {
-    router.push('/');
-    handleClose();
-  };
-
-  const goToTransactions = () => {
-    router.push('/transactions');
+  const handleNav = (path: NavigationPath) => {
+    router.push(path);
     handleClose();
   };
 
@@ -71,8 +67,15 @@ const MobileAppBar = () => {
                 'aria-labelledby': 'basic-button',
               }}
             >
-              <MenuItem onClick={goToHome}>Home</MenuItem>
-              <MenuItem onClick={goToTransactions}>Transactions</MenuItem>
+              <MenuItem onClick={() => handleNav(NavigationPath.Home)}>
+                Home
+              </MenuItem>
+              <MenuItem onClick={() => handleNav(NavigationPath.Transactions)}>
+                Transactions
+              </MenuItem>
+              <MenuItem onClick={() => handleNav(NavigationPath.Stats)}>
+                Stats
+              </MenuItem>
             </Menu>
             <IconButton
               color="inherit"

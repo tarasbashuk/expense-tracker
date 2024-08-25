@@ -3,8 +3,6 @@
 import { Currency } from '@prisma/client';
 import { ExpenseCategory, IncomeCategory, UserSettings } from './types';
 
-export const TRANSACTIONS_URL = '/transactions';
-
 export const DEFAULT_SETTINGS: UserSettings = {
   language: 'ENG',
   theme: 'Light',
@@ -86,3 +84,6 @@ export const DO_NOT_ENCRYPT_LIST = [
   'bashuk.taras@gmail.com',
   'bashuk.mariia@gmail.com',
 ];
+
+export const JANUARY = '0';
+export const DECEMBER = '11';

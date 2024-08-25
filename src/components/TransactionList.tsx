@@ -18,13 +18,11 @@ import ArrowBack from '@mui/icons-material/ArrowBack';
 import ArrowForward from '@mui/icons-material/ArrowForward';
 
 import TransactionItem from './TransactionItem';
-import { MONTH_LIST } from '@/constants/constants';
+import { DECEMBER, JANUARY, MONTH_LIST } from '@/constants/constants';
 import getTransactions from '@/app/actions/getTransactions';
 import deleteTransaction from '@/app/actions/deleteTransaction';
 import { useTransactions } from '@/context/TranasctionsContext';
 
-const JANUARY = '0';
-const DECEMBER = '11';
 const today = new Date();
 const currentMonth = today.getMonth().toString();
 const currentYear = today.getFullYear();

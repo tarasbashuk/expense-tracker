@@ -7,6 +7,12 @@ export type UserSettings = Pick<
   'theme' | 'language' | 'defaultCurrency' | 'initialAmount'
 >;
 
+export enum NavigationPath {
+  Home = './',
+  Transactions = '/transactions',
+  Stats = '/stats',
+}
+
 export enum IncomeCategory {
   ROI = 'ROI',
   Salary = 'salary',

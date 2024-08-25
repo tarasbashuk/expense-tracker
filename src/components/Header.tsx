@@ -4,9 +4,10 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import HomeIcon from '@mui/icons-material/Home';
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import DonutSmallIcon from '@mui/icons-material/DonutSmall';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 import { Button } from '@mui/material';
-import { TRANSACTIONS_URL } from '@/constants/constants';
+import { NavigationPath } from '@/constants/types';
 
 const Header = async () => {
   return (
@@ -21,7 +22,7 @@ const Header = async () => {
               </Stack>
             </Link>
             <SignedIn>
-              <Link href={TRANSACTIONS_URL} className="nav-link">
+              <Link href={NavigationPath.Transactions} className="nav-link">
                 <Stack
                   direction="row"
                   spacing={1}
@@ -29,6 +30,16 @@ const Header = async () => {
                 >
                   <ReceiptIcon />
                   <h3>Transactions</h3>
+                </Stack>
+              </Link>
+              <Link href={NavigationPath.Stats} className="nav-link">
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ alignItems: 'center' }}
+                >
+                  <DonutSmallIcon />
+                  <h3>Stats</h3>
                 </Stack>
               </Link>
             </SignedIn>

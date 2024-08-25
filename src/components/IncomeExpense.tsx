@@ -2,13 +2,13 @@ import Link from 'next/link';
 import { Box, Card, CardContent, Divider, Typography } from '@mui/material';
 import getIncomeExpense from '@/app/actions/getIncomeExpense';
 
-import { TRANSACTIONS_URL } from '@/constants/constants';
+import { NavigationPath } from '@/constants/types';
 
 const IncomeExpense = async () => {
   const { income, expense } = await getIncomeExpense();
 
   return (
-    <Link href={TRANSACTIONS_URL}>
+    <Link href={NavigationPath.Transactions}>
       <Card>
         <CardContent>
           <Box
