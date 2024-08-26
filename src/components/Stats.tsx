@@ -1,53 +1,58 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { PieChart } from '@mui/x-charts/PieChart';
-import { Box, Stack, Typography } from '@mui/material';
-import MonthSelect from './MonthSelect';
-import { Transaction, TransactionType } from '@prisma/client';
-import getTransactions from '@/app/actions/getTransactions';
-import {
-  convertToChartData,
-  groupTransactionsByCategory,
-} from '@/lib/pieChartUtils';
-import TransactionTypeButtonGroup from './TransactionTypeButtonGroup';
+import { PieValueType } from '@mui/x-charts';
+import { TransactionType } from '@prisma/client';
+import { Box, CircularProgress, Stack, Typography } from '@mui/material';
+
+import MonthSelect from './shared/MonthSelect';
+import TransactionTypeButtonGroup from './shared/TransactionTypeButtonGroup';
+import { useMediaQueries } from '@/lib/useMediaQueries';
+import getStats from '@/app/actions/getStats';
 
 const today = new Date();
 const currentMonth = today.getMonth().toString();
 const currentYear = today.getFullYear();
 
 const Stats = () => {
+  const { isMobile } = useMediaQueries();
   const [error, setError] = useState<string>('');
   const [month, setMonth] = useState(currentMonth);
-  const [isLoading, setIsloading] = useState(false);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsloading] = useState(true);
+  const [expenseChartData, setExpenseChartData] = useState<PieValueType[]>([]);
+  const [incomeChartData, setIncomeChartData] = useState<PieValueType[]>([]);
   const [transactionType, setTranasctionType] = useState<TransactionType>(
     TransactionType.Expense,
   );
 
-  const groupedExpenses = groupTransactionsByCategory(
-    transactions,
-    transactionType,
-  );
-  const expenseChartData = convertToChartData(groupedExpenses);
-
-  const sortedChartData = expenseChartData.sort(
-    (c1, c2) => c2.value - c1.value,
-  );
-
   useEffect(() => {
     const fetchTrans = async () => {
-      const { transactions, error } = await getTransactions(
+      const { expenseChartData, incomeChartData, error } = await getStats(
         currentYear,
         Number(month),
       );
-      setTransactions(transactions || []);
+      setExpenseChartData(expenseChartData || []);
+      setIncomeChartData(incomeChartData || []);
       setError(error || '');
       setIsloading(false);
     };
 
     setIsloading(true);
     fetchTrans();
-  }, [month, setTransactions]);
+  }, [month]);
+
+  const chartData =
+    transactionType === TransactionType.Expense
+      ? expenseChartData
+      : incomeChartData;
+
+  if (error) {
+    return (
+      <Typography variant="h5" component="p" color="error" my="4">
+        {error}
+      </Typography>
+    );
+  }
 
   return (
     <Stack direction="column" alignItems="center">
@@ -63,25 +68,32 @@ const Stats = () => {
         />
       </Box>
 
-      {!isLoading && !!transactions.length ? (
+      {isLoading && <CircularProgress sx={{ my: 5 }} />}
+
+      {!isLoading && !!chartData.length ? (
         <PieChart
           slotProps={{
             legend: {
               direction: 'row',
-              position: { vertical: 'top', horizontal: 'middle' },
+              position: {
+                vertical: isMobile ? 'middle' : 'top',
+                horizontal: isMobile ? 'left' : 'middle',
+              },
             },
           }}
           series={[
             {
-              data: sortedChartData,
-              innerRadius: 30,
-              outerRadius: 200,
+              data: chartData,
               paddingAngle: 1,
               cornerRadius: 5,
+              innerRadius: isMobile ? 10 : 30,
+              outerRadius: isMobile ? 150 : 200,
+              cx: isMobile ? '73%' : '57%',
+              cy: isMobile ? '15%' : '50%',
             },
           ]}
-          width={900}
-          height={650}
+          width={isMobile ? 320 : 900}
+          height={isMobile ? 1150 : 650}
         />
       ) : (
         !isLoading && (

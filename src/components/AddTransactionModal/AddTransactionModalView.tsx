@@ -6,8 +6,6 @@ import {
   FormControl,
   InputLabel,
   Stack,
-  ToggleButtonGroup,
-  ToggleButton,
   Input,
   InputAdornment,
   TextField,
@@ -31,6 +29,7 @@ import { TransactionCategory } from '@/constants/types';
 import { getIconByName } from '@/lib/getCategoryIcon';
 import { DatePicker } from '@mui/x-date-pickers';
 import CurrencySelect from '../CurrencySelect';
+import TransactionTypeButtonGroup from '../shared/TransactionTypeButtonGroup';
 
 const style = {
   position: 'absolute',
@@ -59,10 +58,7 @@ interface Props {
   handleClose: () => void;
   onSubmit: () => void;
   /* eslint-disable no-unused-vars*/
-  handleTypeChange: (
-    event: React.MouseEvent<HTMLElement>,
-    newType: TransactionType,
-  ) => void;
+  handleTypeChange: (newType: TransactionType) => void;
   handleDateChange: (date: Date | null) => void;
   handleAmountChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleCurrencyChange: (event: SelectChangeEvent) => void;
@@ -123,27 +119,14 @@ const AddTransactionModalView: React.FC<Props> = ({
         <form action={onSubmit}>
           <Grid container spacing={2} justifyContent="space-between">
             <Grid item xs={4} sm={8}>
-              <ToggleButtonGroup
-                exclusive
-                fullWidth
-                size="large"
-                color="primary"
-                value={transactionType}
-                onChange={handleTypeChange}
-              >
-                <ToggleButton
-                  sx={{ paddingTop: '13.875px', paddingBottom: '13.875px' }}
-                  value={TransactionType.Expense}
-                >
-                  Expense
-                </ToggleButton>
-                <ToggleButton
-                  sx={{ paddingTop: '13.875px', paddingBottom: '13.875px' }}
-                  value={TransactionType.Income}
-                >
-                  Income
-                </ToggleButton>
-              </ToggleButtonGroup>
+              <TransactionTypeButtonGroup
+                transactionType={transactionType}
+                setTranasctionType={handleTypeChange}
+                buttonsSx={{
+                  paddingTop: '13.875px',
+                  paddingBottom: '13.875px',
+                }}
+              />
             </Grid>
             <Grid item xs={5} sm={4}>
               <DatePicker

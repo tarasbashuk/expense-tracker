@@ -7,6 +7,7 @@ import {
   TransactionCategory,
 } from '@/constants/types';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/constants/constants';
+import Decimal from 'decimal.js';
 
 export const groupTransactionsByCategory = (
   transactions: Transaction[],
@@ -18,24 +19,23 @@ export const groupTransactionsByCategory = (
       (acc, transaction) => {
         const { category, amountDefaultCurrency } = transaction;
 
-        // TODO: use decimal
         if (!acc[category]) {
-          acc[category] = 0;
+          acc[category] = new Decimal(0);
         }
-        acc[category] += amountDefaultCurrency;
+
+        acc[category] = acc[category].plus(new Decimal(amountDefaultCurrency));
 
         return acc;
       },
-      {} as Record<string, number>,
+      {} as Record<string, Decimal>,
     );
 
-// Convert grouped data to the desired structure for pie chart
 export const convertToChartData = (
-  groupedData: Record<string, number>,
+  groupedData: Record<string, Decimal>,
 ): PieValueType[] =>
-  Object.entries(groupedData).map(([category, value], index) => ({
+  Object.entries(groupedData).map(([category, amount], index) => ({
     id: index,
-    value,
+    value: amount.toDecimalPlaces(0).toNumber(),
     label:
       EXPENSE_CATEGORIES[category as ExpenseCategory] ||
       INCOME_CATEGORIES[category as IncomeCategory],

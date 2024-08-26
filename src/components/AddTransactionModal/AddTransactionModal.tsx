@@ -77,13 +77,7 @@ const AddTransactionModal: React.FC = () => {
     setIsTransactionModalOpen(false);
   };
 
-  const handleTypeChange = (
-    _event: React.MouseEvent<HTMLElement>,
-    newType: TransactionType,
-  ) => {
-    // If a user click on already selected type button, the newTypes cames as null
-    if (!newType) return;
-
+  const handleTypeChange = (newType: TransactionType) => {
     setTranasctionType(newType);
     setCategory('');
   };

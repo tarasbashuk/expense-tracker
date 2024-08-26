@@ -2,26 +2,13 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { Transaction } from '@prisma/client';
-import {
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
-  Typography,
-  CircularProgress,
-  Stack,
-  IconButton,
-  List,
-} from '@mui/material';
-import ArrowBack from '@mui/icons-material/ArrowBack';
-import ArrowForward from '@mui/icons-material/ArrowForward';
+import { Typography, CircularProgress, List } from '@mui/material';
 
 import TransactionItem from './TransactionItem';
-import { DECEMBER, JANUARY, MONTH_LIST } from '@/constants/constants';
 import getTransactions from '@/app/actions/getTransactions';
 import deleteTransaction from '@/app/actions/deleteTransaction';
 import { useTransactions } from '@/context/TranasctionsContext';
+import MonthSelect from './shared/MonthSelect';
 
 const today = new Date();
 const currentMonth = today.getMonth().toString();
@@ -41,27 +28,6 @@ const TransactionList = () => {
   const handleEditTransaction = (transactionId: string) => {
     setTransactionId(transactionId);
     setIsTransactionModalOpen(true);
-  };
-  const handleMonthChange = (event: SelectChangeEvent) => {
-    setMonth(event.target.value);
-  };
-
-  const goToPrevMonth = () => {
-    if (month === JANUARY) {
-      setMonth(DECEMBER);
-    } else {
-      const prevMonth = Number(month) - 1;
-      setMonth(prevMonth.toString());
-    }
-  };
-
-  const goToNextMonth = () => {
-    if (month === DECEMBER) {
-      setMonth(JANUARY);
-    } else {
-      const nextMonth = Number(month) + 1;
-      setMonth(nextMonth.toString());
-    }
   };
 
   useEffect(() => {
@@ -115,38 +81,7 @@ const TransactionList = () => {
       <Typography variant="h4" component="h3" gutterBottom>
         History
       </Typography>
-      <Stack direction="row" alignItems="center">
-        <IconButton
-          aria-label="previous"
-          onClick={goToPrevMonth}
-          sx={{ marginRight: 2 }}
-        >
-          <ArrowBack />
-        </IconButton>
-        <FormControl variant="standard" size="small" sx={{ minWidth: 150 }}>
-          <InputLabel id="month-select-label">Month</InputLabel>
-          <Select
-            labelId="month-select-label"
-            id="month-select"
-            value={month}
-            onChange={handleMonthChange}
-            label="Month"
-          >
-            {MONTH_LIST.map((m) => (
-              <MenuItem key={m.value} value={m.value}>
-                {m.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <IconButton
-          aria-label="next"
-          onClick={goToNextMonth}
-          sx={{ marginLeft: 2 }}
-        >
-          <ArrowForward />
-        </IconButton>
-      </Stack>
+      <MonthSelect month={month} setMonth={setMonth} />
 
       {isLoading && <CircularProgress sx={{ my: 5 }} />}
 
