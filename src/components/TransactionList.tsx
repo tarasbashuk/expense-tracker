@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { Transaction } from '@prisma/client';
 import { Typography, CircularProgress, List } from '@mui/material';
@@ -9,6 +9,7 @@ import getTransactions from '@/app/actions/getTransactions';
 import deleteTransaction from '@/app/actions/deleteTransaction';
 import { useTransactions } from '@/context/TranasctionsContext';
 import MonthSelect from './shared/MonthSelect';
+import TransactionsDataGrid from './TransactionsDataGrid';
 
 const today = new Date();
 const currentMonth = today.getMonth().toString();
@@ -25,10 +26,39 @@ const TransactionList = () => {
   const [month, setMonth] = useState(currentMonth);
   const [isLoading, setIsloading] = useState(false);
 
-  const handleEditTransaction = (transactionId: string) => {
-    setTransactionId(transactionId);
-    setIsTransactionModalOpen(true);
-  };
+  const handleEditTransaction = useCallback(
+    (transactionId: string) => {
+      setTransactionId(transactionId);
+      setIsTransactionModalOpen(true);
+    },
+    [setTransactionId, setIsTransactionModalOpen],
+  );
+
+  const handleDeleteTransaction = useCallback(
+    async (transactionId: string) => {
+      const confirmed = window.confirm(
+        'Are you sure you want to delete this transaction?',
+      );
+
+      if (!confirmed) return;
+
+      const { message, error } = await deleteTransaction(transactionId);
+
+      if (error) {
+        toast.error(error);
+      }
+
+      toast.success(message);
+      setTransactions((prevTrans: Transaction[]) => {
+        const updatedTransactions = prevTrans.filter(
+          (trans) => trans.id !== transactionId,
+        );
+
+        return updatedTransactions;
+      });
+    },
+    [setTransactions],
+  );
 
   useEffect(() => {
     const fetchTrans = async () => {
@@ -44,29 +74,6 @@ const TransactionList = () => {
     setIsloading(true);
     fetchTrans();
   }, [month, setTransactions]);
-
-  const handleDeleteTransaction = async (transactionId: string) => {
-    const confirmed = window.confirm(
-      'Are you sure you want to delete this transaction?',
-    );
-
-    if (!confirmed) return;
-
-    const { message, error } = await deleteTransaction(transactionId);
-
-    if (error) {
-      toast.error(error);
-    }
-
-    toast.success(message);
-    setTransactions((prevTrans: Transaction[]) => {
-      const updatedTransactions = prevTrans.filter(
-        (trans) => trans.id !== transactionId,
-      );
-
-      return updatedTransactions;
-    });
-  };
 
   if (error) {
     return (
@@ -92,16 +99,24 @@ const TransactionList = () => {
       )}
 
       {!isLoading && (
-        <List sx={{ mt: 4 }}>
-          {transactions?.map((transaction: Transaction) => (
-            <TransactionItem
-              key={transaction.id}
-              transaction={transaction}
-              handleEdit={handleEditTransaction}
-              handleDelete={handleDeleteTransaction}
-            />
-          ))}
-        </List>
+        <>
+          <TransactionsDataGrid
+            rows={transactions}
+            handleEdit={handleEditTransaction}
+            handleDelete={handleDeleteTransaction}
+          />
+
+          <List sx={{ mt: 4 }}>
+            {transactions?.map((transaction: Transaction) => (
+              <TransactionItem
+                key={transaction.id}
+                transaction={transaction}
+                handleEdit={handleEditTransaction}
+                handleDelete={handleDeleteTransaction}
+              />
+            ))}
+          </List>
+        </>
       )}
     </>
   );

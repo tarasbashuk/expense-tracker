@@ -1,13 +1,9 @@
 import { PieValueType } from '@mui/x-charts';
 import { Transaction, TransactionType } from '@prisma/client';
 import { COLOR_MAP } from './getCategoryColor';
-import {
-  ExpenseCategory,
-  IncomeCategory,
-  TransactionCategory,
-} from '@/constants/types';
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/constants/constants';
+import { TransactionCategory } from '@/constants/types';
 import Decimal from 'decimal.js';
+import { getCategoryLabel } from './utils';
 
 export const groupTransactionsByCategory = (
   transactions: Transaction[],
@@ -31,13 +27,11 @@ export const groupTransactionsByCategory = (
     );
 
 export const convertToChartData = (
-  groupedData: Record<string, Decimal>,
+  groupedData: Record<TransactionCategory, Decimal>,
 ): PieValueType[] =>
   Object.entries(groupedData).map(([category, amount], index) => ({
     id: index,
     value: amount.toDecimalPlaces(0).toNumber(),
-    label:
-      EXPENSE_CATEGORIES[category as ExpenseCategory] ||
-      INCOME_CATEGORIES[category as IncomeCategory],
+    label: getCategoryLabel(category as TransactionCategory),
     color: COLOR_MAP[category as TransactionCategory],
   }));
