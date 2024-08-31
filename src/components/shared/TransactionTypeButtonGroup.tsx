@@ -5,12 +5,14 @@ import { TransactionType } from '@prisma/client';
 interface Props {
   transactionType: TransactionType;
   buttonsSx?: SxProps;
+  size?: 'large' | 'small' | 'medium';
   /* eslint-disable-next-line no-unused-vars*/
   setTranasctionType: (type: TransactionType) => void;
 }
 
 const TransactionTypeButtonGroup: FC<Props> = ({
   buttonsSx,
+  size = 'large',
   transactionType,
   setTranasctionType,
 }) => {
@@ -28,7 +30,7 @@ const TransactionTypeButtonGroup: FC<Props> = ({
     <ToggleButtonGroup
       exclusive
       fullWidth
-      size="large"
+      size={size}
       color="primary"
       value={transactionType}
       onChange={handleTypeChange}

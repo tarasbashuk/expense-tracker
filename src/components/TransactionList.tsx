@@ -2,7 +2,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { Transaction } from '@prisma/client';
-import { Typography, CircularProgress, List } from '@mui/material';
+import {
+  Box,
+  List,
+  Typography,
+  ToggleButton,
+  CircularProgress,
+  ToggleButtonGroup,
+} from '@mui/material';
+import ViewListIcon from '@mui/icons-material/ViewList';
+import TableViewIcon from '@mui/icons-material/TableView';
 
 import TransactionItem from './TransactionItem';
 import getTransactions from '@/app/actions/getTransactions';
@@ -10,6 +19,7 @@ import deleteTransaction from '@/app/actions/deleteTransaction';
 import { useTransactions } from '@/context/TranasctionsContext';
 import MonthSelect from './shared/MonthSelect';
 import TransactionsDataGrid from './TransactionsDataGrid';
+import { ViewType } from '@/constants/types';
 
 const today = new Date();
 const currentMonth = today.getMonth().toString();
@@ -24,6 +34,7 @@ const TransactionList = () => {
   } = useTransactions();
   const [error, setError] = useState<string>('');
   const [month, setMonth] = useState(currentMonth);
+  const [viewType, setViewType] = useState(ViewType.List);
   const [isLoading, setIsloading] = useState(false);
 
   const handleEditTransaction = useCallback(
@@ -58,6 +69,16 @@ const TransactionList = () => {
       });
     },
     [setTransactions],
+  );
+
+  const handleTypeChange = useCallback(
+    (_event: React.MouseEvent<HTMLElement>, newType: ViewType) => {
+      // If a user click on already selected type button, the newType cames as null
+      if (!newType) return;
+
+      setViewType(newType);
+    },
+    [],
   );
 
   useEffect(() => {
@@ -98,24 +119,50 @@ const TransactionList = () => {
         </Typography>
       )}
 
-      {!isLoading && (
+      {!isLoading && !!transactions.length && (
         <>
-          <TransactionsDataGrid
-            rows={transactions}
-            handleEdit={handleEditTransaction}
-            handleDelete={handleDeleteTransaction}
-          />
+          <Box
+            sx={{
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              marginBottom: 1,
+            }}
+          >
+            <ToggleButtonGroup
+              exclusive
+              size="small"
+              color="primary"
+              value={viewType}
+              onChange={handleTypeChange}
+            >
+              <ToggleButton value={ViewType.List}>
+                <ViewListIcon />
+              </ToggleButton>
+              <ToggleButton value={ViewType.Grid}>
+                <TableViewIcon />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
 
-          <List sx={{ mt: 4 }}>
-            {transactions?.map((transaction: Transaction) => (
-              <TransactionItem
-                key={transaction.id}
-                transaction={transaction}
-                handleEdit={handleEditTransaction}
-                handleDelete={handleDeleteTransaction}
-              />
-            ))}
-          </List>
+          {viewType === ViewType.Grid ? (
+            <TransactionsDataGrid
+              rows={transactions}
+              handleEdit={handleEditTransaction}
+              handleDelete={handleDeleteTransaction}
+            />
+          ) : (
+            <List>
+              {transactions?.map((transaction: Transaction) => (
+                <TransactionItem
+                  key={transaction.id}
+                  transaction={transaction}
+                  handleEdit={handleEditTransaction}
+                  handleDelete={handleDeleteTransaction}
+                />
+              ))}
+            </List>
+          )}
         </>
       )}
     </>

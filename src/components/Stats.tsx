@@ -14,8 +14,54 @@ const today = new Date();
 const currentMonth = today.getMonth().toString();
 const currentYear = today.getFullYear();
 
+const getChartDims = ({
+  isExtraSmall,
+  isSmall,
+  isMedium,
+}: Record<string, boolean>) => {
+  if (isExtraSmall) {
+    return {
+      // cx: undefined,
+      // cy: undefined,
+      width: 320,
+      height: 350,
+      innerRadius: 10,
+      outerRadius: 150,
+    };
+  }
+
+  if (isSmall) {
+    return {
+      width: 420,
+      height: 420,
+      innerRadius: 15,
+      outerRadius: 180,
+    };
+  }
+
+  if (isMedium) {
+    return {
+      cx: '20%',
+      cy: '50%',
+      width: 800,
+      height: 450,
+      innerRadius: 20,
+      outerRadius: 140,
+    };
+  }
+
+  return {
+    cx: '25%',
+    cy: '50%',
+    width: 950,
+    height: 450,
+    innerRadius: 30,
+    outerRadius: 200,
+  };
+};
+
 const Stats = () => {
-  const { isMobile } = useMediaQueries();
+  const { isExtraSmall, isSmall, isMedium, isLarge } = useMediaQueries();
   const [error, setError] = useState<string>('');
   const [month, setMonth] = useState(currentMonth);
   const [isLoading, setIsloading] = useState(true);
@@ -24,6 +70,15 @@ const Stats = () => {
   const [transactionType, setTranasctionType] = useState<TransactionType>(
     TransactionType.Expense,
   );
+  console.log('isExtraSmall', isExtraSmall);
+  console.log('isSmall', isSmall);
+  console.log('isMedium', isMedium);
+  console.log('isLarge', isLarge);
+  const { cx, cy, width, height, innerRadius, outerRadius } = getChartDims({
+    isExtraSmall,
+    isSmall,
+    isMedium,
+  });
 
   useEffect(() => {
     const fetchTrans = async () => {
@@ -41,10 +96,9 @@ const Stats = () => {
     fetchTrans();
   }, [month]);
 
-  const chartData =
-    transactionType === TransactionType.Expense
-      ? expenseChartData
-      : incomeChartData;
+  const expenseType = transactionType === TransactionType.Expense;
+
+  const chartData = expenseType ? expenseChartData : incomeChartData;
 
   if (error) {
     return (
@@ -63,6 +117,7 @@ const Stats = () => {
           sx={{ marginBottom: 3 }}
         />
         <TransactionTypeButtonGroup
+          size="medium"
           transactionType={transactionType}
           setTranasctionType={setTranasctionType}
         />
@@ -72,30 +127,33 @@ const Stats = () => {
 
       {!isLoading && !!chartData.length ? (
         <PieChart
+          margin={{ right: 3 }}
           slotProps={{
             legend: {
-              direction: 'row',
+              hidden: isExtraSmall || isSmall,
+              direction: 'column',
               position: {
-                vertical: isMobile ? 'middle' : 'top',
-                horizontal: isMobile ? 'left' : 'middle',
+                vertical: 'top',
+                horizontal: 'right',
               },
             },
           }}
           series={[
             {
+              cx,
+              cy,
+              innerRadius,
+              outerRadius,
               data: chartData,
               paddingAngle: 1,
               cornerRadius: 5,
-              innerRadius: isMobile ? 10 : 30,
-              outerRadius: isMobile ? 150 : 200,
-              cx: isMobile ? '73%' : '57%',
-              cy: isMobile ? '15%' : '50%',
             },
           ]}
-          width={isMobile ? 320 : 900}
-          height={isMobile ? 1150 : 650}
+          width={width}
+          height={height}
         />
       ) : (
+        // </Box>
         !isLoading && (
           <Typography variant="h6" color="textSecondary">
             No transactions available for the selected month.

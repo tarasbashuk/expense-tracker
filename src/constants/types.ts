@@ -54,3 +54,8 @@ export interface TransactionFormData {
   type: TransactionType;
   amountDefaultCurrency?: number;
 }
+
+export enum ViewType {
+  List = 'list',
+  Grid = 'grid',
+}

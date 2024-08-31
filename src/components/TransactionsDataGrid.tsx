@@ -120,6 +120,7 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
         type: 'number',
         width: 140,
         align: 'left',
+        sortable: false,
         headerAlign: 'left',
         valueGetter: (amount, row) => {
           const sign = getTransactionSign(row.type);
@@ -132,6 +133,14 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
         field: 'amountDefaultCurrency',
         renderHeader: () => <DefaultCurrencyHeader />,
         width: 100,
+        sortComparator: (_v1, _v2, cellParams1, cellParams2) => {
+          const row1 = cellParams1.api.getRow(cellParams1.id);
+          const row2 = cellParams2.api.getRow(cellParams2.id);
+          const val1 = row1.amountDefaultCurrency;
+          const val2 = row2.amountDefaultCurrency;
+
+          return val2 - val1;
+        },
         valueGetter: (amount, row) => {
           const sign = getTransactionSign(row.type);
 

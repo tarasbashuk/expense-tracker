@@ -39,7 +39,7 @@ const style = {
 const WelcomeModal = () => {
   const { settings } = useSettings();
   const { user } = useClerk();
-  const { isMobile } = useMediaQueries();
+  const { isSmall } = useMediaQueries();
 
   const [isSaving, setIsSaving] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -142,7 +142,7 @@ const WelcomeModal = () => {
             <Button
               type="submit"
               variant="contained"
-              fullWidth={isMobile}
+              fullWidth={isSmall}
               onClick={handleSubmit}
               disabled={isSubmitDisabled}
             >
