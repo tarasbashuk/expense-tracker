@@ -25,7 +25,7 @@ const IncomeExpense = async () => {
                 component="div"
                 sx={{ color: 'success.main' }}
               >
-                {income}
+                {income?.toFixed(2)}
               </Typography>
             </Box>
             <Divider orientation="vertical" flexItem sx={{ marginX: 2 }} />
@@ -38,7 +38,7 @@ const IncomeExpense = async () => {
                 component="div"
                 sx={{ color: 'error.main' }}
               >
-                {expense}
+                {expense?.toFixed(2)}
               </Typography>
             </Box>
           </Box>

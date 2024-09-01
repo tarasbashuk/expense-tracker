@@ -9,6 +9,8 @@ import MonthSelect from './shared/MonthSelect';
 import TransactionTypeButtonGroup from './shared/TransactionTypeButtonGroup';
 import { useMediaQueries } from '@/lib/useMediaQueries';
 import getStats from '@/app/actions/getStats';
+import AdditionalBalanceInfo from './AdditionalBalanceInfo';
+import getIncomeExpense from '@/app/actions/getIncomeExpense';
 
 const today = new Date();
 const currentMonth = today.getMonth().toString();
@@ -21,8 +23,6 @@ const getChartDims = ({
 }: Record<string, boolean>) => {
   if (isExtraSmall) {
     return {
-      // cx: undefined,
-      // cy: undefined,
       width: 320,
       height: 350,
       innerRadius: 10,
@@ -61,7 +61,9 @@ const getChartDims = ({
 };
 
 const Stats = () => {
-  const { isExtraSmall, isSmall, isMedium, isLarge } = useMediaQueries();
+  const { isExtraSmall, isSmall, isMedium } = useMediaQueries();
+  const [income, setIncome] = useState(0);
+  const [expense, setExpense] = useState(0);
   const [error, setError] = useState<string>('');
   const [month, setMonth] = useState(currentMonth);
   const [isLoading, setIsloading] = useState(true);
@@ -70,10 +72,7 @@ const Stats = () => {
   const [transactionType, setTranasctionType] = useState<TransactionType>(
     TransactionType.Expense,
   );
-  console.log('isExtraSmall', isExtraSmall);
-  console.log('isSmall', isSmall);
-  console.log('isMedium', isMedium);
-  console.log('isLarge', isLarge);
+
   const { cx, cy, width, height, innerRadius, outerRadius } = getChartDims({
     isExtraSmall,
     isSmall,
@@ -86,6 +85,12 @@ const Stats = () => {
         currentYear,
         Number(month),
       );
+      const { income, expense } = await getIncomeExpense(
+        currentYear,
+        Number(month),
+      );
+      setIncome(income || 0);
+      setExpense(expense || 0);
       setExpenseChartData(expenseChartData || []);
       setIncomeChartData(incomeChartData || []);
       setError(error || '');
@@ -126,34 +131,36 @@ const Stats = () => {
       {isLoading && <CircularProgress sx={{ my: 5 }} />}
 
       {!isLoading && !!chartData.length ? (
-        <PieChart
-          margin={{ right: 3 }}
-          slotProps={{
-            legend: {
-              hidden: isExtraSmall || isSmall,
-              direction: 'column',
-              position: {
-                vertical: 'top',
-                horizontal: 'right',
+        <Box>
+          <AdditionalBalanceInfo income={income} expense={expense} />
+          <PieChart
+            margin={{ right: 3 }}
+            slotProps={{
+              legend: {
+                hidden: isExtraSmall || isSmall,
+                direction: 'column',
+                position: {
+                  vertical: 'top',
+                  horizontal: 'right',
+                },
               },
-            },
-          }}
-          series={[
-            {
-              cx,
-              cy,
-              innerRadius,
-              outerRadius,
-              data: chartData,
-              paddingAngle: 1,
-              cornerRadius: 5,
-            },
-          ]}
-          width={width}
-          height={height}
-        />
+            }}
+            series={[
+              {
+                cx,
+                cy,
+                innerRadius,
+                outerRadius,
+                data: chartData,
+                paddingAngle: 1,
+                cornerRadius: 5,
+              },
+            ]}
+            width={width}
+            height={height}
+          />
+        </Box>
       ) : (
-        // </Box>
         !isLoading && (
           <Typography variant="h6" color="textSecondary">
             No transactions available for the selected month.

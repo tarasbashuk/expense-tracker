@@ -20,6 +20,8 @@ import { useTransactions } from '@/context/TranasctionsContext';
 import MonthSelect from './shared/MonthSelect';
 import TransactionsDataGrid from './TransactionsDataGrid';
 import { ViewType } from '@/constants/types';
+import AdditionalBalanceInfo from './AdditionalBalanceInfo';
+import getIncomeExpense from '@/app/actions/getIncomeExpense';
 
 const today = new Date();
 const currentMonth = today.getMonth().toString();
@@ -32,8 +34,11 @@ const TransactionList = () => {
     setTransactionId,
     setIsTransactionModalOpen,
   } = useTransactions();
+
   const [error, setError] = useState<string>('');
   const [month, setMonth] = useState(currentMonth);
+  const [income, setIncome] = useState(0);
+  const [expense, setExpense] = useState(0);
   const [viewType, setViewType] = useState(ViewType.List);
   const [isLoading, setIsloading] = useState(false);
 
@@ -87,6 +92,12 @@ const TransactionList = () => {
         currentYear,
         Number(month),
       );
+      const { income, expense } = await getIncomeExpense(
+        currentYear,
+        Number(month),
+      );
+      setIncome(income || 0);
+      setExpense(expense || 0);
       setTransactions(transactions || []);
       setError(error || '');
       setIsloading(false);
@@ -123,17 +134,23 @@ const TransactionList = () => {
         <>
           <Box
             sx={{
+              my: 1,
               width: '100%',
               display: 'flex',
-              justifyContent: 'flex-end',
-              marginBottom: 1,
+              justifyContent: 'space-between',
             }}
           >
+            <AdditionalBalanceInfo
+              income={income}
+              expense={expense}
+              sx={{ marginLeft: { xs: 0, md: 9, lg: 18 } }}
+            />
             <ToggleButtonGroup
               exclusive
               size="small"
               color="primary"
               value={viewType}
+              sx={{ ml: 'auto', height: 'fit-content' }}
               onChange={handleTypeChange}
             >
               <ToggleButton value={ViewType.List}>

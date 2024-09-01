@@ -116,7 +116,7 @@ const AddTransactionModalView: React.FC<Props> = ({
             <CloseIcon />
           </IconButton>
         </Stack>
-        <form action={onSubmit}>
+        <form>
           <Grid container spacing={2} justifyContent="space-between">
             <Grid item xs={4} sm={8}>
               <TransactionTypeButtonGroup
@@ -249,6 +249,7 @@ const AddTransactionModalView: React.FC<Props> = ({
                 fullWidth
                 type="submit"
                 variant="contained"
+                onClick={onSubmit}
                 disabled={isSubmitDisabled}
               >
                 {isEditMode ? 'Save' : 'Add transaction'}
