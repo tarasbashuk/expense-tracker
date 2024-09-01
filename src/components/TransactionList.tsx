@@ -135,7 +135,7 @@ const TransactionList = () => {
           <Box
             sx={{
               my: 1,
-              px: 2,
+              // px: 2,
               width: '100%',
               display: 'flex',
               justifyContent: 'space-between',

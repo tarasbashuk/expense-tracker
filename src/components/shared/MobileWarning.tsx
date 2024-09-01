@@ -7,10 +7,8 @@ import { useMediaQueries } from '@/lib/useMediaQueries';
 const MobileWarning: React.FC = () => {
   const { isExtraSmall } = useMediaQueries();
 
-  // State to control visibility of the alert
   const [open, setOpen] = useState(true);
 
-  // Function to close the alert
   const handleClose = () => {
     setOpen(false);
   };
@@ -18,7 +16,15 @@ const MobileWarning: React.FC = () => {
   return (
     <>
       {isExtraSmall && open && (
-        <Box sx={{ width: '100%', position: 'fixed', top: 0, zIndex: 1000 }}>
+        <Box
+          sx={{
+            width: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            zIndex: 1000,
+          }}
+        >
           <Alert
             severity="warning"
             variant="filled"

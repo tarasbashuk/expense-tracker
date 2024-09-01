@@ -177,7 +177,6 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
           width: '100%',
           backgroundColor: 'background.paper',
           marginTop: 2,
-          px: 2,
         }}
       >
         <DataGrid
