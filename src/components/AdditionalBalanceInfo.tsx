@@ -52,7 +52,10 @@ const AdditionalBalanceInfo: FC<Props> = ({ sx, income, expense }) => {
           display="flex"
           justifyContent="space-between"
           alignItems="center"
-          sx={{ marginTop: { xs: 2, sm: 1, md: 0 } }}
+          sx={{
+            marginTop: { xs: 2, sm: 1, md: 0 },
+            flexDirection: { xs: 'column', sm: 'row' },
+          }}
         >
           <Box
             width="100%"
@@ -72,7 +75,13 @@ const AdditionalBalanceInfo: FC<Props> = ({ sx, income, expense }) => {
               {income}
             </Typography>
           </Box>
-          <Divider flexItem orientation="vertical" sx={{ margin: '8px' }} />
+
+          <Divider
+            flexItem
+            orientation="vertical"
+            sx={{ margin: '8px', display: { xs: 'none', sm: 'block' } }}
+          />
+
           <Box
             width="100%"
             display="flex"
@@ -92,13 +101,18 @@ const AdditionalBalanceInfo: FC<Props> = ({ sx, income, expense }) => {
             </Typography>
           </Box>
 
-          <Divider flexItem orientation="vertical" sx={{ margin: '8px' }} />
+          <Divider
+            flexItem
+            orientation="vertical"
+            sx={{ margin: '8px', display: { xs: 'none', sm: 'block' } }}
+          />
 
           <Box
             width="100%"
             display="flex"
             alignItems="center"
             justifyContent="start"
+            sx={{ mt: { xs: 1, sm: 0 } }}
           >
             <Typography fontWeight={600} variant="body1" component="div">
               Balance:

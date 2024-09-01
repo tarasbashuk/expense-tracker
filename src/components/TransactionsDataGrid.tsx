@@ -169,7 +169,12 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
 
   return (
     <Box
-      sx={{ height: 420, width: '100%', backgroundColor: 'background.paper' }}
+      sx={{
+        height: 420,
+        width: '100%',
+        backgroundColor: 'background.paper',
+        marginTop: 2,
+      }}
     >
       <DataGrid
         rows={rows}
