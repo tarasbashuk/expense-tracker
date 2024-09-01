@@ -11,6 +11,7 @@ import { useMediaQueries } from '@/lib/useMediaQueries';
 import getStats from '@/app/actions/getStats';
 import AdditionalBalanceInfo from './AdditionalBalanceInfo';
 import getIncomeExpense from '@/app/actions/getIncomeExpense';
+import MobileWarning from './shared/MobileWarning';
 
 const today = new Date();
 const currentMonth = today.getMonth().toString();
@@ -115,6 +116,7 @@ const Stats = () => {
 
   return (
     <Stack direction="column" alignItems="center">
+      <MobileWarning />
       <Box sx={{ width: 'fit-content', marginBottom: 2 }}>
         <MonthSelect
           month={month}

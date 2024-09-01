@@ -10,6 +10,7 @@ import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
 import { TransactionCategory } from '@/constants/types';
 import { getCategoryLabel, getTransactionSign } from '@/lib/utils';
 import { useSettings } from '@/context/SettingsContexts';
+import MobileWarning from './shared/MobileWarning';
 
 interface TransactionsDataGridProps {
   rows: Transaction[];
@@ -176,6 +177,7 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
         marginTop: 2,
       }}
     >
+      <MobileWarning />
       <DataGrid
         rows={rows}
         columns={columns}
