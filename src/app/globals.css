@@ -20,7 +20,6 @@ a {
 }
 
 .container {
-  padding: 0 16px;
   margin: 30px auto;
   max-width: 932px;
   display: flex;
