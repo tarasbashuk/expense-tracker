@@ -169,30 +169,32 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
   );
 
   return (
-    <Box
-      sx={{
-        height: 420,
-        width: '100%',
-        backgroundColor: 'background.paper',
-        marginTop: 2,
-        px: 2,
-      }}
-    >
+    <>
       <MobileWarning />
-      <DataGrid
-        rows={rows}
-        columns={columns}
-        initialState={{
-          pagination: {
-            paginationModel: {
-              pageSize: 10,
-            },
-          },
+      <Box
+        sx={{
+          height: 420,
+          width: '100%',
+          backgroundColor: 'background.paper',
+          marginTop: 2,
+          px: 2,
         }}
-        pageSizeOptions={[10, 20, 50, 100]}
-        disableRowSelectionOnClick
-      />
-    </Box>
+      >
+        <DataGrid
+          rows={rows}
+          columns={columns}
+          initialState={{
+            pagination: {
+              paginationModel: {
+                pageSize: 10,
+              },
+            },
+          }}
+          pageSizeOptions={[10, 20, 50, 100]}
+          disableRowSelectionOnClick
+        />
+      </Box>
+    </>
   );
 };
 
