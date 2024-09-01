@@ -175,7 +175,7 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
         width: '100%',
         backgroundColor: 'background.paper',
         marginTop: 2,
-        mx: 2,
+        px: 2,
       }}
     >
       <MobileWarning />
