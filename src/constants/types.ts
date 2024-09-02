@@ -52,6 +52,7 @@ export interface TransactionFormData {
   category: string;
   currency: Currency;
   type: TransactionType;
+  isCreditTransaction: boolean;
   amountDefaultCurrency?: number;
 }
 

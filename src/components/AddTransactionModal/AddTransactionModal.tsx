@@ -26,8 +26,9 @@ const AddTransactionModal: React.FC = () => {
   let initialText = '';
   let initialCategory = '';
   let initialDate = new Date();
-  let initialCurrency = defaultCurrency;
   let initialAmountDefaultCurrency;
+  let initialCurrency = defaultCurrency;
+  let initialIsCreditTransaction = false;
   let initialType: TransactionType = TransactionType.Expense;
 
   const selectedTransaction = transactions.find(
@@ -40,9 +41,10 @@ const AddTransactionModal: React.FC = () => {
       text,
       type,
       amount,
-      amountDefaultCurrency,
       category,
       currency,
+      isCreditTransaction,
+      amountDefaultCurrency,
     } = selectedTransaction;
 
     initialText = text;
@@ -51,6 +53,7 @@ const AddTransactionModal: React.FC = () => {
     initialCurrency = currency;
     initialCategory = category;
     initialDate = new Date(date);
+    initialIsCreditTransaction = !!isCreditTransaction;
     initialAmountDefaultCurrency = amountDefaultCurrency;
   }
 
@@ -67,6 +70,9 @@ const AddTransactionModal: React.FC = () => {
   const [transactionType, setTranasctionType] =
     useState<TransactionType>(initialType);
   const [currency, setCurrency] = useState<Currency>(initialCurrency);
+  const [isCreditTransaction, setIsCreditTransaction] = useState(
+    initialIsCreditTransaction,
+  );
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -114,6 +120,10 @@ const AddTransactionModal: React.FC = () => {
     setCategory(event.target.value as TransactionCategory);
   };
 
+  const handleIsCreditChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setIsCreditTransaction(event.target.checked);
+  };
+
   // This is a rework of legacy implementaions from Brad Traversy cource,
   // TODO: think about using react-hook-form
   const clientAction = async () => {
@@ -122,6 +132,7 @@ const AddTransactionModal: React.FC = () => {
       date,
       currency,
       category,
+      isCreditTransaction,
       text: text as string,
       type: transactionType,
       amount: amount as number,
@@ -181,6 +192,7 @@ const AddTransactionModal: React.FC = () => {
       transactionType={transactionType}
       isEditMode={!!selectedTransaction}
       isBaseAmmountShown={isBaseAmmountShown}
+      isCreditTransaction={isCreditTransaction}
       amountDefaultCurrency={amountDefaultCurrency}
       onSubmit={clientAction}
       handleClose={handleClose}
@@ -190,6 +202,7 @@ const AddTransactionModal: React.FC = () => {
       handleAmountChange={handleAmountChange}
       handleCurrencyChange={handleCurrencyChange}
       handleCategoryChange={handleCategoryChange}
+      handleIsCreditChange={handleIsCreditChange}
       handleAmountDefaultCurrencyChange={handleAmountDefaultCurrencyChange}
     />
   );

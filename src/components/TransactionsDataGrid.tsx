@@ -1,7 +1,7 @@
 'use client';
 import { FC, useMemo, useState, MouseEvent } from 'react';
 import { Box, IconButton, Menu, MenuItem } from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { DataGrid, GridColDef, gridDateComparator } from '@mui/x-data-grid';
 import { Transaction } from '@prisma/client';
 import { format } from 'date-fns';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -98,7 +98,15 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
       {
         field: 'date',
         headerName: 'Date',
-        width: 140,
+        width: 100,
+        sortComparator: (_v1, _v2, cellParams1, cellParams2) => {
+          const row1 = cellParams1.api.getRow(cellParams1.id);
+          const row2 = cellParams2.api.getRow(cellParams2.id);
+          const val1 = row1.date;
+          const val2 = row2.date;
+
+          return gridDateComparator(val1, val2, cellParams1, cellParams2);
+        },
         valueGetter: (date: string) => format(date, 'PP'),
       },
       {
@@ -119,7 +127,7 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
         field: 'amount',
         headerName: 'Amount',
         type: 'number',
-        width: 140,
+        width: 100,
         align: 'left',
         sortable: false,
         headerAlign: 'left',
@@ -146,6 +154,20 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
           const sign = getTransactionSign(row.type);
 
           return `${sign} ${Math.abs(amount!)}`;
+        },
+      },
+      // {
+      //   field: 'currency',
+      //   headerName: 'Currency',
+      //   width: 40,
+      //   valueGetter: (currency) => CURRENCY_SYMBOL_MAP[currency],
+      // },
+      {
+        field: 'isCreditTransaction',
+        headerName: 'Credit',
+        width: 40,
+        valueGetter: (isCredit) => {
+          return isCredit ? 'Yes' : 'No';
         },
       },
       {

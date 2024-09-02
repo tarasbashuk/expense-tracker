@@ -15,6 +15,8 @@ import {
   Grid,
   IconButton,
   SelectChangeEvent,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -53,6 +55,7 @@ interface Props {
   isEditMode: boolean;
   isSubmitDisabled: boolean;
   isBaseAmmountShown: boolean;
+  isCreditTransaction: boolean;
   amountDefaultCurrency?: number;
   transactionType: TransactionType;
   handleClose: () => void;
@@ -64,6 +67,7 @@ interface Props {
   handleCurrencyChange: (event: SelectChangeEvent) => void;
   handleTextChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleCategoryChange: (event: SelectChangeEvent) => void;
+  handleIsCreditChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleAmountDefaultCurrencyChange: (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => void;
@@ -80,6 +84,7 @@ const AddTransactionModalView: React.FC<Props> = ({
   transactionType,
   isSubmitDisabled,
   isBaseAmmountShown,
+  isCreditTransaction,
   amountDefaultCurrency,
   onSubmit,
   handleClose,
@@ -89,6 +94,7 @@ const AddTransactionModalView: React.FC<Props> = ({
   handleCurrencyChange,
   handleTextChange,
   handleCategoryChange,
+  handleIsCreditChange,
   handleAmountDefaultCurrencyChange,
 }) => {
   const categories =
@@ -241,6 +247,19 @@ const AddTransactionModalView: React.FC<Props> = ({
                 variant="standard"
                 value={text}
                 onChange={handleTextChange}
+              />
+            </Grid>
+
+            {/* TODO: add tooltip with explanation */}
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={isCreditTransaction}
+                    onChange={handleIsCreditChange}
+                  />
+                }
+                label="Paid by credit card"
               />
             </Grid>
 
