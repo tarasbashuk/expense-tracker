@@ -19,6 +19,8 @@ import LocalPharmacyIcon from '@mui/icons-material/LocalPharmacy';
 import SavingsIcon from '@mui/icons-material/Savings';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import AirportShuttleIcon from '@mui/icons-material/AirportShuttle';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
+import CreditScoreIcon from '@mui/icons-material/CreditScore';
 import { TransactionCategory } from '@/constants/types';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import { SvgIconTypeMap } from '@mui/material';
@@ -50,7 +52,9 @@ export const ICON_MAP: Record<
   others: MoreHorizIcon,
   salary: AttachMoneyIcon,
   investments: TrendingUpIcon,
+  creditReceived: CreditCardIcon,
   ROI: TrendingUpIcon,
+  CCRepayment: CreditScoreIcon,
 };
 
 export const getIconByName = (iconName: TransactionCategory) => {

@@ -3,10 +3,12 @@ import {
   red,
   pink,
   teal,
+  lime,
   cyan,
   blue,
   grey,
   green,
+  amber,
   orange,
   purple,
   yellow,
@@ -38,4 +40,6 @@ export const COLOR_MAP: Record<TransactionCategory, string> = {
   salary: green[700],
   investments: blue[800],
   ROI: cyan[700],
+  creditReceived: lime[500],
+  CCRepayment: amber[500], // New category
 };

@@ -13,8 +13,9 @@ export const DEFAULT_SETTINGS: UserSettings = {
 export const INCOME_CATEGORIES: { [key in IncomeCategory]: string } = {
   salary: 'Salary',
   gifts: 'Gifts',
-  others: 'Others',
+  creditReceived: 'Credit Received',
   ROI: 'Return on Investments',
+  others: 'Others',
 };
 
 export const EXPENSE_CATEGORIES: { [key in ExpenseCategory]: string } = {
@@ -37,6 +38,7 @@ export const EXPENSE_CATEGORIES: { [key in ExpenseCategory]: string } = {
   gifts: 'Gifts',
   savings: 'Savings',
   investments: 'Investments',
+  CCRepayment: 'Credit Card Repayment',
   others: 'Others',
 };
 

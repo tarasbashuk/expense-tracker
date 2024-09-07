@@ -18,6 +18,7 @@ export enum IncomeCategory {
   Salary = 'salary',
   Gifts = 'gifts',
   Others = 'others',
+  CreditReceived = 'creditReceived',
 }
 
 export enum ExpenseCategory {
@@ -40,6 +41,7 @@ export enum ExpenseCategory {
   Gifts = 'gifts',
   Savings = 'savings',
   Investments = 'investments',
+  CCRepayment = 'CCRepayment',
   Others = 'others',
 }
 
