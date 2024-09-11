@@ -2,8 +2,8 @@
 import { revalidatePath } from 'next/cache';
 import { currentUser } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
-import { Transaction } from '@prisma/client';
-import { TransactionFormData } from '@/constants/types';
+import { Transaction, TransactionType } from '@prisma/client';
+import { IncomeCategory, TransactionFormData } from '@/constants/types';
 import { DO_NOT_ENCRYPT_LIST } from '@/constants/constants';
 import { decrypt, decryptFloat, encrypt, encryptFloat } from '@/lib/crypto';
 
@@ -43,6 +43,9 @@ async function addUpdateTransaction(
   }
 
   let amountDefaultCurrencyValue = amountDefaultCurrency || amount;
+  let creditIncomeText = `Credit income for: ${text}`;
+  const isCreditExpenseTransaction =
+    formData.isCreditTransaction && formData.type === TransactionType.Expense;
 
   // When editing transaction in the default amount we need to set value manually
   if (!isDefaultAmmountRequired && transacionId) {
@@ -52,6 +55,7 @@ async function addUpdateTransaction(
   if (shouldEncrypt && encryptKey) {
     formData.amount = encryptFloat(formData.amount, encryptKey);
     formData.text = encrypt(formData.text, encryptKey);
+    creditIncomeText = encrypt(creditIncomeText, encryptKey);
     amountDefaultCurrencyValue = encryptFloat(
       amountDefaultCurrencyValue,
       encryptKey,
@@ -71,6 +75,22 @@ async function addUpdateTransaction(
           amountDefaultCurrency: amountDefaultCurrencyValue,
         },
       });
+
+      //If CC is used we update a credit income transaction under the hood
+      if (isCreditExpenseTransaction) {
+        await db.transaction.update({
+          where: {
+            CCExpenseTransactionId: transacionId,
+          },
+          data: {
+            currency: formData.currency,
+            amount: formData.amount,
+            date: formData.date,
+            text: creditIncomeText,
+            amountDefaultCurrency: amountDefaultCurrencyValue,
+          },
+        });
+      }
     } else {
       transacionData = await db.transaction.create({
         data: {
@@ -79,6 +99,21 @@ async function addUpdateTransaction(
           amountDefaultCurrency: amountDefaultCurrencyValue,
         },
       });
+
+      //If CC is used we create a credit income transaction under the hood
+      if (isCreditExpenseTransaction) {
+        await db.transaction.create({
+          data: {
+            ...formData,
+            userId,
+            category: IncomeCategory.CreditReceived,
+            type: TransactionType.Income,
+            text: creditIncomeText,
+            CCExpenseTransactionId: transacionData.id,
+            amountDefaultCurrency: amountDefaultCurrencyValue,
+          },
+        });
+      }
     }
 
     revalidatePath('/');

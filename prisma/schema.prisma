@@ -37,6 +37,7 @@ model Transaction {
   currency               Currency  @default(EUR)
   type                   TransactionType  @default(Expense)
   isCreditTransaction    Boolean? @default(false)
+  CCExpenseTransactionId String? @unique
   userId                 String
   user                   User      @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
   createdAt              DateTime  @default(now())

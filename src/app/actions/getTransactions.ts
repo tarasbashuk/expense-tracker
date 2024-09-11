@@ -5,10 +5,12 @@ import { Transaction } from '@prisma/client';
 import { endOfMonth, startOfMonth, format } from 'date-fns';
 import { DATE_FORMATS, DO_NOT_ENCRYPT_LIST } from '@/constants/constants';
 import { decrypt, decryptFloat } from '@/lib/crypto';
+import { IncomeCategory } from '@/constants/types';
 
 async function getTransactions(
   year: number,
   month: number,
+  excludeCreditIncome = false,
 ): Promise<{
   transactions?: Transaction[];
   error?: string;
@@ -37,6 +39,15 @@ async function getTransactions(
           gte: formattedStart,
           lte: formattedEnd,
         },
+        AND: [
+          excludeCreditIncome
+            ? {
+                NOT: {
+                  category: IncomeCategory.CreditReceived,
+                },
+              }
+            : {},
+        ],
       },
       orderBy: [
         {

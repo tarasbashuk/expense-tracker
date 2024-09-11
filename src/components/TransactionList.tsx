@@ -91,6 +91,7 @@ const TransactionList = () => {
       const { transactions, error } = await getTransactions(
         currentYear,
         Number(month),
+        true,
       );
       const { income, expense } = await getIncomeExpense(
         currentYear,

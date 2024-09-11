@@ -1,6 +1,7 @@
 'use server';
 import { db } from '@/lib/db';
 import { auth } from '@clerk/nextjs/server';
+import { TransactionType } from '@prisma/client';
 import { revalidatePath, revalidateTag } from 'next/cache';
 
 async function deleteTransaction(transactionId: string): Promise<{
@@ -14,12 +15,26 @@ async function deleteTransaction(transactionId: string): Promise<{
   }
 
   try {
-    await db.transaction.delete({
+    const deletetTr = await db.transaction.delete({
       where: {
         id: transactionId,
         userId,
       },
     });
+
+    const isCreditExpenseTr =
+      deletetTr.isCreditTransaction &&
+      deletetTr.type === TransactionType.Expense;
+
+    // Deleting respective Income credit transaction
+    if (isCreditExpenseTr) {
+      await db.transaction.delete({
+        where: {
+          CCExpenseTransactionId: deletetTr.id,
+          userId,
+        },
+      });
+    }
 
     revalidatePath('/transactions');
     revalidateTag('transactions');
