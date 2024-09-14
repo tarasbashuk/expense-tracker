@@ -24,13 +24,13 @@ import getIncomeExpense from '@/app/actions/getIncomeExpense';
 import MobileWarning from './shared/MobileWarning';
 import { getIconByName } from '@/lib/getCategoryIcon';
 import { TransactionCategory } from '@/constants/types';
-import { red, green } from '@mui/material/colors';
 import {
   CURRENCY_SYMBOL_MAP,
   EXPENSE_CATEGORIES_LIST,
   INCOME_CATEGORIES_LIST,
 } from '@/constants/constants';
 import { useSettings } from '@/context/SettingsContexts';
+import { COLOR_MAP } from '@/lib/getCategoryColor';
 
 const today = new Date();
 const currentMonth = today.getMonth().toString();
@@ -146,8 +146,7 @@ const Stats = () => {
   )?.value;
 
   const IconComponent = getIconByName(activeCategory as TransactionCategory);
-  const labelColor =
-    transactionType === TransactionType.Expense ? red[500] : green[500];
+  const labelColor = COLOR_MAP[activeCategory as TransactionCategory];
 
   if (error) {
     return (
@@ -191,7 +190,7 @@ const Stats = () => {
                 />
                 <ListItemText
                   sx={{
-                    marginLeft: '24px',
+                    marginLeft: 1,
                   }}
                   primary={`${Math.abs(activeData.value)} ${CURRENCY_SYMBOL_MAP[settings.defaultCurrency]}`}
                 />
