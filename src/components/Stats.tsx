@@ -3,7 +3,17 @@ import React, { useEffect, useState } from 'react';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { PieValueType } from '@mui/x-charts';
 import { TransactionType } from '@prisma/client';
-import { Box, CircularProgress, Stack, Typography } from '@mui/material';
+import {
+  Avatar,
+  Box,
+  CircularProgress,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Stack,
+  Typography,
+} from '@mui/material';
+import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 
 import MonthSelect from './shared/MonthSelect';
 import TransactionTypeButtonGroup from './shared/TransactionTypeButtonGroup';
@@ -12,6 +22,15 @@ import getStats from '@/app/actions/getStats';
 import AdditionalBalanceInfo from './AdditionalBalanceInfo';
 import getIncomeExpense from '@/app/actions/getIncomeExpense';
 import MobileWarning from './shared/MobileWarning';
+import { getIconByName } from '@/lib/getCategoryIcon';
+import { TransactionCategory } from '@/constants/types';
+import { red, green } from '@mui/material/colors';
+import {
+  CURRENCY_SYMBOL_MAP,
+  EXPENSE_CATEGORIES_LIST,
+  INCOME_CATEGORIES_LIST,
+} from '@/constants/constants';
+import { useSettings } from '@/context/SettingsContexts';
 
 const today = new Date();
 const currentMonth = today.getMonth().toString();
@@ -61,10 +80,18 @@ const getChartDims = ({
   };
 };
 
+const ALL_CATEGORIES_LIST = [
+  ...INCOME_CATEGORIES_LIST,
+  ...EXPENSE_CATEGORIES_LIST,
+];
+
 const Stats = () => {
+  const { settings } = useSettings();
   const { isExtraSmall, isSmall, isMedium } = useMediaQueries();
   const [income, setIncome] = useState(0);
   const [expense, setExpense] = useState(0);
+  const [activeDataIndex, setActiveDataIndex] = useState<number | null>(null);
+
   const [error, setError] = useState<string>('');
   const [month, setMonth] = useState(currentMonth);
   const [isLoading, setIsloading] = useState(true);
@@ -73,6 +100,11 @@ const Stats = () => {
   const [transactionType, setTranasctionType] = useState<TransactionType>(
     TransactionType.Expense,
   );
+
+  const handleTranasctionTypeChange = (type: TransactionType) => {
+    setActiveDataIndex(null);
+    setTranasctionType(type);
+  };
 
   const { cx, cy, width, height, innerRadius, outerRadius } = getChartDims({
     isExtraSmall,
@@ -106,6 +138,17 @@ const Stats = () => {
 
   const chartData = expenseType ? expenseChartData : incomeChartData;
 
+  const activeData = chartData[activeDataIndex as number];
+
+  //  it's not effective, think about crating a label - key map
+  const activeCategory = ALL_CATEGORIES_LIST.find(
+    (item) => item.label === activeData?.label,
+  )?.value;
+
+  const IconComponent = getIconByName(activeCategory as TransactionCategory);
+  const labelColor =
+    transactionType === TransactionType.Expense ? red[500] : green[500];
+
   if (error) {
     return (
       <Typography variant="h5" component="p" color="error" my="4">
@@ -126,7 +169,7 @@ const Stats = () => {
         <TransactionTypeButtonGroup
           size="medium"
           transactionType={transactionType}
-          setTranasctionType={setTranasctionType}
+          setTranasctionType={handleTranasctionTypeChange}
         />
       </Box>
 
@@ -134,7 +177,41 @@ const Stats = () => {
 
       {!isLoading && !!chartData.length ? (
         <Box>
-          <AdditionalBalanceInfo income={income} expense={expense} />
+          {activeData ? (
+            <Box>
+              <ListItem>
+                <ListItemAvatar>
+                  <Avatar sx={{ bgcolor: labelColor }}>
+                    {IconComponent && <IconComponent />}
+                  </Avatar>
+                </ListItemAvatar>
+                <ListItemText
+                  sx={{ flex: '0 1 auto' }}
+                  primary={activeData?.label as string}
+                />
+                <ListItemText
+                  sx={{
+                    marginLeft: '24px',
+                  }}
+                  primary={`${Math.abs(activeData.value)} ${CURRENCY_SYMBOL_MAP[settings.defaultCurrency]}`}
+                />
+              </ListItem>
+            </Box>
+          ) : (
+            <ListItem sx={{ minHeight: 56 }}>
+              <ListItemAvatar>
+                <Avatar>
+                  <QuestionMarkIcon />
+                </Avatar>
+              </ListItemAvatar>
+              Click on Pie Chart to see the info
+            </ListItem>
+          )}
+          <AdditionalBalanceInfo
+            income={income}
+            expense={expense}
+            sx={{ paddingLeft: 2 }}
+          />
           <PieChart
             margin={{ right: 3 }}
             slotProps={{
@@ -160,6 +237,7 @@ const Stats = () => {
             ]}
             width={width}
             height={height}
+            onItemClick={(_e, d) => setActiveDataIndex(d.dataIndex)}
           />
         </Box>
       ) : (
