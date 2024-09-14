@@ -13,13 +13,33 @@ import { getOrCreateUser } from '@/lib/userUtils';
 import CssBaseline from '@mui/material/CssBaseline';
 
 import './globals.css';
-// import 'react-toastify/dist/ReactToastify.css';
 
 const roboto = Roboto({ weight: '400', subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Expense Tracker',
   description: 'Track your expenses and create a budget',
+  icons: {
+    icon: [
+      {
+        rel: 'icon',
+        url: '/favicon-32x32.png',
+        sizes: '32x32',
+        type: 'image/png',
+      },
+      {
+        rel: 'icon',
+        url: '/favicon-16x16.png',
+        sizes: '16x16',
+        type: 'image/png',
+      },
+    ],
+    apple: '/apple-touch-icon.png',
+    other: {
+      rel: 'manifest',
+      url: '/site.webmanifest',
+    },
+  },
 };
 
 export default async function RootLayout({
