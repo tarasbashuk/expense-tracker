@@ -76,18 +76,53 @@ async function addUpdateTransaction(
         },
       });
 
+      const expenseTransaction = await db.transaction.findUnique({
+        where: {
+          CCExpenseTransactionId: transacionId,
+        },
+      });
+      const isExpenseTransactionExist = expenseTransaction !== null;
+
+      const transactionBecomeNonCredit =
+        !formData.isCreditTransaction && isExpenseTransactionExist;
+
       //If CC is used we update a credit income transaction under the hood
-      if (isCreditExpenseTransaction) {
-        await db.transaction.update({
+      if (isCreditExpenseTransaction && !transactionBecomeNonCredit) {
+        // This could happenede when user first create a non-credit transaction, but than change it to a credit one
+        if (isExpenseTransactionExist) {
+          await db.transaction.update({
+            where: {
+              CCExpenseTransactionId: transacionId,
+            },
+            data: {
+              currency: formData.currency,
+              amount: formData.amount,
+              date: formData.date,
+              text: creditIncomeText,
+              amountDefaultCurrency: amountDefaultCurrencyValue,
+            },
+          });
+        } else {
+          await db.transaction.create({
+            data: {
+              ...formData,
+              userId,
+              category: IncomeCategory.CreditReceived,
+              type: TransactionType.Income,
+              text: creditIncomeText,
+              CCExpenseTransactionId: transacionId,
+              amountDefaultCurrency: amountDefaultCurrencyValue,
+            },
+          });
+        }
+      }
+
+      // if a user change transaction for a non-credit we need to delete icome counterpart
+      if (transactionBecomeNonCredit) {
+        await db.transaction.delete({
           where: {
             CCExpenseTransactionId: transacionId,
-          },
-          data: {
-            currency: formData.currency,
-            amount: formData.amount,
-            date: formData.date,
-            text: creditIncomeText,
-            amountDefaultCurrency: amountDefaultCurrencyValue,
+            userId,
           },
         });
       }

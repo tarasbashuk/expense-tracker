@@ -4,7 +4,7 @@ import {
   IncomeCategory,
   TransactionCategory,
 } from '@/constants/types';
-import { TransactionType } from '@prisma/client';
+import { Transaction, TransactionType } from '@prisma/client';
 
 export const getCategoryLabel = (category: TransactionCategory) =>
   EXPENSE_CATEGORIES[category as ExpenseCategory] ||
@@ -12,3 +12,6 @@ export const getCategoryLabel = (category: TransactionCategory) =>
 
 export const getTransactionSign = (type: TransactionType) =>
   type === TransactionType.Expense ? '-' : '+';
+
+export const getCheckSum = (transactions: Transaction[]) =>
+  transactions.reduce((acc, tr) => acc + tr.amountDefaultCurrency, 0);

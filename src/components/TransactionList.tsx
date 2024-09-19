@@ -22,6 +22,8 @@ import TransactionsDataGrid from './TransactionsDataGrid';
 import { ViewType } from '@/constants/types';
 import AdditionalBalanceInfo from './AdditionalBalanceInfo';
 import getIncomeExpense from '@/app/actions/getIncomeExpense';
+import { getCheckSum } from '@/lib/utils';
+import usePrevious from '@/lib/hooks/usePrevious';
 
 const today = new Date();
 const currentMonth = today.getMonth().toString();
@@ -34,6 +36,9 @@ const TransactionList = () => {
     setTransactionId,
     setIsTransactionModalOpen,
   } = useTransactions();
+  // Workoraund for re-fething expense/income data
+  const checkSum = getCheckSum(transactions);
+  const prevCheckSum = usePrevious(checkSum);
 
   const [error, setError] = useState<string>('');
   const [month, setMonth] = useState(currentMonth);
@@ -93,12 +98,7 @@ const TransactionList = () => {
         Number(month),
         true,
       );
-      const { income, expense } = await getIncomeExpense(
-        currentYear,
-        Number(month),
-      );
-      setIncome(income || 0);
-      setExpense(expense || 0);
+
       setTransactions(transactions || []);
       setError(error || '');
       setIsloading(false);
@@ -107,6 +107,23 @@ const TransactionList = () => {
     setIsloading(true);
     fetchTrans();
   }, [month, setTransactions]);
+
+  useEffect(() => {
+    const fetchIncomeExpense = async () => {
+      const { income, expense } = await getIncomeExpense(
+        currentYear,
+        Number(month),
+      );
+
+      setIncome(income || 0);
+      setExpense(expense || 0);
+    };
+    const shouldFetch = !!checkSum && checkSum !== prevCheckSum;
+
+    if (shouldFetch) {
+      fetchIncomeExpense();
+    }
+  }, [month, checkSum, prevCheckSum]);
 
   if (error) {
     return (
@@ -136,7 +153,6 @@ const TransactionList = () => {
           <Box
             sx={{
               my: 1,
-              // px: 2,
               width: '100%',
               display: 'flex',
               justifyContent: 'space-between',
