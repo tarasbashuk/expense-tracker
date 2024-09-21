@@ -43,11 +43,11 @@ export const metadata: Metadata = {
         sizes: '16x16',
         type: 'image/png',
       },
-      // {
-      //   rel: 'icon',
-      //   url: '/favicon.ico',
-      //   sizes: 'any', // for any size
-      // },
+      {
+        rel: 'icon',
+        url: '/favicon.ico',
+        sizes: 'any', // for any size
+      },
       {
         rel: 'mask-icon',
         url: '/mask-icon.svg',
