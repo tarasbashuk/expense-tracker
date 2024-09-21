@@ -43,10 +43,15 @@ export const metadata: Metadata = {
         sizes: '16x16',
         type: 'image/png',
       },
+      // {
+      //   rel: 'icon',
+      //   url: '/favicon.ico',
+      //   sizes: 'any', // for any size
+      // },
       {
-        rel: 'icon',
-        url: '/favicon.ico',
-        sizes: 'any', // for any size
+        rel: 'mask-icon',
+        url: '/mask-icon.svg',
+        color: '#5bbad5', // The color you want for the icon
       },
     ],
     apple: '/apple-touch-icon.png', // Ensure this is 180x180
