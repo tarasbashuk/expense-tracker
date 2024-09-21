@@ -43,8 +43,13 @@ export const metadata: Metadata = {
         sizes: '16x16',
         type: 'image/png',
       },
+      {
+        rel: 'icon',
+        url: '/favicon.ico',
+        sizes: 'any', // for any size
+      },
     ],
-    apple: '/apple-touch-icon.png',
+    apple: '/apple-touch-icon.png', // Ensure this is 180x180
     other: {
       rel: 'manifest',
       url: '/manifest.webmanifest',
