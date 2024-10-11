@@ -6,6 +6,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { TransactionType } from '@prisma/client';
 import Decimal from 'decimal.js';
 import { endOfMonth, startOfMonth, format } from 'date-fns';
+import { ExpenseCategory, IncomeCategory } from '@/constants/types';
 
 async function getIncomeExpense(
   year?: number,
@@ -13,6 +14,8 @@ async function getIncomeExpense(
 ): Promise<{
   income?: number;
   expense?: number;
+  creditReturned?: number;
+  creditReceived?: number;
   error?: string;
 }> {
   // const { userId } = auth();
@@ -44,29 +47,51 @@ async function getIncomeExpense(
         },
       },
     });
-    const income = transactions
-      .filter((item) => item.type === TransactionType.Income)
-      .reduce((acc, item) => {
-        const amountDefaultCurrency =
-          shouldDecrypt && decryptKey
-            ? decryptFloat(item.amountDefaultCurrency, decryptKey)
-            : item.amountDefaultCurrency;
+    const decryptedTransactions =
+      shouldDecrypt && decryptKey
+        ? transactions.map((tr) => ({
+            ...tr,
+            amountDefaultCurrency: decryptFloat(
+              tr.amountDefaultCurrency,
+              decryptKey,
+            ),
+          }))
+        : transactions;
 
-        return acc.plus(new Decimal(amountDefaultCurrency));
-      }, new Decimal(0));
+    let income = new Decimal(0);
+    let expense = new Decimal(0);
+    let creditReceived = new Decimal(0);
+    let creditReturned = new Decimal(0);
 
-    const expense = transactions
-      .filter((item) => item.type === TransactionType.Expense)
-      .reduce((acc, item) => {
-        const amountDefaultCurrency =
-          shouldDecrypt && decryptKey
-            ? decryptFloat(item.amountDefaultCurrency, decryptKey)
-            : item.amountDefaultCurrency;
+    decryptedTransactions.forEach((tr) => {
+      const amount = new Decimal(tr.amountDefaultCurrency);
 
-        return acc.plus(new Decimal(amountDefaultCurrency));
-      }, new Decimal(0));
+      if (
+        tr.type === TransactionType.Income &&
+        tr.category !== IncomeCategory.CreditReceived
+      ) {
+        income = income.plus(amount);
+      }
 
-    return { income: income.toNumber(), expense: expense.toNumber() };
+      if (tr.type === TransactionType.Expense) {
+        expense = expense.plus(amount);
+      }
+
+      if (tr.category === IncomeCategory.CreditReceived) {
+        creditReceived = creditReceived.plus(amount);
+      }
+
+      if (tr.category === ExpenseCategory.CCRepayment) {
+        creditReturned = creditReturned.plus(amount);
+      }
+    });
+
+    return {
+      income: income.toNumber(),
+      expense: expense.toNumber(),
+      creditReturned: creditReturned.toNumber(),
+      creditReceived: creditReceived.toNumber(),
+    };
   } catch (error) {
     return { error: 'Database error' };
   }

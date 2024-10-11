@@ -2,11 +2,12 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
 import HomeIcon from '@mui/icons-material/Home';
+import Typography from '@mui/material/Typography';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import DonutSmallIcon from '@mui/icons-material/DonutSmall';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
-import { Button } from '@mui/material';
 import { NavigationPath } from '@/constants/types';
 
 const Header = async () => {
@@ -18,7 +19,7 @@ const Header = async () => {
             <Link href="/">
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                 <HomeIcon />
-                <h3>Expense Tracker</h3>
+                <Typography variant="h6">Home</Typography>
               </Stack>
             </Link>
             <SignedIn>
@@ -29,7 +30,7 @@ const Header = async () => {
                   sx={{ alignItems: 'center' }}
                 >
                   <ReceiptIcon />
-                  <h3>Transactions</h3>
+                  <Typography variant="h6">Transactions</Typography>
                 </Stack>
               </Link>
               <Link href={NavigationPath.Stats} className="nav-link">
@@ -39,7 +40,7 @@ const Header = async () => {
                   sx={{ alignItems: 'center' }}
                 >
                   <DonutSmallIcon />
-                  <h3>Stats</h3>
+                  <Typography variant="h6">Stats</Typography>
                 </Stack>
               </Link>
             </SignedIn>
@@ -54,7 +55,9 @@ const Header = async () => {
             </SignedOut>
 
             <SignedIn>
-              <UserButton showName />
+              <Typography variant="h6">
+                <UserButton showName />
+              </Typography>
             </SignedIn>
           </Suspense>
         </div>

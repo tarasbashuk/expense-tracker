@@ -5,7 +5,8 @@ import getIncomeExpense from '@/app/actions/getIncomeExpense';
 import { NavigationPath } from '@/constants/types';
 
 const IncomeExpense = async () => {
-  const { income, expense } = await getIncomeExpense();
+  const { income, expense, creditReceived, creditReturned } =
+    await getIncomeExpense();
 
   return (
     <Link href={NavigationPath.Transactions}>
@@ -39,6 +40,47 @@ const IncomeExpense = async () => {
                 sx={{ color: 'error.main' }}
               >
                 {expense?.toFixed(2)}
+              </Typography>
+            </Box>
+          </Box>
+
+          <Divider orientation="horizontal" flexItem sx={{ marginY: 2 }} />
+
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Box textAlign="center" flex={1} p={1}>
+              <Typography
+                variant="h6"
+                component="div"
+                sx={{
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Credit recieved
+              </Typography>
+              <Typography
+                variant="h5"
+                component="div"
+                sx={{ color: 'error.main' }}
+              >
+                {creditReceived?.toFixed(2)}
+              </Typography>
+            </Box>
+            <Divider orientation="vertical" flexItem sx={{ marginX: 2 }} />
+
+            <Box textAlign="center" flex={1} p={1}>
+              <Typography variant="h6" component="div">
+                Credit returned
+              </Typography>
+              <Typography
+                variant="h5"
+                component="div"
+                sx={{ color: 'success.main' }}
+              >
+                {creditReturned?.toFixed(2)}
               </Typography>
             </Box>
           </Box>
