@@ -88,7 +88,7 @@ async function addUpdateTransaction(
 
       //If CC is used we update a credit income transaction under the hood
       if (isCreditExpenseTransaction && !transactionBecomeNonCredit) {
-        // This could happenede when user first create a non-credit transaction, but than change it to a credit one
+        // This could happened when a user first create a non-credit transaction, but than change it to a credit one
         if (isExpenseTransactionExist) {
           await db.transaction.update({
             where: {
@@ -117,7 +117,7 @@ async function addUpdateTransaction(
         }
       }
 
-      // if a user change transaction for a non-credit we need to delete icome counterpart
+      // if a user change transaction for a non-credit we need to delete income counterpart
       if (transactionBecomeNonCredit) {
         await db.transaction.delete({
           where: {

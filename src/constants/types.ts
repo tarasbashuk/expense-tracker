@@ -62,3 +62,5 @@ export enum ViewType {
   List = 'list',
   Grid = 'grid',
 }
+
+export type Currencies = Record<string, number | null | undefined>;

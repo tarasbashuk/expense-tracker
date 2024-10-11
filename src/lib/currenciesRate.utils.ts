@@ -26,15 +26,46 @@ export const findDirectRate = (
 ): number | null => {
   const directRate = rates.find(
     (rate) =>
-      (rate.currencyCodeA === currencyA && rate.currencyCodeB === currencyB) ||
-      (rate.currencyCodeA === currencyB && rate.currencyCodeB === currencyA),
+      rate.currencyCodeA === currencyA && rate.currencyCodeB === currencyB,
   );
 
   // Return the most relevant rate: rateBuy, rateSell, or rateCross
   return (
-    directRate?.rateBuy || directRate?.rateSell || directRate?.rateCross || null
+    directRate?.rateSell || directRate?.rateBuy || directRate?.rateCross || null
   );
 };
+
+// Get sell rate againts UAH
+export const getUAHSellRate = (
+  currency: number,
+  rates: BankRate[],
+): number | undefined =>
+  rates.find((rate) => rate.currencyCodeA === currency)?.rateSell;
+
+export const getUAHDirectRates = (
+  currency: number,
+  rates: BankRate[],
+): {
+  rateSell: number | undefined;
+  rateBuy: number | undefined;
+  rateCross: number | undefined;
+} => {
+  const { rateSell, rateBuy, rateCross } =
+    rates.find((rate) => rate.currencyCodeA === currency) || {};
+
+  return {
+    rateSell,
+    rateBuy,
+    rateCross,
+  };
+};
+
+// Get buy rate againts UAH
+export const getUAHBuyRate = (
+  currency: number,
+  rates: BankRate[],
+): number | undefined =>
+  rates.find((rate) => rate.currencyCodeA === currency)?.rateBuy;
 
 // Function to find a cross-rate, with caching
 export const findRate = (

@@ -89,3 +89,11 @@ export const DO_NOT_ENCRYPT_LIST = [
 
 export const JANUARY = '0';
 export const DECEMBER = '11';
+
+export const CURRENCY_ISO_MAP = {
+  EUR: 978,
+  PLN: 985,
+  UAH: 980,
+  USD: 840,
+  MDL: 498,
+} as const;

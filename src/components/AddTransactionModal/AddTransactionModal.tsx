@@ -9,11 +9,14 @@ import { TransactionCategory, TransactionFormData } from '@/constants/types';
 import { useSettings } from '@/context/SettingsContexts';
 import { useTransactions } from '@/context/TranasctionsContext';
 import AddTransactionModalView from './AddTransactionModalView';
+// import { useCurrencies } from '@/context/CurrenciesContext';
 
 const AddTransactionModal: React.FC = () => {
   const {
     settings: { defaultCurrency },
   } = useSettings();
+  // const { currnecies } = useCurrencies();
+  // console.log('currnecies', currnecies);
   const {
     transactions,
     transactionId,
