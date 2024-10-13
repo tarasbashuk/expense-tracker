@@ -10,7 +10,7 @@ import {
 import { Currencies } from '@/constants/types';
 
 interface CurrenciesContextType {
-  currnecies: Currencies;
+  currencies: Currencies;
   setCurrencies: Dispatch<SetStateAction<Currencies>>;
 }
 
@@ -25,12 +25,12 @@ export const CurrenciesProvider = ({
   children: ReactNode;
   initialCurrencies: Currencies;
 }) => {
-  const [currnecies, setCurrencies] = useState<Currencies>(initialCurrencies);
+  const [currencies, setCurrencies] = useState<Currencies>(initialCurrencies);
 
   return (
     <CurrenciesContext.Provider
       value={{
-        currnecies,
+        currencies,
         setCurrencies,
       }}
     >

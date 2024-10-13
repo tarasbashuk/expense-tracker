@@ -54,7 +54,7 @@ interface Props {
   currency: Currency;
   isEditMode: boolean;
   isSubmitDisabled: boolean;
-  isBaseAmmountShown: boolean;
+  isBaseAmountShown: boolean;
   isCreditTransaction: boolean;
   amountDefaultCurrency?: number;
   transactionType: TransactionType;
@@ -83,7 +83,7 @@ const AddTransactionModalView: React.FC<Props> = ({
   isEditMode,
   transactionType,
   isSubmitDisabled,
-  isBaseAmmountShown,
+  isBaseAmountShown,
   isCreditTransaction,
   amountDefaultCurrency,
   onSubmit,
@@ -173,7 +173,7 @@ const AddTransactionModalView: React.FC<Props> = ({
               />
             </Grid>
 
-            {isBaseAmmountShown && (
+            {isBaseAmountShown && (
               <>
                 <Grid item xs={8}>
                   <FormControl required fullWidth variant="standard">

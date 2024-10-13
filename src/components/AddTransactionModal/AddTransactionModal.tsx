@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Decimal from 'decimal.js';
 import { toast } from 'react-toastify';
 import { SelectChangeEvent } from '@mui/material';
 
@@ -9,14 +10,15 @@ import { TransactionCategory, TransactionFormData } from '@/constants/types';
 import { useSettings } from '@/context/SettingsContexts';
 import { useTransactions } from '@/context/TranasctionsContext';
 import AddTransactionModalView from './AddTransactionModalView';
-// import { useCurrencies } from '@/context/CurrenciesContext';
+import { useCurrencies } from '@/context/CurrenciesContext';
+import { CURRENCY_ISO_MAP } from '@/constants/constants';
 
 const AddTransactionModal: React.FC = () => {
   const {
     settings: { defaultCurrency },
   } = useSettings();
-  // const { currnecies } = useCurrencies();
-  // console.log('currnecies', currnecies);
+  const { currencies } = useCurrencies();
+
   const {
     transactions,
     transactionId,
@@ -79,7 +81,7 @@ const AddTransactionModal: React.FC = () => {
 
   const [isSaving, setIsSaving] = useState(false);
 
-  const isBaseAmmountShown = currency !== defaultCurrency;
+  const isBaseAmountShown = currency !== defaultCurrency;
 
   const handleClose = () => {
     setTransactionId(null);
@@ -106,6 +108,31 @@ const AddTransactionModal: React.FC = () => {
     // to prevent passing 0 value if the event.target.value is an empty string
     const value = Number(event.target.value) || undefined;
     setAmount(value);
+
+    if (isBaseAmountShown && value) {
+      const rateKey = `${CURRENCY_ISO_MAP[currency]}-${CURRENCY_ISO_MAP[defaultCurrency as Currency]}`;
+      const rate = currencies[rateKey];
+
+      if (rate) {
+        let amountInDefaultCurrency: number;
+
+        if (currency === 'UAH' || defaultCurrency === 'UAH') {
+          // Divide when converting to/from UAH
+          amountInDefaultCurrency = new Decimal(value)
+            .div(rate)
+            .toDecimalPlaces(2)
+            .toNumber();
+        } else {
+          // Multiply for other cross-currency conversions
+          amountInDefaultCurrency = new Decimal(value)
+            .mul(rate)
+            .toDecimalPlaces(2)
+            .toNumber();
+        }
+
+        setAmountDefaultCurrency(amountInDefaultCurrency);
+      }
+    }
   };
 
   const handleAmountDefaultCurrencyChange = (
@@ -144,7 +171,7 @@ const AddTransactionModal: React.FC = () => {
 
     const { data, error } = await addUpdateTransaction(
       formData,
-      isBaseAmmountShown,
+      isBaseAmountShown,
       selectedTransaction?.id,
     );
 
@@ -194,7 +221,7 @@ const AddTransactionModal: React.FC = () => {
       isSubmitDisabled={isSaving}
       transactionType={transactionType}
       isEditMode={!!selectedTransaction}
-      isBaseAmmountShown={isBaseAmmountShown}
+      isBaseAmountShown={isBaseAmountShown}
       isCreditTransaction={isCreditTransaction}
       amountDefaultCurrency={amountDefaultCurrency}
       onSubmit={clientAction}
