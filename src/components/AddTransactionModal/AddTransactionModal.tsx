@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Decimal from 'decimal.js';
 import { toast } from 'react-toastify';
 import { SelectChangeEvent } from '@mui/material';
+import { isSameMonth } from 'date-fns';
 
 import addUpdateTransaction from '@/app/actions/addUpdateTransaction';
 import { Currency, TransactionType } from '@prisma/client';
@@ -116,7 +117,7 @@ const AddTransactionModal: React.FC = () => {
       if (rate) {
         let amountInDefaultCurrency: number;
 
-        if (currency === 'UAH' || defaultCurrency === 'UAH') {
+        if (currency === Currency.UAH || defaultCurrency === Currency.UAH) {
           // Divide when converting to/from UAH
           amountInDefaultCurrency = new Decimal(value)
             .div(rate)
@@ -181,31 +182,42 @@ const AddTransactionModal: React.FC = () => {
       toast.success(
         selectedTransaction ? 'Changes were saved' : 'A transaction was added',
       );
-      setTransactions((transactions) => {
-        const existingIndex = transactions.findIndex((tr) => tr.id === data.id);
 
-        let updatedTransactions;
+      const isTrFromTheCurrentMonth = isSameMonth(
+        data.date,
+        transactions[0]?.date,
+      );
 
-        if (existingIndex !== -1) {
-          // Update the existing transaction
-          updatedTransactions = [
-            ...transactions.slice(0, existingIndex),
-            data,
-            ...transactions.slice(existingIndex + 1),
-          ];
-        } else {
-          // Add new transaction
-          updatedTransactions = [data, ...transactions];
-        }
+      // No need to update transactions if a new transaction it belongs to different than current month
+      if (isTrFromTheCurrentMonth) {
+        setTransactions((transactions) => {
+          const existingIndex = transactions.findIndex(
+            (tr) => tr.id === data.id,
+          );
 
-        // Sort transactions by date in descending order
-        updatedTransactions.sort(
-          (trA, trB) =>
-            new Date(trB.date).getTime() - new Date(trA.date).getTime(),
-        );
+          let updatedTransactions;
 
-        return updatedTransactions;
-      });
+          if (existingIndex !== -1) {
+            // Update the existing transaction
+            updatedTransactions = [
+              ...transactions.slice(0, existingIndex),
+              data,
+              ...transactions.slice(existingIndex + 1),
+            ];
+          } else {
+            // Add new transaction
+            updatedTransactions = [data, ...transactions];
+          }
+
+          // Sort transactions by date in descending order
+          updatedTransactions.sort(
+            (trA, trB) =>
+              new Date(trB.date).getTime() - new Date(trA.date).getTime(),
+          );
+
+          return updatedTransactions;
+        });
+      }
       handleClose();
     }
     setIsSaving(false);
