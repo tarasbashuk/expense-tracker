@@ -1,8 +1,15 @@
 'use client';
 import { FC, useMemo, useState, MouseEvent } from 'react';
-import { Box, IconButton, Menu, MenuItem } from '@mui/material';
-import { DataGrid, GridColDef, gridDateComparator } from '@mui/x-data-grid';
-import { Transaction } from '@prisma/client';
+import { Box, IconButton, Menu, MenuItem, Typography } from '@mui/material';
+import {
+  DataGrid,
+  GridColDef,
+  gridDateComparator,
+  GridFooter,
+  gridPaginatedVisibleSortedGridRowEntriesSelector,
+  useGridApiContext,
+} from '@mui/x-data-grid';
+import { Transaction, TransactionType } from '@prisma/client';
 import { format } from 'date-fns';
 import MenuIcon from '@mui/icons-material/Menu';
 
@@ -24,6 +31,40 @@ interface ActionMenuProps {
   onEdit: () => void;
   onDelete: () => void;
 }
+
+const CurrentSum = () => {
+  let income = 0;
+  let expense = 0;
+  const apiRef = useGridApiContext();
+  const { settings } = useSettings();
+  const currentRows = gridPaginatedVisibleSortedGridRowEntriesSelector(apiRef);
+  const currencySymbol = CURRENCY_SYMBOL_MAP[settings?.defaultCurrency];
+
+  currentRows.forEach(({ model }) => {
+    if (model.type === TransactionType.Income) {
+      income += model.amountDefaultCurrency;
+    } else {
+      expense += model.amountDefaultCurrency;
+    }
+  });
+
+  return (
+    <Box
+      sx={{
+        position: 'absolute',
+        top: '0.25rem',
+        left: '0.5rem',
+      }}
+    >
+      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+        Income: {income.toFixed(2)} {currencySymbol}
+      </Typography>
+      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+        Expense: {expense.toFixed(2)} {currencySymbol}
+      </Typography>
+    </Box>
+  );
+};
 
 const DefaultCurrencyHeader = () => {
   const { settings } = useSettings();
@@ -213,6 +254,14 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
           }}
           pageSizeOptions={[10, 20, 50, 100]}
           disableRowSelectionOnClick
+          slots={{
+            footer: () => (
+              <Box position="relative">
+                <CurrentSum />
+                <GridFooter />
+              </Box>
+            ),
+          }}
         />
       </Box>
     </>
