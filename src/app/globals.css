@@ -18,6 +18,10 @@ a {
   text-decoration: none;
 }
 
+.hide-scroll {
+  overflow: hidden !important;
+}
+
 .container {
   padding: 0 16px;
   margin: 30px auto;

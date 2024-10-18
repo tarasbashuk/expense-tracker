@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Decimal from 'decimal.js';
 import { toast } from 'react-toastify';
 import { SelectChangeEvent } from '@mui/material';
@@ -222,6 +222,12 @@ const AddTransactionModal: React.FC = () => {
     }
     setIsSaving(false);
   };
+
+  useEffect(() => {
+    document.body.classList.add('hide-scroll');
+
+    return () => document.body.classList.remove('hide-scroll');
+  }, []);
 
   return (
     <AddTransactionModalView
