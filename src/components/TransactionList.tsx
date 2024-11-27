@@ -34,6 +34,7 @@ const TransactionList = () => {
     transactions,
     setTransactions,
     setTransactionId,
+    setIsCopyTransactionFlow,
     setIsTransactionModalOpen,
   } = useTransactions();
   // Workoraund for re-fething expense/income data
@@ -53,6 +54,15 @@ const TransactionList = () => {
       setIsTransactionModalOpen(true);
     },
     [setTransactionId, setIsTransactionModalOpen],
+  );
+
+  const handleCopyTransaction = useCallback(
+    (transactionId: string) => {
+      setTransactionId(transactionId);
+      setIsTransactionModalOpen(true);
+      setIsCopyTransactionFlow(true);
+    },
+    [setTransactionId, setIsCopyTransactionFlow, setIsTransactionModalOpen],
   );
 
   const handleDeleteTransaction = useCallback(
@@ -184,6 +194,7 @@ const TransactionList = () => {
             <TransactionsDataGrid
               rows={transactions}
               handleEdit={handleEditTransaction}
+              handleCopy={handleCopyTransaction}
               handleDelete={handleDeleteTransaction}
             />
           ) : (

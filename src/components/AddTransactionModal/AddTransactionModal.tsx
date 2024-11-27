@@ -23,10 +23,40 @@ const AddTransactionModal: React.FC = () => {
   const {
     transactions,
     transactionId,
+    isCopyTransactionFlow,
     setTransactions,
     setTransactionId,
+    setIsCopyTransactionFlow,
     setIsTransactionModalOpen,
   } = useTransactions();
+
+  const calculateAmountInDefaultCurrency = (
+    value: number,
+    currency: Currency,
+  ) => {
+    const rateKey = `${CURRENCY_ISO_MAP[currency]}-${CURRENCY_ISO_MAP[defaultCurrency as Currency]}`;
+    const rate = currencies[rateKey];
+
+    if (rate) {
+      let amountInDefaultCurrency: number;
+
+      if (currency === Currency.UAH || defaultCurrency === Currency.UAH) {
+        // Divide when converting to/from UAH
+        amountInDefaultCurrency = new Decimal(value)
+          .div(rate)
+          .toDecimalPlaces(2)
+          .toNumber();
+      } else {
+        // Multiply for other cross-currency conversions
+        amountInDefaultCurrency = new Decimal(value)
+          .mul(rate)
+          .toDecimalPlaces(2)
+          .toNumber();
+      }
+
+      return amountInDefaultCurrency;
+    }
+  };
 
   let initialAmount;
   let initialText = '';
@@ -58,9 +88,11 @@ const AddTransactionModal: React.FC = () => {
     initialAmount = amount;
     initialCurrency = currency;
     initialCategory = category;
-    initialDate = new Date(date);
+    initialDate = isCopyTransactionFlow ? new Date() : new Date(date);
     initialIsCreditTransaction = !!isCreditTransaction;
-    initialAmountDefaultCurrency = amountDefaultCurrency;
+    initialAmountDefaultCurrency = isCopyTransactionFlow
+      ? calculateAmountInDefaultCurrency(amount, currency)
+      : amountDefaultCurrency;
   }
 
   const [text, setText] = useState<string | undefined>(initialText);
@@ -86,6 +118,7 @@ const AddTransactionModal: React.FC = () => {
 
   const handleClose = () => {
     setTransactionId(null);
+    setIsCopyTransactionFlow(false);
     setIsTransactionModalOpen(false);
   };
 
@@ -111,28 +144,12 @@ const AddTransactionModal: React.FC = () => {
     setAmount(value);
 
     if (isBaseAmountShown && value) {
-      const rateKey = `${CURRENCY_ISO_MAP[currency]}-${CURRENCY_ISO_MAP[defaultCurrency as Currency]}`;
-      const rate = currencies[rateKey];
+      const amountInDefaultCurrency = calculateAmountInDefaultCurrency(
+        value,
+        currency,
+      );
 
-      if (rate) {
-        let amountInDefaultCurrency: number;
-
-        if (currency === Currency.UAH || defaultCurrency === Currency.UAH) {
-          // Divide when converting to/from UAH
-          amountInDefaultCurrency = new Decimal(value)
-            .div(rate)
-            .toDecimalPlaces(2)
-            .toNumber();
-        } else {
-          // Multiply for other cross-currency conversions
-          amountInDefaultCurrency = new Decimal(value)
-            .mul(rate)
-            .toDecimalPlaces(2)
-            .toNumber();
-        }
-
-        setAmountDefaultCurrency(amountInDefaultCurrency);
-      }
+      setAmountDefaultCurrency(amountInDefaultCurrency);
     }
   };
 
@@ -144,7 +161,17 @@ const AddTransactionModal: React.FC = () => {
   };
 
   const handleCurrencyChange = (event: SelectChangeEvent) => {
-    setCurrency(event.target.value as Currency);
+    const newCurrency = event.target.value as Currency;
+    setCurrency(newCurrency);
+
+    if (amount) {
+      const amountInDefaultCurrency = calculateAmountInDefaultCurrency(
+        amount,
+        newCurrency,
+      );
+
+      setAmountDefaultCurrency(amountInDefaultCurrency);
+    }
   };
 
   const handleCategoryChange = (event: SelectChangeEvent) => {
@@ -169,11 +196,14 @@ const AddTransactionModal: React.FC = () => {
       amount: amount as number,
       amountDefaultCurrency: amountDefaultCurrency as number,
     };
+    const transactionId = isCopyTransactionFlow
+      ? selectedTransaction?.id
+      : undefined;
 
     const { data, error } = await addUpdateTransaction(
       formData,
       isBaseAmountShown,
-      selectedTransaction?.id,
+      transactionId,
     );
 
     if (error) {

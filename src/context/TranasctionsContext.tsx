@@ -14,6 +14,8 @@ interface TransactionsContextType {
   setTransactions: Dispatch<SetStateAction<Transaction[]>>;
   isTransactionModalOpen: boolean;
   setIsTransactionModalOpen: Dispatch<SetStateAction<boolean>>;
+  isCopyTransactionFlow: boolean;
+  setIsCopyTransactionFlow: Dispatch<SetStateAction<boolean>>;
   transactionId: string | null;
   setTransactionId: Dispatch<SetStateAction<string | null>>;
 }
@@ -32,6 +34,7 @@ export const TransactionsProvider = ({
   const [transactions, setTransactions] =
     useState<Transaction[]>(initialSettings);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [isCopyTransactionFlow, setIsCopyTransactionFlow] = useState(false);
   const [transactionId, setTransactionId] = useState<string | null>(null);
 
   return (
@@ -43,6 +46,8 @@ export const TransactionsProvider = ({
         setIsTransactionModalOpen,
         transactionId,
         setTransactionId,
+        isCopyTransactionFlow,
+        setIsCopyTransactionFlow,
       }}
     >
       {children}

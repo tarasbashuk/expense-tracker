@@ -22,12 +22,14 @@ import MobileWarning from './shared/MobileWarning';
 interface TransactionsDataGridProps {
   rows: Transaction[];
   /* eslint-disable no-unused-vars*/
+  handleCopy: (id: string) => void;
   handleEdit: (id: string) => void;
   handleDelete: (id: string) => void;
   /* eslint-enable */
 }
 
 interface ActionMenuProps {
+  onCopy: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -72,7 +74,7 @@ const DefaultCurrencyHeader = () => {
   return `Amount, ${CURRENCY_SYMBOL_MAP[settings?.defaultCurrency]}`;
 };
 
-const ActionMenu: FC<ActionMenuProps> = ({ onEdit, onDelete }) => {
+const ActionMenu: FC<ActionMenuProps> = ({ onCopy, onEdit, onDelete }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const isOpen = Boolean(anchorEl);
@@ -111,6 +113,14 @@ const ActionMenu: FC<ActionMenuProps> = ({ onEdit, onDelete }) => {
         </MenuItem>
         <MenuItem
           onClick={() => {
+            onCopy();
+            handleClose();
+          }}
+        >
+          Copy
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
             onDelete();
             handleClose();
           }}
@@ -131,6 +141,7 @@ const ActionMenu: FC<ActionMenuProps> = ({ onEdit, onDelete }) => {
 
 const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
   rows,
+  handleCopy,
   handleEdit,
   handleDelete,
 }) => {
@@ -222,13 +233,14 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
           return (
             <ActionMenu
               onEdit={() => handleEdit(row.id)}
+              onCopy={() => handleCopy(row.id)}
               onDelete={() => handleDelete(row.id)}
             />
           );
         },
       },
     ],
-    [handleEdit, handleDelete],
+    [handleCopy, handleEdit, handleDelete],
   );
 
   return (
