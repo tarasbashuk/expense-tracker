@@ -39,6 +39,7 @@ export enum ExpenseCategory {
   Beauty = 'beauty',
   Healthcare = 'healthcare',
   Gifts = 'gifts',
+  Trips = 'trips',
   Savings = 'savings',
   Investments = 'investments',
   CCRepayment = 'CCRepayment',

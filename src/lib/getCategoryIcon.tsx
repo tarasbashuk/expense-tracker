@@ -21,6 +21,7 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import AirportShuttleIcon from '@mui/icons-material/AirportShuttle';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import CreditScoreIcon from '@mui/icons-material/CreditScore';
+import AirplaneTicketIcon from '@mui/icons-material/AirplaneTicket';
 import { TransactionCategory } from '@/constants/types';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import { SvgIconTypeMap } from '@mui/material';
@@ -48,6 +49,7 @@ export const ICON_MAP: Record<
   beauty: SpaIcon,
   healthcare: LocalPharmacyIcon,
   gifts: CardGiftcardIcon,
+  trips: AirplaneTicketIcon,
   savings: SavingsIcon,
   others: MoreHorizIcon,
   salary: AttachMoneyIcon,

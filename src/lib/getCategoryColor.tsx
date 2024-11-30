@@ -41,5 +41,6 @@ export const COLOR_MAP: Record<TransactionCategory, string> = {
   investments: blue[800],
   ROI: cyan[700],
   creditReceived: lime[500],
-  CCRepayment: amber[500], // New category
+  CCRepayment: amber[500],
+  trips: amber[900],
 };

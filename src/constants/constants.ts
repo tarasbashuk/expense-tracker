@@ -36,6 +36,7 @@ export const EXPENSE_CATEGORIES: { [key in ExpenseCategory]: string } = {
   beauty: 'Beauty Services & Goods',
   healthcare: 'Healthcare and Drugs',
   gifts: 'Gifts',
+  trips: 'Trips',
   savings: 'Savings',
   investments: 'Investments',
   CCRepayment: 'Credit Card Repayment',
