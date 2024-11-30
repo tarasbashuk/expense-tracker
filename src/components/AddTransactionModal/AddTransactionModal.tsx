@@ -196,7 +196,7 @@ const AddTransactionModal: React.FC = () => {
       amount: amount as number,
       amountDefaultCurrency: amountDefaultCurrency as number,
     };
-    const transactionId = isCopyTransactionFlow
+    const transactionId = !isCopyTransactionFlow
       ? selectedTransaction?.id
       : undefined;
 
