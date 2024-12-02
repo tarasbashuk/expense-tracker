@@ -71,7 +71,7 @@ const IncomeExpense = async () => {
               }}
             />
             <Chip
-              label="icluding:"
+              label="plus:"
               color="success"
               variant="outlined"
               size="small"

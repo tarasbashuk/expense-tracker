@@ -73,7 +73,10 @@ async function getIncomeExpense(
         income = income.plus(amount);
       }
 
-      if (tr.type === TransactionType.Expense) {
+      if (
+        tr.type === TransactionType.Expense &&
+        tr.category !== ExpenseCategory.CCRepayment
+      ) {
         expense = expense.plus(amount);
       }
 
