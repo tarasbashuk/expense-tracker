@@ -152,7 +152,6 @@ async function addUpdateTransaction(
     }
 
     revalidatePath('/');
-    revalidatePath('/transactions');
 
     return {
       data:

@@ -2,7 +2,6 @@
 import { db } from '@/lib/db';
 import { auth } from '@clerk/nextjs/server';
 import { TransactionType } from '@prisma/client';
-import { revalidatePath, revalidateTag } from 'next/cache';
 
 async function deleteTransaction(transactionId: string): Promise<{
   message?: string;
@@ -35,9 +34,6 @@ async function deleteTransaction(transactionId: string): Promise<{
         },
       });
     }
-
-    revalidatePath('/transactions');
-    revalidateTag('transactions');
 
     return { message: 'Transaction deleted' };
   } catch (error) {
