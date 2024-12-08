@@ -8,7 +8,7 @@ async function deleteTransaction(transactionId: string): Promise<{
   message?: string;
   error?: string;
 }> {
-  const { userId } = auth();
+  const { userId } = await auth();
 
   if (!userId) {
     return { error: 'User not found' };
