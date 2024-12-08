@@ -5,9 +5,13 @@ import type { User } from '@prisma/client';
 import { DEFAULT_SETTINGS } from '@/constants/constants';
 
 const getClerkUser = async () => {
-  const user = await currentUser();
+  try {
+    const user = await currentUser();
 
-  return user;
+    return user;
+  } catch (error) {
+    return null;
+  }
 };
 
 const getDBUser = async (user: ClerkUser) => {
