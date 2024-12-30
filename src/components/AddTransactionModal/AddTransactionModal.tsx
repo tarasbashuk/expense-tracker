@@ -221,11 +221,8 @@ const AddTransactionModal: React.FC = () => {
         data.date,
         transactions[0]?.date,
       );
-      console.log('isSameYear', isSameYear);
-      console.log('transactions[0]', transactions[0]);
-      console.log('data.date', data.date);
 
-      // No need to update transactions if a new transaction it belongs to different than current month
+      // No need to update transactions if a new transaction belongs to a different than the current year/month
       if (isTrFromTheCurrentMonth && isTrFromTheCurrentYear) {
         setTransactions((transactions) => {
           const existingIndex = transactions.findIndex(
