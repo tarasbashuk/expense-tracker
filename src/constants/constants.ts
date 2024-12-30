@@ -79,6 +79,11 @@ export const MONTH_LIST = [
   { value: '11', label: 'December' },
 ];
 
+export const YEAR_LIST = ['2024', '2025', '2026'];
+
+export const MIN_YEAR = YEAR_LIST[0];
+export const MAX_YEAR = YEAR_LIST[YEAR_LIST.length - 1];
+
 export const DATE_FORMATS = {
   YYYY_MM_DD: 'yyyy-MM-dd',
 };

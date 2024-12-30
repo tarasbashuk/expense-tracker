@@ -17,7 +17,7 @@ import TransactionItem from './TransactionItem';
 import getTransactions from '@/app/actions/getTransactions';
 import deleteTransaction from '@/app/actions/deleteTransaction';
 import { useTransactions } from '@/context/TranasctionsContext';
-import MonthSelect from './shared/MonthSelect';
+import YearMonthSelect from './shared/YearMonthSelect';
 import TransactionsDataGrid from './TransactionsDataGrid';
 import { ViewType } from '@/constants/types';
 import AdditionalBalanceInfo from './AdditionalBalanceInfo';
@@ -27,7 +27,7 @@ import usePrevious from '@/lib/hooks/usePrevious';
 
 const today = new Date();
 const currentMonth = today.getMonth().toString();
-const currentYear = today.getFullYear();
+const currentYear = today.getFullYear().toString();
 
 const TransactionList = () => {
   const {
@@ -43,6 +43,7 @@ const TransactionList = () => {
 
   const [error, setError] = useState<string>('');
   const [month, setMonth] = useState(currentMonth);
+  const [year, setYear] = useState(currentYear);
   const [income, setIncome] = useState(0);
   const [expense, setExpense] = useState(0);
   const [viewType, setViewType] = useState(ViewType.List);
@@ -104,7 +105,7 @@ const TransactionList = () => {
   useEffect(() => {
     const fetchTrans = async () => {
       const { transactions, error } = await getTransactions(
-        currentYear,
+        Number(year),
         Number(month),
         true,
       );
@@ -116,12 +117,12 @@ const TransactionList = () => {
 
     setIsloading(true);
     fetchTrans();
-  }, [month, setTransactions]);
+  }, [month, year, setTransactions]);
 
   useEffect(() => {
     const fetchIncomeExpense = async () => {
       const { income, expense } = await getIncomeExpense(
-        currentYear,
+        Number(year),
         Number(month),
       );
 
@@ -133,7 +134,7 @@ const TransactionList = () => {
     if (shouldFetch) {
       fetchIncomeExpense();
     }
-  }, [month, checkSum, prevCheckSum]);
+  }, [year, month, checkSum, prevCheckSum]);
 
   if (error) {
     return (
@@ -148,7 +149,12 @@ const TransactionList = () => {
       <Typography variant="h4" component="h3" gutterBottom>
         History
       </Typography>
-      <MonthSelect month={month} setMonth={setMonth} />
+      <YearMonthSelect
+        year={year}
+        month={month}
+        setMonth={setMonth}
+        setYear={setYear}
+      />
 
       {isLoading && <CircularProgress sx={{ my: 5 }} />}
 

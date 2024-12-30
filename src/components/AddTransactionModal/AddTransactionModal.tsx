@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Decimal from 'decimal.js';
 import { toast } from 'react-toastify';
 import { SelectChangeEvent } from '@mui/material';
-import { isSameMonth } from 'date-fns';
+import { isSameMonth, isSameYear } from 'date-fns';
 
 import addUpdateTransaction from '@/app/actions/addUpdateTransaction';
 import { Currency, TransactionType } from '@prisma/client';
@@ -217,9 +217,16 @@ const AddTransactionModal: React.FC = () => {
         data.date,
         transactions[0]?.date,
       );
+      const isTrFromTheCurrentYear = isSameYear(
+        data.date,
+        transactions[0]?.date,
+      );
+      console.log('isSameYear', isSameYear);
+      console.log('transactions[0]', transactions[0]);
+      console.log('data.date', data.date);
 
       // No need to update transactions if a new transaction it belongs to different than current month
-      if (isTrFromTheCurrentMonth) {
+      if (isTrFromTheCurrentMonth && isTrFromTheCurrentYear) {
         setTransactions((transactions) => {
           const existingIndex = transactions.findIndex(
             (tr) => tr.id === data.id,

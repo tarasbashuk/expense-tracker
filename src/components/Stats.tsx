@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 
-import MonthSelect from './shared/MonthSelect';
+import YearMonthSelect from './shared/YearMonthSelect';
 import TransactionTypeButtonGroup from './shared/TransactionTypeButtonGroup';
 import { useMediaQueries } from '@/lib/useMediaQueries';
 import getStats from '@/app/actions/getStats';
@@ -34,7 +34,7 @@ import { COLOR_MAP } from '@/lib/getCategoryColor';
 
 const today = new Date();
 const currentMonth = today.getMonth().toString();
-const currentYear = today.getFullYear();
+const currentYear = today.getFullYear().toString();
 
 const getChartDims = ({
   isExtraSmall,
@@ -94,6 +94,7 @@ const Stats = () => {
 
   const [error, setError] = useState<string>('');
   const [month, setMonth] = useState(currentMonth);
+  const [year, setYear] = useState(currentYear);
   const [isLoading, setIsloading] = useState(true);
   const [expenseChartData, setExpenseChartData] = useState<PieValueType[]>([]);
   const [incomeChartData, setIncomeChartData] = useState<PieValueType[]>([]);
@@ -115,11 +116,11 @@ const Stats = () => {
   useEffect(() => {
     const fetchTrans = async () => {
       const { expenseChartData, incomeChartData, error } = await getStats(
-        currentYear,
+        Number(year),
         Number(month),
       );
       const { income, expense } = await getIncomeExpense(
-        currentYear,
+        Number(year),
         Number(month),
       );
       setIncome(income || 0);
@@ -132,7 +133,7 @@ const Stats = () => {
 
     setIsloading(true);
     fetchTrans();
-  }, [month]);
+  }, [year, month]);
 
   const expenseType = transactionType === TransactionType.Expense;
 
@@ -160,8 +161,10 @@ const Stats = () => {
     <Stack direction="column" alignItems="center">
       <MobileWarning />
       <Box sx={{ width: 'fit-content', marginBottom: 2 }}>
-        <MonthSelect
+        <YearMonthSelect
+          year={year}
           month={month}
+          setYear={setYear}
           setMonth={setMonth}
           sx={{ marginBottom: 3 }}
         />
