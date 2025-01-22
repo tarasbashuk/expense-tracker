@@ -1,5 +1,6 @@
 'use server';
 import { DO_NOT_ENCRYPT_LIST } from '@/constants/constants';
+import { ExpenseCategory, IncomeCategory } from '@/constants/types';
 import { decryptFloat } from '@/lib/crypto';
 import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
@@ -36,19 +37,28 @@ async function getUserBalance(): Promise<{
     const initialAmount = new Decimal(Number(settings?.initialAmount || 0));
     const defaultCurrency = settings?.defaultCurrency;
 
-    const balance = transactions.reduce((sum, transaction) => {
+    const balance = transactions.reduce((sum, tr) => {
       const amountDefaultCurrency =
         shouldDecrypt && decryptKey
-          ? decryptFloat(transaction.amountDefaultCurrency, decryptKey)
-          : transaction.amountDefaultCurrency;
+          ? decryptFloat(tr.amountDefaultCurrency, decryptKey)
+          : tr.amountDefaultCurrency;
 
       const amount = new Decimal(amountDefaultCurrency);
 
-      if (transaction.type === TransactionType.Income) {
+      if (
+        tr.type === TransactionType.Income &&
+        tr.category !== IncomeCategory.CreditReceived
+      ) {
         return sum.plus(amount);
-      } else {
+      }
+      if (
+        tr.type === TransactionType.Expense &&
+        tr.category !== ExpenseCategory.CCRepayment
+      ) {
         return sum.minus(amount);
       }
+
+      return sum;
     }, initialAmount);
 
     return { balance: balance.toFixed(2), defaultCurrency };

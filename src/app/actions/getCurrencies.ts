@@ -16,7 +16,7 @@ async function getCurrencies(): Promise<{
 
     return { currencies };
   } catch (error) {
-    console.error('Monobank API error:', error);
+    console.error('Monobank API error');
 
     return { error: 'Monobank API error' };
   }

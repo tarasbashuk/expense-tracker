@@ -30,7 +30,8 @@ async function getIncomeExpense(
     return { error: 'User not found' };
   }
 
-  if (year && month) {
+  //To treat Jan (0) as a proper month
+  if (year && month?.toString()) {
     const startDate = startOfMonth(new Date(year, month));
     const endDate = endOfMonth(new Date(year, month));
     formattedStart = new Date(format(startDate, DATE_FORMATS.YYYY_MM_DD));
