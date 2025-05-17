@@ -22,6 +22,7 @@ import AirportShuttleIcon from '@mui/icons-material/AirportShuttle';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import CreditScoreIcon from '@mui/icons-material/CreditScore';
 import AirplaneTicketIcon from '@mui/icons-material/AirplaneTicket';
+import DevicesOtherIcon from '@mui/icons-material/DevicesOther';
 import { TransactionCategory } from '@/constants/types';
 import { OverridableComponent } from '@mui/material/OverridableComponent';
 import { SvgIconTypeMap } from '@mui/material';
@@ -57,6 +58,7 @@ export const ICON_MAP: Record<
   creditReceived: CreditCardIcon,
   ROI: TrendingUpIcon,
   CCRepayment: CreditScoreIcon,
+  gadgets: DevicesOtherIcon,
 };
 
 export const getIconByName = (iconName: TransactionCategory) => {

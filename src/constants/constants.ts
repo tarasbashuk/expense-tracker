@@ -27,6 +27,7 @@ export const EXPENSE_CATEGORIES: { [key in ExpenseCategory]: string } = {
   auto: 'Auto',
   transport: 'Taxi and Public transport',
   shopping: 'Shopping',
+  gadgets: 'Gadgets & Appliance',
   subscriptions: 'Mobile & App Subscriptions',
   pets: 'Pets',
   donations: 'Donations',

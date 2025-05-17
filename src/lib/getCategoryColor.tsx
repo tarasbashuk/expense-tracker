@@ -15,6 +15,7 @@ import {
   lightBlue,
   deepOrange,
   lightGreen,
+  indigo,
 } from '@mui/material/colors';
 
 export const COLOR_MAP: Record<TransactionCategory, string> = {
@@ -43,4 +44,5 @@ export const COLOR_MAP: Record<TransactionCategory, string> = {
   creditReceived: lime[500],
   CCRepayment: amber[500],
   trips: amber[900],
+  gadgets: indigo[500],
 };

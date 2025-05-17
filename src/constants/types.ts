@@ -30,6 +30,7 @@ export enum ExpenseCategory {
   Auto = 'auto',
   Transport = 'transport',
   Shopping = 'shopping',
+  Gadgets = 'gadgets',
   Subscriptions = 'subscriptions',
   Pets = 'pets',
   Donations = 'donations',
