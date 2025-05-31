@@ -208,18 +208,12 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
           return `${sign} ${Math.abs(amount!)}`;
         },
       },
-      // {
-      //   field: 'currency',
-      //   headerName: 'Currency',
-      //   width: 40,
-      //   valueGetter: (currency) => CURRENCY_SYMBOL_MAP[currency],
-      // },
       {
-        field: 'isCreditTransaction',
-        headerName: 'Credit',
-        width: 40,
-        valueGetter: (isCredit) => {
-          return isCredit ? 'Yes' : 'No';
+        field: 'type',
+        headerName: 'Type',
+        width: 80,
+        valueGetter: (type) => {
+          return type;
         },
       },
       {
