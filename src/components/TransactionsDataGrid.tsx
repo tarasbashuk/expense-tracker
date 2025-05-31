@@ -242,7 +242,7 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
       <MobileWarning />
       <Box
         sx={{
-          height: 420,
+          height: 570,
           width: '100%',
           backgroundColor: 'background.paper',
           marginTop: 2,
