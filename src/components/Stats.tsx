@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { PieChart } from '@mui/x-charts/PieChart';
+import { BarChart } from '@mui/x-charts/BarChart';
 import { PieValueType } from '@mui/x-charts';
 import { TransactionType } from '@prisma/client';
 import {
@@ -12,8 +13,13 @@ import {
   ListItemText,
   Stack,
   Typography,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import PieChartIcon from '@mui/icons-material/PieChart';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import { blue, green } from '@mui/material/colors';
 
 import YearMonthSelect from './shared/YearMonthSelect';
 import TransactionTypeButtonGroup from './shared/TransactionTypeButtonGroup';
@@ -23,7 +29,7 @@ import AdditionalBalanceInfo from './AdditionalBalanceInfo';
 import getIncomeExpense from '@/app/actions/getIncomeExpense';
 import MobileWarning from './shared/MobileWarning';
 import { getIconByName } from '@/lib/getCategoryIcon';
-import { TransactionCategory } from '@/constants/types';
+import { ChartType, TransactionCategory } from '@/constants/types';
 import {
   CURRENCY_SYMBOL_MAP,
   EXPENSE_CATEGORIES_LIST,
@@ -101,10 +107,23 @@ const Stats = () => {
   const [transactionType, setTranasctionType] = useState<TransactionType>(
     TransactionType.Expense,
   );
+  const [chartType, setChartType] = useState<ChartType>('pie');
 
   const handleTranasctionTypeChange = (type: TransactionType) => {
     setActiveDataIndex(null);
     setTranasctionType(type);
+  };
+
+  const handleChartTypeChange = (_e: any, newChartType: ChartType) => {
+    if (newChartType) {
+      setChartType(newChartType);
+    }
+  };
+
+  const handleItemClick = (_e: any, d: { dataIndex: number } | null) => {
+    if (d?.dataIndex !== undefined) {
+      setActiveDataIndex(d.dataIndex);
+    }
   };
 
   const { cx, cy, width, height, innerRadius, outerRadius } = getChartDims({
@@ -168,11 +187,26 @@ const Stats = () => {
           setMonth={setMonth}
           sx={{ marginBottom: 3 }}
         />
-        <TransactionTypeButtonGroup
-          size="medium"
-          transactionType={transactionType}
-          setTranasctionType={handleTranasctionTypeChange}
-        />
+        <Stack direction="row" spacing={2} alignItems="center">
+          <TransactionTypeButtonGroup
+            size="medium"
+            transactionType={transactionType}
+            setTranasctionType={handleTranasctionTypeChange}
+          />
+          <ToggleButtonGroup
+            value={chartType}
+            exclusive
+            onChange={handleChartTypeChange}
+            size="medium"
+          >
+            <ToggleButton value="pie">
+              <PieChartIcon />
+            </ToggleButton>
+            <ToggleButton value="bar">
+              <BarChartIcon />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Stack>
       </Box>
 
       {isLoading && <CircularProgress sx={{ my: 5 }} />}
@@ -206,7 +240,7 @@ const Stats = () => {
                   <QuestionMarkIcon />
                 </Avatar>
               </ListItemAvatar>
-              Click on Pie Chart to see the info
+              Click on chart to see the info
             </ListItem>
           )}
           <AdditionalBalanceInfo
@@ -214,33 +248,61 @@ const Stats = () => {
             expense={expense}
             sx={{ paddingLeft: 2 }}
           />
-          <PieChart
-            margin={{ right: 3 }}
-            slotProps={{
-              legend: {
-                hidden: isExtraSmall || isSmall,
-                direction: 'column',
-                position: {
-                  vertical: 'top',
-                  horizontal: 'right',
+          {chartType === 'pie' ? (
+            <PieChart
+              margin={{ right: 3 }}
+              slotProps={{
+                legend: {
+                  hidden: isExtraSmall || isSmall,
+                  direction: 'column',
+                  position: {
+                    vertical: 'top',
+                    horizontal: 'right',
+                  },
                 },
-              },
-            }}
-            series={[
-              {
-                cx,
-                cy,
-                innerRadius,
-                outerRadius,
-                data: chartData,
-                paddingAngle: 1,
-                cornerRadius: 5,
-              },
-            ]}
-            width={width}
-            height={height}
-            onItemClick={(_e, d) => setActiveDataIndex(d.dataIndex)}
-          />
+              }}
+              series={[
+                {
+                  cx,
+                  cy,
+                  innerRadius,
+                  outerRadius,
+                  data: chartData,
+                  paddingAngle: 1,
+                  cornerRadius: 5,
+                },
+              ]}
+              width={width}
+              height={height}
+              onItemClick={handleItemClick}
+            />
+          ) : (
+            <BarChart
+              margin={{ top: 20, right: 50, left: 40, bottom: 130 }}
+              series={[
+                {
+                  data: chartData.map((item) => item.value),
+                  color:
+                    transactionType === TransactionType.Income
+                      ? green[500]
+                      : blue[500],
+                },
+              ]}
+              xAxis={[
+                {
+                  data: chartData.map((item) => item.label),
+                  scaleType: 'band',
+                  tickLabelStyle: {
+                    angle: 45,
+                    textAnchor: 'start',
+                  },
+                },
+              ]}
+              width={width}
+              height={height}
+              onAxisClick={handleItemClick}
+            />
+          )}
         </Box>
       ) : (
         !isLoading && (

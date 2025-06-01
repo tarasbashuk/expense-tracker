@@ -66,3 +66,5 @@ export enum ViewType {
 }
 
 export type Currencies = Record<string, number | null | undefined>;
+
+export type ChartType = 'pie' | 'bar';
