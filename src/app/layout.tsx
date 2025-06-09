@@ -41,6 +41,7 @@ export const metadata: Metadata = {
       },
     ],
     apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180' },
       { url: '/apple-icon-57x57.png', sizes: '57x57' },
       { url: '/apple-icon-60x60.png', sizes: '60x60' },
       { url: '/apple-icon-72x72.png', sizes: '72x72' },
@@ -51,10 +52,16 @@ export const metadata: Metadata = {
       { url: '/apple-icon-152x152.png', sizes: '152x152' },
       { url: '/apple-icon-180x180.png', sizes: '180x180' },
     ],
-    other: {
-      rel: 'manifest',
-      url: '/manifest.webmanifest',
-    },
+    other: [
+      {
+        rel: 'manifest',
+        url: '/manifest.webmanifest',
+      },
+      {
+        rel: 'apple-touch-icon',
+        url: '/apple-touch-icon.png',
+      },
+    ],
   },
 };
 
