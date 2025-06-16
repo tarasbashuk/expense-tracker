@@ -10,6 +10,7 @@ import {
 import getIncomeExpense from '@/app/actions/getIncomeExpense';
 
 import { NavigationPath } from '@/constants/types';
+import { formatCurrency } from '@/lib/formatCurrency';
 
 const IncomeExpense = async () => {
   const { income, expense, creditReceived, creditReturned } =
@@ -33,7 +34,7 @@ const IncomeExpense = async () => {
                 component="div"
                 sx={{ color: 'success.main' }}
               >
-                {income?.toFixed(2)}
+                {formatCurrency(income ?? 0)}
               </Typography>
             </Box>
 
@@ -48,7 +49,7 @@ const IncomeExpense = async () => {
                 component="div"
                 sx={{ color: 'error.main' }}
               >
-                {expense?.toFixed(2)}
+                {formatCurrency(expense ?? 0)}
               </Typography>
             </Box>
           </Box>
@@ -101,7 +102,7 @@ const IncomeExpense = async () => {
                 component="div"
                 sx={{ color: 'error.main' }}
               >
-                {creditReceived?.toFixed(2)}
+                {formatCurrency(creditReceived ?? 0)}
               </Typography>
             </Box>
             <Divider orientation="vertical" flexItem sx={{ marginX: '1px' }} />
@@ -121,7 +122,7 @@ const IncomeExpense = async () => {
                 component="div"
                 sx={{ color: 'success.main' }}
               >
-                {creditReturned?.toFixed(2)}
+                {formatCurrency(creditReturned ?? 0)}
               </Typography>
             </Box>
           </Box>

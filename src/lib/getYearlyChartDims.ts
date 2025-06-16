@@ -19,7 +19,7 @@ export const getYearlyChartDims = ({
       width: 350,
       height: 300,
       margin: {
-        top: 20,
+        top: 30,
         right: 20,
         left: 40,
         bottom: 120,
@@ -32,7 +32,7 @@ export const getYearlyChartDims = ({
       width: 700,
       height: 400,
       margin: {
-        top: 20,
+        top: 30,
         right: 50,
         left: 80,
         bottom: 90,
@@ -44,7 +44,7 @@ export const getYearlyChartDims = ({
     width: 900,
     height: 400,
     margin: {
-      top: 20,
+      top: 30,
       right: 70,
       left: 70,
       bottom: 90,

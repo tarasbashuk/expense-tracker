@@ -15,6 +15,8 @@ import { getYearlyStats } from '@/app/actions/getYearlyStats';
 import { MONTH_LIST } from '@/constants/constants';
 import { useMediaQueries } from '@/lib/useMediaQueries';
 import { getYearlyChartDims } from '@/lib/getYearlyChartDims';
+import MobileWarning from '@/components/shared/MobileWarning';
+import AdditionalBalanceInfo from './AdditionalBalanceInfo';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -65,6 +67,7 @@ const YearlyStatsContent = () => {
 
   return (
     <Stack alignItems="center" spacing={3} sx={{ mt: 4 }}>
+      <MobileWarning />
       <Typography variant="h4">Yearly Overview</Typography>
       <FormControl sx={{ minWidth: 120 }}>
         <InputLabel id="year-select-label">Year</InputLabel>
@@ -87,6 +90,12 @@ const YearlyStatsContent = () => {
           {error}
         </Typography>
       )}
+
+      <AdditionalBalanceInfo
+        income={Math.round(incomeData.reduce((acc, curr) => acc + curr, 0))}
+        expense={Math.round(expenseData.reduce((acc, curr) => acc + curr, 0))}
+        sx={{ alignSelf: 'flex-start' }}
+      />
 
       <Box
         sx={{
@@ -130,6 +139,11 @@ const YearlyStatsContent = () => {
           margin={margin}
           slotProps={{
             noDataOverlay: { message: 'No data for selected year' },
+            legend: {
+              direction: 'row',
+              position: { vertical: 'top', horizontal: 'middle' },
+              padding: 0,
+            },
           }}
         />
       </Box>

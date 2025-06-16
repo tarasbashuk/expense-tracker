@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import { useSettings } from '@/context/SettingsContexts';
 import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
+import { formatCurrency } from '@/lib/formatCurrency';
 
 interface Props {
   income: number;
@@ -70,9 +71,9 @@ const AdditionalBalanceInfo: FC<Props> = ({ sx, income, expense }) => {
               ml={1}
               variant="body1"
               component="div"
-              sx={{ color: 'success.main' }}
+              sx={{ color: 'success.main', textWrap: 'nowrap' }}
             >
-              {income}
+              {formatCurrency(income)}
             </Typography>
           </Box>
 
@@ -95,9 +96,9 @@ const AdditionalBalanceInfo: FC<Props> = ({ sx, income, expense }) => {
               ml={1}
               variant="body1"
               component="div"
-              sx={{ color: 'error.main' }}
+              sx={{ color: 'error.main', textWrap: 'nowrap' }}
             >
-              {expense}
+              {formatCurrency(expense)}
             </Typography>
           </Box>
 
@@ -123,7 +124,7 @@ const AdditionalBalanceInfo: FC<Props> = ({ sx, income, expense }) => {
               component="div"
               sx={{ color: getAmountColor(balanceNum), textWrap: 'nowrap' }}
             >
-              {balance}
+              {formatCurrency(balanceNum, defaultCurrency)}
             </Typography>
           </Box>
         </Box>
