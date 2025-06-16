@@ -13,15 +13,24 @@ import { BarChart } from '@mui/x-charts/BarChart';
 import { YEAR_LIST } from '@/constants/constants';
 import { getYearlyStats } from '@/app/actions/getYearlyStats';
 import { MONTH_LIST } from '@/constants/constants';
+import { useMediaQueries } from '@/lib/useMediaQueries';
+import { getYearlyChartDims } from '@/lib/getYearlyChartDims';
 
-const CURRENT_YEAR = Number(YEAR_LIST[0]);
+const CURRENT_YEAR = new Date().getFullYear();
 
 const YearlyStatsContent = () => {
+  const { isExtraSmall, isSmall, isMedium } = useMediaQueries();
   const [year, setYear] = useState(CURRENT_YEAR);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [incomeData, setIncomeData] = useState<number[]>([]);
   const [expenseData, setExpenseData] = useState<number[]>([]);
+
+  const { width, height, margin } = getYearlyChartDims({
+    isExtraSmall,
+    isSmall,
+    isMedium,
+  });
 
   useEffect(() => {
     const fetchYearlyData = async () => {
@@ -85,6 +94,21 @@ const YearlyStatsContent = () => {
           maxWidth: 900,
           minHeight: 400,
           position: 'relative',
+          overflowX: 'auto',
+          '&::-webkit-scrollbar': {
+            height: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: '#f1f1f1',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: '#888',
+            borderRadius: '4px',
+            '&:hover': {
+              background: '#555',
+            },
+          },
         }}
       >
         <BarChart
@@ -94,11 +118,16 @@ const YearlyStatsContent = () => {
             {
               data: MONTH_LIST.map((m) => m.label),
               scaleType: 'band',
-              tickLabelStyle: { angle: 45, textAnchor: 'start' },
+              tickLabelStyle: {
+                angle: isExtraSmall || isSmall ? -45 : 45,
+                textAnchor: isExtraSmall || isSmall ? 'end' : 'start',
+                fontSize: isExtraSmall || isSmall ? 10 : 12,
+              },
             },
           ]}
-          width={900}
-          height={400}
+          width={width}
+          height={height}
+          margin={margin}
           slotProps={{
             noDataOverlay: { message: 'No data for selected year' },
           }}
