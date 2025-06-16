@@ -2,7 +2,7 @@
 import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
 import { Transaction } from '@prisma/client';
-import { endOfMonth, startOfMonth, format } from 'date-fns';
+import { format } from 'date-fns';
 import { DATE_FORMATS, DO_NOT_ENCRYPT_LIST } from '@/constants/constants';
 import { decrypt, decryptFloat } from '@/lib/crypto';
 import { IncomeCategory } from '@/constants/types';

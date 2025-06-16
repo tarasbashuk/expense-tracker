@@ -15,6 +15,7 @@ export const formatCurrency = (amount: number, currency?: Currency): string => {
 
   if (currency) {
     const symbol = CURRENCY_SYMBOL_MAP[currency];
+
     return `${finalFormattedAmount} ${symbol}`;
   }
 

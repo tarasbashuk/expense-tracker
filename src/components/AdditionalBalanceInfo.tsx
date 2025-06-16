@@ -9,7 +9,6 @@ import {
   Typography,
 } from '@mui/material';
 import { useSettings } from '@/context/SettingsContexts';
-import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
 import { formatCurrency } from '@/lib/formatCurrency';
 
 interface Props {
@@ -27,10 +26,7 @@ const AdditionalBalanceInfo: FC<Props> = ({ sx, income, expense }) => {
   } = useSettings();
   const [isInfoShown, setIsInfoShown] = useState(false);
 
-  const currencyLabel = CURRENCY_SYMBOL_MAP[defaultCurrency];
   const balanceNum = income - expense;
-
-  const balance = `${balanceNum?.toFixed(2)} ${currencyLabel}`;
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setIsInfoShown(event.target.checked);
