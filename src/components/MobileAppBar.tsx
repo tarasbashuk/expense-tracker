@@ -44,7 +44,7 @@ const MobileAppBar = () => {
     setAnchorEl(null);
   };
 
-  const handleNav = (path: NavigationPath) => {
+  const handleNav = (path: string) => {
     router.push(path);
     handleClose();
   };
@@ -75,6 +75,9 @@ const MobileAppBar = () => {
               </MenuItem>
               <MenuItem onClick={() => handleNav(NavigationPath.Stats)}>
                 Stats
+              </MenuItem>
+              <MenuItem onClick={() => handleNav('/yearly-stats')}>
+                Yearly Stats
               </MenuItem>
             </Menu>
             <IconButton

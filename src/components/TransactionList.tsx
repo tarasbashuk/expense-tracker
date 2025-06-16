@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import TableViewIcon from '@mui/icons-material/TableView';
+import { startOfMonth, endOfMonth } from 'date-fns';
 
 import TransactionItem from './TransactionItem';
 import getTransactions from '@/app/actions/getTransactions';
@@ -104,9 +105,12 @@ const TransactionList = () => {
 
   useEffect(() => {
     const fetchTrans = async () => {
+      const startDate = startOfMonth(new Date(Number(year), Number(month)));
+      const endDate = endOfMonth(new Date(Number(year), Number(month)));
+
       const { transactions, error } = await getTransactions(
-        Number(year),
-        Number(month),
+        startDate,
+        endDate,
         true,
       );
 

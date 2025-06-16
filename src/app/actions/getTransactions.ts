@@ -8,14 +8,13 @@ import { decrypt, decryptFloat } from '@/lib/crypto';
 import { IncomeCategory } from '@/constants/types';
 
 async function getTransactions(
-  year: number,
-  month: number,
+  startDate: Date,
+  endDate: Date,
   excludeCreditIncome = false,
 ): Promise<{
   transactions?: Transaction[];
   error?: string;
 }> {
-  // const { userId } = auth();
   const user = await currentUser();
   const userId = user?.id;
   const userEmail = user?.primaryEmailAddress?.emailAddress;
@@ -26,8 +25,6 @@ async function getTransactions(
     return { error: 'User not found' };
   }
 
-  const startDate = startOfMonth(new Date(year, month));
-  const endDate = endOfMonth(new Date(year, month));
   const formattedStart = new Date(format(startDate, DATE_FORMATS.YYYY_MM_DD));
   const formattedEnd = new Date(format(endDate, DATE_FORMATS.YYYY_MM_DD));
 

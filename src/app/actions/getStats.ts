@@ -6,6 +6,7 @@ import {
 } from '@/lib/pieChartUtils';
 import getTransactions from './getTransactions';
 import { PieValueType } from '@mui/x-charts';
+import { startOfMonth, endOfMonth } from 'date-fns';
 
 async function getStats(
   year: number,
@@ -15,9 +16,12 @@ async function getStats(
   incomeChartData?: PieValueType[];
   error?: string;
 }> {
+  const startDate = startOfMonth(new Date(year, month));
+  const endDate = endOfMonth(new Date(year, month));
+
   const { transactions = [], error } = await getTransactions(
-    year,
-    Number(month),
+    startDate,
+    endDate,
   );
 
   if (error) {

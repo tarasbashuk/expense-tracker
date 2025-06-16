@@ -7,6 +7,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import Typography from '@mui/material/Typography';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import DonutSmallIcon from '@mui/icons-material/DonutSmall';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 import { NavigationPath } from '@/constants/types';
 
@@ -41,6 +42,16 @@ const Header = async () => {
                 >
                   <DonutSmallIcon />
                   <Typography variant="h6">Stats</Typography>
+                </Stack>
+              </Link>
+              <Link href="/yearly-stats" className="nav-link">
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ alignItems: 'center' }}
+                >
+                  <BarChartIcon />
+                  <Typography variant="h6">Yearly Stats</Typography>
                 </Stack>
               </Link>
             </SignedIn>
