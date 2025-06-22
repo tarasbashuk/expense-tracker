@@ -105,9 +105,8 @@ const TransactionList = () => {
 
   useEffect(() => {
     const fetchTrans = async () => {
-      const startDate = startOfMonth(new Date(Number(year), Number(month)));
-      const endDate = endOfMonth(new Date(Number(year), Number(month)));
-
+      const startDate = new Date(Date.UTC(Number(year), Number(month), 1));
+      const endDate = new Date(Date.UTC(Number(year), Number(month) + 1, 0));
       const { transactions, error } = await getTransactions(
         startDate,
         endDate,

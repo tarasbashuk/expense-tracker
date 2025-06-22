@@ -18,8 +18,8 @@ export async function getYearlyStats(
   year: number,
 ): Promise<YearlyStatsResponse> {
   try {
-    const startDate = startOfYear(new Date(year, 0));
-    const endDate = endOfYear(new Date(year, 11));
+    const startDate = new Date(Date.UTC(year, 0, 1));
+    const endDate = new Date(Date.UTC(year + 1, 0, 0));
     const { transactions = [] } = await getTransactions(startDate, endDate);
 
     // Initialize 12-month arrays with zeros

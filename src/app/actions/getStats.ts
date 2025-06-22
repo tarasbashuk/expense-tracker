@@ -16,8 +16,8 @@ async function getStats(
   incomeChartData?: PieValueType[];
   error?: string;
 }> {
-  const startDate = startOfMonth(new Date(year, month));
-  const endDate = endOfMonth(new Date(year, month));
+  const startDate = new Date(Date.UTC(year, month, 1));
+  const endDate = new Date(Date.UTC(year, month + 1, 0));
 
   const { transactions = [], error } = await getTransactions(
     startDate,

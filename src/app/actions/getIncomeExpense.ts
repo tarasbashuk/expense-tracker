@@ -32,8 +32,8 @@ async function getIncomeExpense(
 
   //To treat Jan (0) as a proper month
   if (year && month?.toString()) {
-    const startDate = startOfMonth(new Date(year, month));
-    const endDate = endOfMonth(new Date(year, month));
+    const startDate = new Date(Date.UTC(year, month, 1));
+    const endDate = new Date(Date.UTC(year, month + 1, 0));
     formattedStart = new Date(format(startDate, DATE_FORMATS.YYYY_MM_DD));
     formattedEnd = new Date(format(endDate, DATE_FORMATS.YYYY_MM_DD));
   }
