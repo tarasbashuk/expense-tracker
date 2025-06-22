@@ -6,7 +6,6 @@ import { format } from 'date-fns';
 import { DATE_FORMATS, DO_NOT_ENCRYPT_LIST } from '@/constants/constants';
 import { decrypt, decryptFloat } from '@/lib/crypto';
 import { IncomeCategory } from '@/constants/types';
-import * as Sentry from '@sentry/nextjs';
 
 async function getTransactions(
   startDate: Date,
@@ -28,11 +27,6 @@ async function getTransactions(
 
   const formattedStart = new Date(format(startDate, DATE_FORMATS.YYYY_MM_DD));
   const formattedEnd = new Date(format(endDate, DATE_FORMATS.YYYY_MM_DD));
-
-  // Sentry logging
-  Sentry.captureMessage('getTransactions', {
-    extra: { startDate, endDate, formattedStart, formattedEnd },
-  });
 
   try {
     const transactions = await db.transaction.findMany({
