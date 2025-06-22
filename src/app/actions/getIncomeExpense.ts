@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
 import { TransactionType } from '@prisma/client';
 import Decimal from 'decimal.js';
-import { endOfMonth, startOfMonth, format } from 'date-fns';
+import { format } from 'date-fns';
 import { ExpenseCategory, IncomeCategory } from '@/constants/types';
 
 async function getIncomeExpense(

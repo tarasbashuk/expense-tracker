@@ -1,6 +1,6 @@
 'use server';
 
-import { startOfYear, endOfYear, getMonth } from 'date-fns';
+import { getMonth } from 'date-fns';
 import { TransactionType } from '@prisma/client';
 import getTransactions from './getTransactions';
 

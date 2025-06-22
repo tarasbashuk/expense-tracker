@@ -6,7 +6,6 @@ import {
 } from '@/lib/pieChartUtils';
 import getTransactions from './getTransactions';
 import { PieValueType } from '@mui/x-charts';
-import { startOfMonth, endOfMonth } from 'date-fns';
 
 async function getStats(
   year: number,

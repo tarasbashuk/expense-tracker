@@ -12,7 +12,6 @@ import {
 } from '@mui/material';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import TableViewIcon from '@mui/icons-material/TableView';
-import { startOfMonth, endOfMonth } from 'date-fns';
 
 import TransactionItem from './TransactionItem';
 import getTransactions from '@/app/actions/getTransactions';
