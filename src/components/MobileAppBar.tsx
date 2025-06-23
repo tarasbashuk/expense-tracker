@@ -77,7 +77,7 @@ const MobileAppBar = () => {
                 Stats
               </MenuItem>
               <MenuItem onClick={() => handleNav('/yearly-stats')}>
-                Yearly Stats
+                Yearly stats
               </MenuItem>
             </Menu>
             <IconButton

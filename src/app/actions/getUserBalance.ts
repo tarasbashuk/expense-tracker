@@ -9,6 +9,7 @@ import Decimal from 'decimal.js';
 
 async function getUserBalance(): Promise<{
   balance?: string;
+  initialAmount?: string;
   defaultCurrency?: Currency;
   error?: string;
 }> {
@@ -61,7 +62,11 @@ async function getUserBalance(): Promise<{
       return sum;
     }, initialAmount);
 
-    return { balance: balance.toFixed(2), defaultCurrency };
+    return {
+      defaultCurrency,
+      balance: balance.toFixed(2),
+      initialAmount: initialAmount.toFixed(2),
+    };
   } catch (error) {
     return { error: 'Database error' };
   }

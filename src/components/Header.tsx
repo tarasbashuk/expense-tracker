@@ -51,7 +51,7 @@ const Header = async () => {
                   sx={{ alignItems: 'center' }}
                 >
                   <BarChartIcon />
-                  <Typography variant="h6">Yearly Stats</Typography>
+                  <Typography variant="h6">Yearly stats</Typography>
                 </Stack>
               </Link>
             </SignedIn>

@@ -68,7 +68,7 @@ const YearlyStatsContent = () => {
   return (
     <Stack alignItems="center" spacing={3} sx={{ mt: 4 }}>
       <MobileWarning />
-      <Typography variant="h4">Yearly Overview</Typography>
+      <Typography variant="h4">Yearly overview</Typography>
       <FormControl sx={{ minWidth: 120 }}>
         <InputLabel id="year-select-label">Year</InputLabel>
         <Select
