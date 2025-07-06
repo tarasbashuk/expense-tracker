@@ -57,6 +57,8 @@ export interface TransactionFormData {
   currency: Currency;
   type: TransactionType;
   isCreditTransaction: boolean;
+  isRecurring?: boolean;
+  recurringEndDate?: Date;
   amountDefaultCurrency?: number;
 }
 

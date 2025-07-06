@@ -1,0 +1,98 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { addMonths, startOfMonth, endOfMonth } from 'date-fns';
+
+export async function POST(request: NextRequest) {
+  try {
+    // Verify secret key for security
+    const authHeader = request.headers.get('authorization');
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const today = new Date();
+    const oneMonthAgo = new Date(today);
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    // Find all recurring transactions that were created one month ago
+    const recurringTransactions = await db.transaction.findMany({
+      where: {
+        isRecurring: true,
+        date: {
+          gte: startOfMonth(oneMonthAgo),
+          lte: endOfMonth(oneMonthAgo),
+        },
+        // Check if the recurrence period hasn't ended
+        OR: [
+          { recurringEndDate: null }, // Infinite
+          { recurringEndDate: { gt: new Date() } }, // Not ended yet
+        ],
+      },
+    });
+
+    const createdTransactions = [];
+
+    for (const transaction of recurringTransactions) {
+      // Create a new transaction for the next month
+      let nextMonthDate = addMonths(transaction.date, 1);
+
+      // Handle different number of days in months
+      // If the original date was at the end of the month (28, 29, 30, 31),
+      // and the next month has fewer days, we take the last day of the month
+      const originalDay = transaction.date.getDate();
+      const nextMonthLastDay = new Date(
+        nextMonthDate.getFullYear(),
+        nextMonthDate.getMonth() + 1,
+        0,
+      ).getDate();
+
+      if (originalDay > nextMonthLastDay) {
+        // If the original day is greater than the number of days in the next month
+        nextMonthDate = new Date(
+          nextMonthDate.getFullYear(),
+          nextMonthDate.getMonth(),
+          nextMonthLastDay,
+        );
+      }
+
+      // Check if we haven't exceeded the end date
+      if (
+        transaction.recurringEndDate &&
+        nextMonthDate > transaction.recurringEndDate
+      ) {
+        continue;
+      }
+
+      const newTransaction = await db.transaction.create({
+        data: {
+          text: transaction.text,
+          amount: transaction.amount,
+          amountDefaultCurrency: transaction.amountDefaultCurrency,
+          date: nextMonthDate,
+          category: transaction.category,
+          currency: transaction.currency,
+          type: transaction.type,
+          isCreditTransaction: transaction.isCreditTransaction,
+          isRecurring: true,
+          recurringEndDate: transaction.recurringEndDate,
+          userId: transaction.userId,
+        },
+      });
+
+      createdTransactions.push(newTransaction);
+    }
+
+    return NextResponse.json({
+      success: true,
+      processed: recurringTransactions.length,
+      created: createdTransactions.length,
+    });
+  } catch (error) {
+    console.error('Error processing recurring transactions:', error);
+
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
+  }
+}

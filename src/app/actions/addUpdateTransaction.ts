@@ -17,8 +17,16 @@ async function addUpdateTransaction(
   isDefaultAmmountRequired: boolean,
   transacionId?: string,
 ): Promise<TransactionResult> {
-  const { text, date, amount, category, currency, amountDefaultCurrency } =
-    formData;
+  const {
+    text,
+    date,
+    amount,
+    category,
+    currency,
+    amountDefaultCurrency,
+    isRecurring,
+    recurringEndDate,
+  } = formData;
 
   // const { userId } = auth();
   const user = await currentUser();
@@ -36,6 +44,11 @@ async function addUpdateTransaction(
     (isDefaultAmmountRequired && !amountDefaultCurrency)
   ) {
     return { error: 'Category, text or amount is missing' };
+  }
+
+  // Validation for recurring transactions
+  if (isRecurring && recurringEndDate && recurringEndDate <= date) {
+    return { error: 'End date must be after start date' };
   }
 
   if (!userId) {
@@ -73,6 +86,8 @@ async function addUpdateTransaction(
         data: {
           ...formData,
           amountDefaultCurrency: amountDefaultCurrencyValue,
+          isRecurring: isRecurring || false,
+          recurringEndDate: recurringEndDate || null,
         },
       });
 
@@ -132,6 +147,8 @@ async function addUpdateTransaction(
           ...formData,
           userId,
           amountDefaultCurrency: amountDefaultCurrencyValue,
+          isRecurring: isRecurring || false,
+          recurringEndDate: recurringEndDate || null,
         },
       });
 

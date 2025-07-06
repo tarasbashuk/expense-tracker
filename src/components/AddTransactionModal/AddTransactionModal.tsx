@@ -65,6 +65,8 @@ const AddTransactionModal: React.FC = () => {
   let initialAmountDefaultCurrency;
   let initialCurrency = defaultCurrency;
   let initialIsCreditTransaction = false;
+  let initialIsRecurring = false;
+  let initialRecurringEndDate: Date | undefined;
   let initialType: TransactionType = TransactionType.Expense;
 
   const selectedTransaction = transactions.find(
@@ -80,6 +82,8 @@ const AddTransactionModal: React.FC = () => {
       category,
       currency,
       isCreditTransaction,
+      isRecurring,
+      recurringEndDate,
       amountDefaultCurrency,
     } = selectedTransaction;
 
@@ -90,6 +94,12 @@ const AddTransactionModal: React.FC = () => {
     initialCategory = category;
     initialDate = isCopyTransactionFlow ? new Date() : new Date(date);
     initialIsCreditTransaction = !!isCreditTransaction;
+    initialIsRecurring = !!isRecurring;
+    initialRecurringEndDate = isCopyTransactionFlow
+      ? undefined
+      : recurringEndDate
+        ? new Date(recurringEndDate)
+        : undefined;
     initialAmountDefaultCurrency = isCopyTransactionFlow
       ? calculateAmountInDefaultCurrency(amount, currency)
       : amountDefaultCurrency;
@@ -110,6 +120,10 @@ const AddTransactionModal: React.FC = () => {
   const [currency, setCurrency] = useState<Currency>(initialCurrency);
   const [isCreditTransaction, setIsCreditTransaction] = useState(
     initialIsCreditTransaction,
+  );
+  const [isRecurring, setIsRecurring] = useState(initialIsRecurring);
+  const [recurringEndDate, setRecurringEndDate] = useState<Date | undefined>(
+    initialRecurringEndDate,
   );
 
   const [isSaving, setIsSaving] = useState(false);
@@ -182,6 +196,19 @@ const AddTransactionModal: React.FC = () => {
     setIsCreditTransaction(event.target.checked);
   };
 
+  const handleIsRecurringChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setIsRecurring(event.target.checked);
+    if (!event.target.checked) {
+      setRecurringEndDate(undefined);
+    }
+  };
+
+  const handleRecurringEndDateChange = (value: Date | null) => {
+    setRecurringEndDate(value || undefined);
+  };
+
   // This is a rework of legacy implementaions from Brad Traversy cource,
   // TODO: think about using react-hook-form
   const clientAction = async () => {
@@ -191,6 +218,8 @@ const AddTransactionModal: React.FC = () => {
       currency,
       category,
       isCreditTransaction,
+      isRecurring,
+      recurringEndDate,
       text: text as string,
       type: transactionType,
       amount: amount as number,
@@ -275,6 +304,8 @@ const AddTransactionModal: React.FC = () => {
       isEditMode={!!selectedTransaction}
       isBaseAmountShown={isBaseAmountShown}
       isCreditTransaction={isCreditTransaction}
+      isRecurring={isRecurring}
+      recurringEndDate={recurringEndDate}
       amountDefaultCurrency={amountDefaultCurrency}
       onSubmit={clientAction}
       handleClose={handleClose}
@@ -285,6 +316,8 @@ const AddTransactionModal: React.FC = () => {
       handleCurrencyChange={handleCurrencyChange}
       handleCategoryChange={handleCategoryChange}
       handleIsCreditChange={handleIsCreditChange}
+      handleIsRecurringChange={handleIsRecurringChange}
+      handleRecurringEndDateChange={handleRecurringEndDateChange}
       handleAmountDefaultCurrencyChange={handleAmountDefaultCurrencyChange}
     />
   );

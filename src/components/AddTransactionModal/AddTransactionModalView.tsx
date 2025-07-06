@@ -56,6 +56,8 @@ interface Props {
   isSubmitDisabled: boolean;
   isBaseAmountShown: boolean;
   isCreditTransaction: boolean;
+  isRecurring?: boolean;
+  recurringEndDate?: Date;
   amountDefaultCurrency?: number;
   transactionType: TransactionType;
   handleClose: () => void;
@@ -68,6 +70,8 @@ interface Props {
   handleTextChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleCategoryChange: (event: SelectChangeEvent) => void;
   handleIsCreditChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  handleIsRecurringChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  handleRecurringEndDateChange: (date: Date | null) => void;
   handleAmountDefaultCurrencyChange: (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => void;
@@ -85,6 +89,8 @@ const AddTransactionModalView: React.FC<Props> = ({
   isSubmitDisabled,
   isBaseAmountShown,
   isCreditTransaction,
+  isRecurring,
+  recurringEndDate,
   amountDefaultCurrency,
   onSubmit,
   handleClose,
@@ -95,6 +101,8 @@ const AddTransactionModalView: React.FC<Props> = ({
   handleTextChange,
   handleCategoryChange,
   handleIsCreditChange,
+  handleIsRecurringChange,
+  handleRecurringEndDateChange,
   handleAmountDefaultCurrencyChange,
 }) => {
   const categories =
@@ -262,6 +270,36 @@ const AddTransactionModalView: React.FC<Props> = ({
                 label="Paid by credit card"
               />
             </Grid>
+
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={isRecurring || false}
+                    onChange={handleIsRecurringChange}
+                  />
+                }
+                label="Recurring transaction (monthly)"
+              />
+            </Grid>
+
+            {isRecurring && (
+              <Grid item xs={12}>
+                <DatePicker
+                  label="End date (optional - leave empty for infinite)"
+                  name="recurringEndDate"
+                  value={recurringEndDate || null}
+                  onChange={handleRecurringEndDateChange}
+                  format={DATE_FORMATS.YYYY_MM_DD}
+                  slotProps={{
+                    textField: {
+                      helperText:
+                        'Leave empty if you want the transaction to repeat indefinitely',
+                    },
+                  }}
+                />
+              </Grid>
+            )}
 
             <Grid item xs={12} sm={5} marginTop={2} sx={{ marginLeft: 'auto' }}>
               <Button

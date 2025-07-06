@@ -42,3 +42,4 @@ prisma/scripts/*
 
 # Sentry Config File
 .env.sentry-build-plugin
+db_backups/
