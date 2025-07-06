@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { addMonths, startOfMonth, endOfMonth } from 'date-fns';
+import {
+  addMonths,
+  startOfDay,
+  endOfDay,
+  isLastDayOfMonth,
+  endOfMonth,
+} from 'date-fns';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,13 +20,30 @@ export async function POST(request: NextRequest) {
     const oneMonthAgo = new Date(today);
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-    // Find all recurring transactions that were created one month ago
+    // Determine search date range based on whether today is the last day of the month
+    let searchStartDate, searchEndDate;
+
+    if (isLastDayOfMonth(today)) {
+      // Last day of month: search from current day to end of previous month
+      searchStartDate = new Date(
+        oneMonthAgo.getFullYear(),
+        oneMonthAgo.getMonth(),
+        today.getDate(),
+      );
+      searchEndDate = endOfMonth(oneMonthAgo);
+    } else {
+      // Regular day: search only for the specific day
+      searchStartDate = startOfDay(oneMonthAgo);
+      searchEndDate = endOfDay(oneMonthAgo);
+    }
+
+    // Find recurring transactions based on the determined date range
     const recurringTransactions = await db.transaction.findMany({
       where: {
         isRecurring: true,
         date: {
-          gte: startOfMonth(oneMonthAgo),
-          lte: endOfMonth(oneMonthAgo),
+          gte: searchStartDate,
+          lte: searchEndDate,
         },
         // Check if the recurrence period hasn't ended
         OR: [
@@ -86,6 +109,12 @@ export async function POST(request: NextRequest) {
       success: true,
       processed: recurringTransactions.length,
       created: createdTransactions.length,
+      date: oneMonthAgo.toISOString().split('T')[0], // Log which date was processed
+      isLastDayOfMonth: isLastDayOfMonth(today),
+      searchRange: {
+        from: searchStartDate.toISOString().split('T')[0],
+        to: searchEndDate.toISOString().split('T')[0],
+      },
     });
   } catch (error) {
     console.error('Error processing recurring transactions:', error);
