@@ -11,8 +11,11 @@ import {
   ListItemSecondaryAction,
   ListItemText,
   Typography,
+  Tooltip,
+  Box,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import RepeatIcon from '@mui/icons-material/Repeat';
 import { getIconByName } from '@/lib/getCategoryIcon';
 import { green, red } from '@mui/material/colors';
 
@@ -45,12 +48,23 @@ const TransactionItem: FC<Props> = ({
     category,
     currency,
     amountDefaultCurrency,
+    isRecurring,
+    recurringEndDate,
   } = transaction;
   const sign = getTransactionSign(type);
   const IconComponent = getIconByName(category as TransactionCategory);
   const labelColor = type === TransactionType.Expense ? red[500] : green[500];
   const formattedDate = format(date, 'PP');
   const isSecondaryAmountShown = currency !== settings.defaultCurrency;
+
+  // Format recurring end date for tooltip
+  const recurringEndDateFormatted = recurringEndDate
+    ? format(new Date(recurringEndDate), 'PP')
+    : null;
+
+  const recurringTooltip = isRecurring
+    ? `Recurring transaction${recurringEndDateFormatted ? ` until ${recurringEndDateFormatted}` : ' (infinite)'}`
+    : '';
 
   return (
     <>
@@ -70,17 +84,30 @@ const TransactionItem: FC<Props> = ({
         </ListItemAvatar>
         <ListItemText
           primary={
-            <Typography
-              noWrap
-              sx={{
-                width: { xs: '150px', sm: '250px' },
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {text}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                noWrap
+                sx={{
+                  width: { xs: '150px', sm: '250px' },
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {text}
+              </Typography>
+              {isRecurring && (
+                <Tooltip title={recurringTooltip} arrow>
+                  <RepeatIcon
+                    sx={{
+                      color: green[500],
+                      fontSize: '1.2rem',
+                      cursor: 'help',
+                    }}
+                  />
+                </Tooltip>
+              )}
+            </Box>
           }
           secondary={formattedDate}
         />

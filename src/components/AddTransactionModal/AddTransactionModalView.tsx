@@ -19,6 +19,8 @@ import {
   Checkbox,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import RepeatIcon from '@mui/icons-material/Repeat';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
 
 import {
   CURRENCY_SYMBOL_MAP,
@@ -267,11 +269,15 @@ const AddTransactionModalView: React.FC<Props> = ({
                     onChange={handleIsCreditChange}
                   />
                 }
-                label="Paid by credit card"
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CreditCardIcon
+                      sx={{ fontSize: '1.2rem', color: 'primary.main' }}
+                    />
+                    Paid by credit card
+                  </Box>
+                }
               />
-            </Grid>
-
-            <Grid item xs={12}>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -279,14 +285,21 @@ const AddTransactionModalView: React.FC<Props> = ({
                     onChange={handleIsRecurringChange}
                   />
                 }
-                label="Recurring transaction (monthly)"
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <RepeatIcon
+                      sx={{ fontSize: '1.2rem', color: 'success.main' }}
+                    />
+                    Recurring (monthly)
+                  </Box>
+                }
               />
             </Grid>
 
             {isRecurring && (
               <Grid item xs={12}>
                 <DatePicker
-                  label="End date (optional - leave empty for infinite)"
+                  label="End date"
                   name="recurringEndDate"
                   value={recurringEndDate || null}
                   onChange={handleRecurringEndDateChange}

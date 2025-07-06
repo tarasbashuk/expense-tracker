@@ -1,6 +1,13 @@
 'use client';
 import { FC, useMemo, useState, MouseEvent } from 'react';
-import { Box, IconButton, Menu, MenuItem, Typography } from '@mui/material';
+import {
+  Box,
+  IconButton,
+  Menu,
+  MenuItem,
+  Typography,
+  Tooltip,
+} from '@mui/material';
 import {
   DataGrid,
   GridColDef,
@@ -12,6 +19,7 @@ import {
 import { Transaction, TransactionType } from '@prisma/client';
 import { format } from 'date-fns';
 import MenuIcon from '@mui/icons-material/Menu';
+import RepeatIcon from '@mui/icons-material/Repeat';
 
 import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
 import { TransactionCategory } from '@/constants/types';
@@ -174,6 +182,35 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
         headerName: 'Description',
         width: 260,
         // editable: true,
+      },
+      {
+        field: 'isRecurring',
+        headerName: 'Recurring',
+        width: 80,
+        align: 'center',
+        headerAlign: 'center',
+        sortable: false,
+        renderCell: ({ row }) => {
+          if (!row.isRecurring) return null;
+
+          const recurringEndDateFormatted = row.recurringEndDate
+            ? format(new Date(row.recurringEndDate), 'PP')
+            : null;
+
+          const tooltip = `Recurring transaction${recurringEndDateFormatted ? ` until ${recurringEndDateFormatted}` : ' (infinite)'}`;
+
+          return (
+            <Tooltip title={tooltip} arrow>
+              <RepeatIcon
+                sx={{
+                  color: 'success.main',
+                  fontSize: '1.2rem',
+                  cursor: 'help',
+                }}
+              />
+            </Tooltip>
+          );
+        },
       },
       {
         field: 'amount',
