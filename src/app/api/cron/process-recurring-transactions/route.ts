@@ -74,6 +74,18 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // Optimization: fetch default currency for all unique userIds in a single query
+    const userIds = Array.from(
+      new Set(recurringTransactions.map((t) => t.userId)),
+    );
+    const settingsList = await db.settings.findMany({
+      where: { clerkUserId: { in: userIds } },
+      select: { clerkUserId: true, defaultCurrency: true },
+    });
+    const userCurrencyMap = new Map(
+      settingsList.map((s) => [s.clerkUserId, s.defaultCurrency]),
+    );
+
     const createdTransactions = [];
 
     for (const transaction of recurringTransactions) {
@@ -107,12 +119,7 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      // --- Get user's default currency ---
-      const userSettings = await db.settings.findUnique({
-        where: { clerkUserId: transaction.userId },
-        select: { defaultCurrency: true },
-      });
-      const defaultCurrency = userSettings?.defaultCurrency;
+      const defaultCurrency = userCurrencyMap.get(transaction.userId);
       let amountDefaultCurrency = transaction.amountDefaultCurrency;
 
       // --- If currency differs, recalc by actual rate ---
@@ -139,7 +146,7 @@ export async function GET(request: NextRequest) {
           }
 
           Sentry.captureMessage(
-            `Recurring conversion: from=${transaction.currency}, to=${defaultCurrency}, rate=${rate}, origAmount=${transaction.amount}, converted=${amountDefaultCurrency}`,
+            `Recurring transaction currency conversion: userId=${transaction.userId}, from=${transaction.currency}, to=${defaultCurrency}, rate=${rate}, originalAmount=${transaction.amount}, convertedAmount=${amountDefaultCurrency}`,
             'info',
           );
         }
