@@ -9,7 +9,7 @@ import {
 } from 'date-fns';
 import * as Sentry from '@sentry/nextjs';
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     Sentry.captureMessage(
       'Cron job started: processing recurring transactions',
