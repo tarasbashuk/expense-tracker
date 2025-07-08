@@ -7,9 +7,15 @@ import {
   isLastDayOfMonth,
   endOfMonth,
 } from 'date-fns';
+import * as Sentry from '@sentry/nextjs';
 
 export async function POST(request: NextRequest) {
   try {
+    Sentry.captureMessage(
+      'Cron job started: processing recurring transactions',
+      'info',
+    );
+
     // Verify secret key for security
     const authHeader = request.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -105,6 +111,23 @@ export async function POST(request: NextRequest) {
       createdTransactions.push(newTransaction);
     }
 
+    Sentry.captureMessage(
+      `Cron job processed. Created: ${createdTransactions.length}, Processed: ${recurringTransactions.length}`,
+      'info',
+    );
+
+    if (createdTransactions.length > 0) {
+      Sentry.captureMessage(
+        `Created transactions: ${createdTransactions
+          .map(
+            (t) =>
+              `id=${t.id}, userId=${t.userId}, date=${t.date.toISOString()}, amount=${t.amount}, text=${t.text}`,
+          )
+          .join(' | ')}`,
+        'info',
+      );
+    }
+
     return NextResponse.json({
       success: true,
       processed: recurringTransactions.length,
@@ -117,6 +140,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    Sentry.captureException(error);
     console.error('Error processing recurring transactions:', error);
 
     return NextResponse.json(
