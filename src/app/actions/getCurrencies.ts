@@ -1,17 +1,14 @@
 'use server';
-import axios from 'axios';
-import { BankRate, getCurrenciesFromMap } from '@/lib/currenciesRate.utils';
+import { getCurrenciesFromMap } from '@/lib/currenciesRate.utils';
 import { Currencies } from '@/constants/types';
-import { MONOBANK_CURRENCY_API_URL } from '@/constants/constants';
+import { getMonobankRates } from '@/lib/monobankRatesCache';
 
 async function getCurrencies(): Promise<{
   currencies?: Currencies;
   error?: string;
 }> {
   try {
-    const { data: rates } = await axios.get<BankRate[]>(
-      MONOBANK_CURRENCY_API_URL,
-    );
+    const rates = await getMonobankRates();
 
     const currencies = getCurrenciesFromMap(rates);
 

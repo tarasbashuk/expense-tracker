@@ -10,15 +10,12 @@ import {
   endOfMonth,
 } from 'date-fns';
 import * as Sentry from '@sentry/nextjs';
-import axios from 'axios';
 import Decimal from 'decimal.js';
 
 import { getCurrenciesFromMap } from '@/lib/currenciesRate.utils';
-import {
-  CURRENCY_ISO_MAP,
-  MONOBANK_CURRENCY_API_URL,
-} from '@/constants/constants';
+import { CURRENCY_ISO_MAP } from '@/constants/constants';
 import { Currency } from '@prisma/client';
+import { getMonobankRates } from '@/lib/monobankRatesCache';
 
 export async function GET(request: NextRequest) {
   try {
@@ -54,8 +51,8 @@ export async function GET(request: NextRequest) {
       searchEndDate = endOfDay(oneMonthAgo);
     }
 
-    // Fetch Monobank rates ONCE for all transactions
-    const { data: rates } = await axios.get(MONOBANK_CURRENCY_API_URL);
+    // Fetch Monobank rates ONCE for all transactions (with cache)
+    const rates = await getMonobankRates();
     const currenciesMap = getCurrenciesFromMap(rates);
 
     // Find recurring transactions based on the determined date range
