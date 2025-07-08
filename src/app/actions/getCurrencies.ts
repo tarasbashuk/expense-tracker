@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { BankRate, getCurrenciesFromMap } from '@/lib/currenciesRate.utils';
 import { Currencies } from '@/constants/types';
+import { MONOBANK_CURRENCY_API_URL } from '@/constants/constants';
 
 async function getCurrencies(): Promise<{
   currencies?: Currencies;
@@ -9,7 +10,7 @@ async function getCurrencies(): Promise<{
 }> {
   try {
     const { data: rates } = await axios.get<BankRate[]>(
-      'https://api.monobank.ua/bank/currency',
+      MONOBANK_CURRENCY_API_URL,
     );
 
     const currencies = getCurrenciesFromMap(rates);

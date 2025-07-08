@@ -104,3 +104,7 @@ export const CURRENCY_ISO_MAP: Record<Currency, number> = {
   USD: 840,
   // MDL: 498,
 } as const;
+
+// Додаю константу для API Monobank
+export const MONOBANK_CURRENCY_API_URL =
+  'https://api.monobank.ua/bank/currency';

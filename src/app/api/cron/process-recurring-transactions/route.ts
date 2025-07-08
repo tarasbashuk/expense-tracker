@@ -8,6 +8,15 @@ import {
   endOfMonth,
 } from 'date-fns';
 import * as Sentry from '@sentry/nextjs';
+import axios from 'axios';
+import Decimal from 'decimal.js';
+
+import { getCurrenciesFromMap } from '@/lib/currenciesRate.utils';
+import {
+  CURRENCY_ISO_MAP,
+  MONOBANK_CURRENCY_API_URL,
+} from '@/constants/constants';
+import { Currency } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
@@ -42,6 +51,10 @@ export async function GET(request: NextRequest) {
       searchStartDate = startOfDay(oneMonthAgo);
       searchEndDate = endOfDay(oneMonthAgo);
     }
+
+    // Fetch Monobank rates ONCE for all transactions
+    const { data: rates } = await axios.get(MONOBANK_CURRENCY_API_URL);
+    const currenciesMap = getCurrenciesFromMap(rates);
 
     // Find recurring transactions based on the determined date range
     const recurringTransactions = await db.transaction.findMany({
@@ -92,11 +105,48 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
+      // --- Get user's default currency ---
+      const userSettings = await db.settings.findUnique({
+        where: { clerkUserId: transaction.userId },
+        select: { defaultCurrency: true },
+      });
+      const defaultCurrency = userSettings?.defaultCurrency;
+      let amountDefaultCurrency = transaction.amount;
+
+      // --- If currency differs, recalc by actual rate ---
+      if (defaultCurrency && transaction.currency !== defaultCurrency) {
+        const from = CURRENCY_ISO_MAP[transaction.currency];
+        const to = CURRENCY_ISO_MAP[defaultCurrency];
+        const rateKey = `${from}-${to}`;
+        const rate = currenciesMap[rateKey];
+
+        if (rate) {
+          Sentry.captureMessage(
+            `Recurring conversion: from=${transaction.currency}, to=${defaultCurrency}, rate=${rate}, origAmount=${transaction.amount}, converted=${amountDefaultCurrency}`,
+            'info',
+          );
+          if (
+            transaction.currency === Currency.UAH ||
+            defaultCurrency === Currency.UAH
+          ) {
+            amountDefaultCurrency = new Decimal(transaction.amount)
+              .div(rate)
+              .toDecimalPlaces(2)
+              .toNumber();
+          } else {
+            amountDefaultCurrency = new Decimal(transaction.amount)
+              .mul(rate)
+              .toDecimalPlaces(2)
+              .toNumber();
+          }
+        }
+      }
+
       const newTransaction = await db.transaction.create({
         data: {
           text: transaction.text,
           amount: transaction.amount,
-          amountDefaultCurrency: transaction.amountDefaultCurrency,
+          amountDefaultCurrency,
           date: nextMonthDate,
           category: transaction.category,
           currency: transaction.currency,
