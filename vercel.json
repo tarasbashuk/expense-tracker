@@ -3,7 +3,7 @@
     {
       "path": "/api/cron/process-recurring-transactions",
       "schedule": "0 2 * * *",
-      "memory": "POST"
+      "method": "POST"
     }
   ]
 }
