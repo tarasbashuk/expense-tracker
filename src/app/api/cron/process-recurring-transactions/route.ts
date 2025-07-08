@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
         select: { defaultCurrency: true },
       });
       const defaultCurrency = userSettings?.defaultCurrency;
-      let amountDefaultCurrency = transaction.amount;
+      let amountDefaultCurrency = transaction.amountDefaultCurrency;
 
       // --- If currency differs, recalc by actual rate ---
       if (defaultCurrency && transaction.currency !== defaultCurrency) {
@@ -123,10 +123,6 @@ export async function GET(request: NextRequest) {
         const rate = currenciesMap[rateKey];
 
         if (rate) {
-          Sentry.captureMessage(
-            `Recurring conversion: from=${transaction.currency}, to=${defaultCurrency}, rate=${rate}, origAmount=${transaction.amount}, converted=${amountDefaultCurrency}`,
-            'info',
-          );
           if (
             transaction.currency === Currency.UAH ||
             defaultCurrency === Currency.UAH
@@ -141,6 +137,11 @@ export async function GET(request: NextRequest) {
               .toDecimalPlaces(2)
               .toNumber();
           }
+
+          Sentry.captureMessage(
+            `Recurring conversion: from=${transaction.currency}, to=${defaultCurrency}, rate=${rate}, origAmount=${transaction.amount}, converted=${amountDefaultCurrency}`,
+            'info',
+          );
         }
       }
 
