@@ -35,19 +35,15 @@ export async function GET(request: NextRequest) {
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
     // Determine search date range based on whether today is the last day of the month
-    let searchStartDate, searchEndDate;
+    let searchEndDate;
+    // Always search from the same day one month ago
+    const searchStartDate = startOfDay(oneMonthAgo);
 
     if (isLastDayOfMonth(today)) {
-      // Last day of month: search from current day to end of previous month
-      searchStartDate = new Date(
-        oneMonthAgo.getFullYear(),
-        oneMonthAgo.getMonth(),
-        today.getDate(),
-      );
+      // Last day of month: search until the end of previous month
       searchEndDate = endOfMonth(oneMonthAgo);
     } else {
       // Regular day: search only for the specific day
-      searchStartDate = startOfDay(oneMonthAgo);
       searchEndDate = endOfDay(oneMonthAgo);
     }
 
@@ -86,7 +82,7 @@ export async function GET(request: NextRequest) {
     const createdTransactions = [];
 
     for (const transaction of recurringTransactions) {
-      // Create a new transaction for the next month
+      // Create a new transaction for the current month based on a recurring transaction from the previous month
       let nextMonthDate = addMonths(transaction.date, 1);
 
       // Handle different number of days in months
