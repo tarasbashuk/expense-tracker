@@ -57,9 +57,13 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
-        // Calculate statistics
-        const expenses = transactions.filter((t) => t.type === 'Expense');
-        const incomes = transactions.filter((t) => t.type === 'Income');
+        // Calculate statistics (excluding CCRepayment and CreditReceived)
+        const expenses = transactions.filter(
+          (t) => t.type === 'Expense' && t.category !== 'CCRepayment',
+        );
+        const incomes = transactions.filter(
+          (t) => t.type === 'Income' && t.category !== 'CreditReceived',
+        );
 
         const totalExpenses = expenses.reduce(
           (sum, t) => sum + t.amountDefaultCurrency,
