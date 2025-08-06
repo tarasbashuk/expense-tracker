@@ -27,6 +27,7 @@ export async function sendRecurringTransactionsEmail(
 
   if (!process.env.APP_EMAIL || !process.env.APP_EMAIL_PASS) {
     console.warn('Email configuration missing, skipping email notification');
+
     return;
   }
 
@@ -45,6 +46,7 @@ export async function sendRecurringTransactionsEmail(
         acc[transaction.userId] = [];
       }
       acc[transaction.userId].push(transaction);
+
       return acc;
     },
     {} as Record<string, Transaction[]>,

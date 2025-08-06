@@ -76,7 +76,6 @@ export async function GET(request: NextRequest) {
 
         // Top 5 expenses by amount (excluding CCRepayment)
         const topExpenses = expenses
-          .filter((t) => t.category !== 'CCRepayment')
           .sort((a, b) => b.amountDefaultCurrency - a.amountDefaultCurrency)
           .slice(0, 5);
 
@@ -84,6 +83,7 @@ export async function GET(request: NextRequest) {
         const categoryCounts = expenses.reduce(
           (acc, t) => {
             acc[t.category] = (acc[t.category] || 0) + 1;
+
             return acc;
           },
           {} as Record<string, number>,

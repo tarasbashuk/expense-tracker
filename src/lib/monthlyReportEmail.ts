@@ -5,6 +5,7 @@ interface TopExpense {
   amountDefaultCurrency: number;
   currency: string;
   date: Date;
+  category: string;
 }
 
 interface TopCategory {
@@ -28,6 +29,7 @@ interface MonthlyReportData {
 export async function sendMonthlyReportEmail(data: MonthlyReportData) {
   if (!process.env.APP_EMAIL || !process.env.APP_EMAIL_PASS) {
     console.warn('Email configuration missing, skipping monthly report');
+
     return;
   }
 
