@@ -16,6 +16,7 @@ import { getCurrenciesFromMap } from '@/lib/currenciesRate.utils';
 import { CURRENCY_ISO_MAP } from '@/constants/constants';
 import { Currency } from '@prisma/client';
 import { getMonobankRates } from '@/lib/monobankRatesCache';
+import { sendRecurringTransactionsEmail } from '@/lib/email';
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,6 +37,7 @@ export async function GET(request: NextRequest) {
 
     // Determine search date range based on whether today is the last day of the month
     let searchEndDate;
+
     // Always search from the same day one month ago
     const searchStartDate = startOfDay(oneMonthAgo);
 
@@ -48,8 +50,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch Monobank rates ONCE for all transactions (with cache)
-    const rates = await getMonobankRates();
-    const currenciesMap = getCurrenciesFromMap(rates);
+    let rates;
+    let currenciesMap: Record<string, number> = {};
+    try {
+      rates = await getMonobankRates();
+      currenciesMap = getCurrenciesFromMap(rates);
+    } catch (error) {
+      console.warn(
+        'Failed to fetch Monobank rates, continuing without currency conversion:',
+        error,
+      );
+      Sentry.captureMessage(
+        'Monobank API rate limit reached, skipping currency conversion',
+        'warning',
+      );
+    }
 
     // Find recurring transactions based on the determined date range
     const recurringTransactions = await db.transaction.findMany({
@@ -67,7 +82,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Optimization: fetch default currency for all unique userIds in a single query
+    // Optimization: fetch default currency and user emails for all unique userIds in a single query
     const userIds = Array.from(
       new Set(recurringTransactions.map((t) => t.userId)),
     );
@@ -78,6 +93,12 @@ export async function GET(request: NextRequest) {
     const userCurrencyMap = new Map(
       settingsList.map((s) => [s.clerkUserId, s.defaultCurrency]),
     );
+
+    // Get user emails from our database
+    const userEmails = await db.user.findMany({
+      where: { clerkUserId: { in: userIds } },
+      select: { clerkUserId: true, email: true },
+    });
 
     const createdTransactions = [];
 
@@ -180,6 +201,9 @@ export async function GET(request: NextRequest) {
         'info',
       );
     }
+
+    // Send email notification about recurring transactions
+    await sendRecurringTransactionsEmail(createdTransactions, userEmails);
 
     return NextResponse.json({
       success: true,
