@@ -174,7 +174,7 @@ export async function sendRecurringTransactionsEmail(
       await transporter.sendMail({
         from: process.env.APP_EMAIL,
         to: userEmail.email,
-        subject: `🔄 Your Recurring Transactions - ${new Date().toLocaleDateString()}`,
+        subject: `Your Recurring Transactions - ${new Date().toLocaleDateString()}`,
         html: emailContent,
       });
 

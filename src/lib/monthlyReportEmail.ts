@@ -262,7 +262,7 @@ export async function sendMonthlyReportEmail(data: MonthlyReportData) {
     await transporter.sendMail({
       from: process.env.APP_EMAIL,
       to: data.userEmail,
-      subject: `📊 Your Monthly Report - ${data.month}`,
+      subject: `Your Monthly Report - ${data.month}`,
       html: htmlContent,
     });
 
