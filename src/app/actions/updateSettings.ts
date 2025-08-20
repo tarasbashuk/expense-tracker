@@ -2,7 +2,7 @@
 import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
 import { UserSettings } from '@/constants/types';
-import { Currency } from '@prisma/client';
+import { Currency, Language } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { DO_NOT_ENCRYPT_LIST } from '@/constants/constants';
 import { encryptFloat } from '@/lib/crypto';
@@ -10,9 +10,11 @@ import { encryptFloat } from '@/lib/crypto';
 async function updateSettings({
   initialAmount,
   defaultCurrency,
+  language,
 }: {
   initialAmount: number;
   defaultCurrency: Currency;
+  language: Language;
 }): Promise<{
   settings?: UserSettings | null;
   error?: string;
@@ -39,10 +41,12 @@ async function updateSettings({
       data: {
         initialAmount: initialAmountVal,
         defaultCurrency,
+        language,
       },
     });
 
     revalidatePath('/');
+    revalidatePath('/settings');
 
     return { settings };
   } catch (error) {

@@ -17,7 +17,8 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import CurrencySelect from '../CurrencySelect';
-import { Currency } from '@prisma/client';
+import LanguageSelect from '../LanguageSelect';
+import { Currency, Language } from '@prisma/client';
 import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
 import { useMediaQueries } from '@/lib/useMediaQueries';
 import updateSettings from '@/app/actions/updateSettings';
@@ -46,6 +47,7 @@ const WelcomeModal = () => {
 
   const [currency, setCurrency] = useState<Currency>(Currency.EUR);
   const [initialAmount, setInititialAmount] = useState<number | undefined>();
+  const [language, setLanguage] = useState<Language>(Language.ENG);
 
   useEffect(() => {
     if (settings.initialAmount === null && user?.id) {
@@ -64,12 +66,17 @@ const WelcomeModal = () => {
     setCurrency(event.target.value as Currency);
   };
 
+  const handleLanguageChange = (event: SelectChangeEvent) => {
+    setLanguage(event.target.value as Language);
+  };
+
   const handleSubmit = async () => {
     setIsSaving(true);
 
     const { settings, error } = await updateSettings({
       defaultCurrency: currency,
       initialAmount: initialAmount as number,
+      language,
     });
 
     if (error) {
@@ -95,8 +102,11 @@ const WelcomeModal = () => {
           </Typography>
 
           <Typography variant="h6">
-            Please set your base currency and initial amount:
+            Please set your language, base currency and initial amount:
           </Typography>
+
+          <LanguageSelect value={language} onChange={handleLanguageChange} />
+
           <Grid container justifyContent="space-between" marginTop={4}>
             <Grid item xs={3} mr={1}>
               <CurrencySelect

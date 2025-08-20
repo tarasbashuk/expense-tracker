@@ -8,19 +8,28 @@ import Typography from '@mui/material/Typography';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import DonutSmallIcon from '@mui/icons-material/DonutSmall';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 import { NavigationPath } from '@/constants/types';
 
 const Header = async () => {
   return (
-    <Box sx={{ top: 'auto', bottom: 0, display: { xs: 'none', sm: 'block' } }}>
+    <Box
+      sx={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1100,
+        display: { xs: 'none', sm: 'block' },
+      }}
+    >
       <nav className="navbar">
         <div className="navbar-container">
           <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
             <Link href="/">
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                 <HomeIcon />
-                <Typography variant="h6">Home</Typography>
               </Stack>
             </Link>
             <SignedIn>
@@ -44,7 +53,7 @@ const Header = async () => {
                   <Typography variant="h6">Stats</Typography>
                 </Stack>
               </Link>
-              <Link href="/yearly-stats" className="nav-link">
+              <Link href={NavigationPath.YearlyStats} className="nav-link">
                 <Stack
                   direction="row"
                   spacing={1}
@@ -52,6 +61,16 @@ const Header = async () => {
                 >
                   <BarChartIcon />
                   <Typography variant="h6">Yearly stats</Typography>
+                </Stack>
+              </Link>
+              <Link href={NavigationPath.Settings} className="nav-link">
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ alignItems: 'center' }}
+                >
+                  <SettingsIcon />
+                  <Typography variant="h6">Settings</Typography>
                 </Stack>
               </Link>
             </SignedIn>

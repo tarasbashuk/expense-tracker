@@ -9,8 +9,14 @@ import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import Typography from '@mui/material/Typography';
 import MenuIcon from '@mui/icons-material/Menu';
 import AddIcon from '@mui/icons-material/Add';
+import SettingsIcon from '@mui/icons-material/Settings';
+import HomeIcon from '@mui/icons-material/Home';
+import ReceiptIcon from '@mui/icons-material/Receipt';
+import DonutSmallIcon from '@mui/icons-material/DonutSmall';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
@@ -27,6 +33,14 @@ const fabStyles = {
   right: { xs: 0, sm: 20 },
   bottom: { xs: 30, sm: 15 },
   margin: '0 auto',
+};
+
+const appBarStyles = {
+  position: 'fixed',
+  zIndex: 1100,
+  top: 'auto',
+  bottom: 0,
+  display: { xs: 'block', sm: 'none' },
 };
 
 const MobileAppBar = () => {
@@ -52,11 +66,7 @@ const MobileAppBar = () => {
   return (
     <>
       <LocalizationProvider dateAdapter={AdapterDateFns}>
-        <AppBar
-          position="fixed"
-          color="info"
-          sx={{ top: 'auto', bottom: 0, display: { xs: 'block', sm: 'none' } }}
-        >
+        <AppBar position="fixed" color="info" sx={appBarStyles}>
           <Toolbar>
             <Menu
               id="basic-menu"
@@ -67,17 +77,50 @@ const MobileAppBar = () => {
                 'aria-labelledby': 'basic-button',
               }}
             >
-              <MenuItem onClick={() => handleNav(NavigationPath.Home)}>
-                Home
+              <MenuItem
+                onClick={() => handleNav(NavigationPath.Home)}
+                sx={{ py: 1.5 }}
+              >
+                <Stack direction="row" spacing={3} alignItems="center">
+                  <HomeIcon />
+                  <Typography sx={{ ml: 0.5 }}>Home</Typography>
+                </Stack>
               </MenuItem>
-              <MenuItem onClick={() => handleNav(NavigationPath.Transactions)}>
-                Transactions
+              <MenuItem
+                onClick={() => handleNav(NavigationPath.Transactions)}
+                sx={{ py: 1.5 }}
+              >
+                <Stack direction="row" spacing={3} alignItems="center">
+                  <ReceiptIcon />
+                  <Typography sx={{ ml: 0.5 }}>Transactions</Typography>
+                </Stack>
               </MenuItem>
-              <MenuItem onClick={() => handleNav(NavigationPath.Stats)}>
-                Stats
+              <MenuItem
+                onClick={() => handleNav(NavigationPath.Stats)}
+                sx={{ py: 1.5 }}
+              >
+                <Stack direction="row" spacing={3} alignItems="center">
+                  <DonutSmallIcon />
+                  <Typography sx={{ ml: 0.5 }}>Stats</Typography>
+                </Stack>
               </MenuItem>
-              <MenuItem onClick={() => handleNav('/yearly-stats')}>
-                Yearly stats
+              <MenuItem
+                onClick={() => handleNav(NavigationPath.YearlyStats)}
+                sx={{ py: 1.5 }}
+              >
+                <Stack direction="row" spacing={3} alignItems="center">
+                  <BarChartIcon />
+                  <Typography sx={{ ml: 0.5 }}>Yearly stats</Typography>
+                </Stack>
+              </MenuItem>
+              <MenuItem
+                onClick={() => handleNav(NavigationPath.Settings)}
+                sx={{ py: 1.5 }}
+              >
+                <Stack direction="row" spacing={3} alignItems="center">
+                  <SettingsIcon />
+                  <Typography sx={{ ml: 0.5 }}>Settings</Typography>
+                </Stack>
               </MenuItem>
             </Menu>
             <IconButton

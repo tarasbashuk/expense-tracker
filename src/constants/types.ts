@@ -11,6 +11,8 @@ export enum NavigationPath {
   Home = './',
   Transactions = '/transactions',
   Stats = '/stats',
+  Settings = '/settings',
+  YearlyStats = '/yearly-stats',
 }
 
 export enum IncomeCategory {
