@@ -14,16 +14,7 @@ import { NavigationPath } from '@/constants/types';
 
 const Header = async () => {
   return (
-    <Box
-      sx={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 1100,
-        display: { xs: 'none', sm: 'block' },
-      }}
-    >
+    <Box sx={{ top: 'auto', bottom: 0, display: { xs: 'none', sm: 'block' } }}>
       <nav className="navbar">
         <div className="navbar-container">
           <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
