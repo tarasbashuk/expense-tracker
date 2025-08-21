@@ -2,8 +2,7 @@
 import { createContext, useContext, ReactNode, useState, useMemo } from 'react';
 import { UserSettings } from '@/constants/types';
 import { Language } from '@prisma/client';
-
-type Locale = 'en' | 'uk';
+import type { Locale } from '@/locales';
 
 interface SettingsContextType {
   settings: UserSettings;
@@ -27,13 +26,13 @@ export const SettingsProvider = ({
 }) => {
   const [settings, setSettings] = useState<UserSettings>(initialSettings);
 
-  const locale = useMemo(
-    () => (settings.language === Language.ENG ? 'en' : 'uk'),
+  const locale = useMemo<Locale>(
+    () => (settings.language === Language.ENG ? 'en-US' : 'uk-UA'),
     [settings.language],
   );
 
   const setLocale = (newLocale: Locale) => {
-    const newLanguage = newLocale === 'en' ? Language.ENG : Language.UKR;
+    const newLanguage = newLocale === 'en-US' ? Language.ENG : Language.UKR;
     setSettings((prevSettings) => ({
       ...prevSettings,
       language: newLanguage,

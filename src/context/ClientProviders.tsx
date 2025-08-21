@@ -14,7 +14,7 @@ export const ClientProviders = ({
     <IntlProvider
       locale={locale}
       messages={messages[locale]}
-      defaultLocale="en"
+      defaultLocale="en-US"
     >
       {children}
     </IntlProvider>

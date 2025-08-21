@@ -42,7 +42,7 @@ const SettingsPage = () => {
   const handleLanguageChange = (event: SelectChangeEvent) => {
     const newLanguage = event.target.value as Language;
     setLanguage(newLanguage);
-    setLocale(newLanguage === Language.ENG ? 'en' : 'uk');
+    setLocale(newLanguage === Language.ENG ? 'en-US' : 'uk-UA');
   };
 
   const handleCurrencyChange = (event: SelectChangeEvent) => {
