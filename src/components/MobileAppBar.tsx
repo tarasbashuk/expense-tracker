@@ -20,6 +20,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
+import { FormattedMessage } from 'react-intl';
 
 import AddTransactionModal from './AddTransactionModal/AddTransactionModal';
 import { useTransactions } from '@/context/TranasctionsContext';
@@ -81,45 +82,70 @@ const MobileAppBar = () => {
                 onClick={() => handleNav(NavigationPath.Home)}
                 sx={{ py: 1.5 }}
               >
-                <Stack direction="row" spacing={3} alignItems="center">
+                <Stack direction="row" spacing={1} alignItems="center">
                   <HomeIcon />
-                  <Typography sx={{ ml: 0.5 }}>Home</Typography>
+                  <Typography>
+                    <FormattedMessage
+                      id="navigation.home"
+                      defaultMessage="Home"
+                    />
+                  </Typography>
                 </Stack>
               </MenuItem>
               <MenuItem
                 onClick={() => handleNav(NavigationPath.Transactions)}
                 sx={{ py: 1.5 }}
               >
-                <Stack direction="row" spacing={3} alignItems="center">
+                <Stack direction="row" spacing={1} alignItems="center">
                   <ReceiptIcon />
-                  <Typography sx={{ ml: 0.5 }}>Transactions</Typography>
+                  <Typography>
+                    <FormattedMessage
+                      id="navigation.transactions"
+                      defaultMessage="Transactions"
+                    />
+                  </Typography>
                 </Stack>
               </MenuItem>
               <MenuItem
                 onClick={() => handleNav(NavigationPath.Stats)}
                 sx={{ py: 1.5 }}
               >
-                <Stack direction="row" spacing={3} alignItems="center">
+                <Stack direction="row" spacing={1} alignItems="center">
                   <DonutSmallIcon />
-                  <Typography sx={{ ml: 0.5 }}>Stats</Typography>
+                  <Typography>
+                    <FormattedMessage
+                      id="navigation.stats"
+                      defaultMessage="Stats"
+                    />
+                  </Typography>
                 </Stack>
               </MenuItem>
               <MenuItem
                 onClick={() => handleNav(NavigationPath.YearlyStats)}
                 sx={{ py: 1.5 }}
               >
-                <Stack direction="row" spacing={3} alignItems="center">
+                <Stack direction="row" spacing={1} alignItems="center">
                   <BarChartIcon />
-                  <Typography sx={{ ml: 0.5 }}>Yearly stats</Typography>
+                  <Typography>
+                    <FormattedMessage
+                      id="navigation.yearlyStats"
+                      defaultMessage="Yearly stats"
+                    />
+                  </Typography>
                 </Stack>
               </MenuItem>
               <MenuItem
                 onClick={() => handleNav(NavigationPath.Settings)}
                 sx={{ py: 1.5 }}
               >
-                <Stack direction="row" spacing={3} alignItems="center">
+                <Stack direction="row" spacing={1} alignItems="center">
                   <SettingsIcon />
-                  <Typography sx={{ ml: 0.5 }}>Settings</Typography>
+                  <Typography>
+                    <FormattedMessage
+                      id="navigation.settings"
+                      defaultMessage="Settings"
+                    />
+                  </Typography>
                 </Stack>
               </MenuItem>
             </Menu>

@@ -29,6 +29,7 @@
   "welcome.baseCurrency": "Base currency",
   "welcome.startAmount": "Start amount",
   "welcome.balanceInfo": "The balance, regardless of the actual transaction's currency, will be shown in the base currency.",
+  "welcome.encryptWarning": "Important: Data encryption setting cannot be changed later. Once enabled, your financial data will remain encrypted and this setting cannot be disabled.",
   "welcome.save": "Save",
 
   "languages.english": "English",

@@ -25,6 +25,7 @@ import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
 import { useMediaQueries } from '@/lib/useMediaQueries';
 import updateSettings from '@/app/actions/updateSettings';
 import { toast } from 'react-toastify';
+import { FormattedMessage, useIntl } from 'react-intl';
 
 const style = {
   position: 'absolute',
@@ -43,6 +44,7 @@ const WelcomeModal = () => {
   const { settings, setSettings } = useSettings();
   const { user } = useClerk();
   const { isSmall } = useMediaQueries();
+  const { formatMessage } = useIntl();
 
   const [isSaving, setIsSaving] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -102,15 +104,24 @@ const WelcomeModal = () => {
       <Box sx={style}>
         <Stack spacing={2} marginBottom={3} direction="column">
           <Typography variant="h4">
-            Welcome to the Expense Tracker App!
+            <FormattedMessage
+              id="welcome.title"
+              defaultMessage="Welcome to the Expense Tracker App!"
+            />
           </Typography>
 
           <Typography variant="h6">
-            Please set your language, base currency and initial amount:
+            <FormattedMessage
+              id="welcome.subtitle"
+              defaultMessage="Please set your language, base currency and initial amount:"
+            />
           </Typography>
 
           <LanguageSelect
-            label="Language"
+            label={formatMessage({
+              id: 'settings.language',
+              defaultMessage: 'Language',
+            })}
             value={language}
             onChange={handleLanguageChange}
           />
@@ -119,14 +130,22 @@ const WelcomeModal = () => {
             <Grid item xs={3} mr={1}>
               <CurrencySelect
                 value={currency}
-                label="Base currency"
+                label={formatMessage({
+                  id: 'welcome.baseCurrency',
+                  defaultMessage: 'Base currency',
+                })}
                 onChange={handleCurrencyChange}
               />
             </Grid>
 
             <Grid item xs={8}>
               <FormControl required fullWidth variant="standard">
-                <InputLabel htmlFor="amount">Start amount</InputLabel>
+                <InputLabel htmlFor="amount">
+                  <FormattedMessage
+                    id="welcome.startAmount"
+                    defaultMessage="Start amount"
+                  />
+                </InputLabel>
                 <Input
                   name="amountDefaultCurrency"
                   type="number"
@@ -153,27 +172,36 @@ const WelcomeModal = () => {
                 onChange={(_, v) => setEncryptData(v)}
               />
             }
-            label="Encrypt data"
+            label={
+              <FormattedMessage
+                id="settings.encryptData"
+                defaultMessage="Encrypt data"
+              />
+            }
           />
 
           {encryptData && (
             <Alert severity="warning">
               <Typography variant="body2">
-                <strong>Important:</strong> Data encryption setting cannot be
-                changed later. Once enabled, your financial data will remain
-                encrypted and this setting cannot be disabled.
+                <FormattedMessage
+                  id="welcome.encryptWarning"
+                  defaultMessage="Important: Data encryption setting cannot be changed later. Once enabled, your financial data will remain encrypted and this setting cannot be disabled."
+                />
               </Typography>
             </Alert>
           )}
 
           <Typography variant="body1">
-            The balance, regardless of the actual transaction&apos;s currency,
-            will be shown in the base currency.
+            <FormattedMessage
+              id="welcome.balanceInfo"
+              defaultMessage="The balance, regardless of the actual transaction's currency, will be shown in the base currency."
+            />
           </Typography>
           <Alert severity="warning">
-            Please be aware that if you change the base currency later, all your
-            existing transactions won&apos;t be recalculated automatically and
-            will need to be updated manually.
+            <FormattedMessage
+              id="settings.currencyWarning"
+              defaultMessage="Please be aware that if you change the base currency later, all your existing transactions won't be recalculated automatically and will need to be updated manually."
+            />
           </Alert>
 
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -184,7 +212,7 @@ const WelcomeModal = () => {
               onClick={handleSubmit}
               disabled={isSubmitDisabled}
             >
-              Save
+              <FormattedMessage id="welcome.saveButton" defaultMessage="Save" />
             </Button>
           </Box>
         </Stack>

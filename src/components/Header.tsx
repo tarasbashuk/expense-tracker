@@ -1,3 +1,4 @@
+'use client';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import Box from '@mui/material/Box';
@@ -11,8 +12,9 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 import { NavigationPath } from '@/constants/types';
+import { FormattedMessage } from 'react-intl';
 
-const Header = async () => {
+const Header = () => {
   return (
     <Box sx={{ top: 'auto', bottom: 0, display: { xs: 'none', sm: 'block' } }}>
       <nav className="navbar">
@@ -21,6 +23,12 @@ const Header = async () => {
             <Link href="/">
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                 <HomeIcon />
+                <Typography variant="h6">
+                  <FormattedMessage
+                    id="navigation.home"
+                    defaultMessage="Home"
+                  />
+                </Typography>
               </Stack>
             </Link>
             <SignedIn>
@@ -31,7 +39,12 @@ const Header = async () => {
                   sx={{ alignItems: 'center' }}
                 >
                   <ReceiptIcon />
-                  <Typography variant="h6">Transactions</Typography>
+                  <Typography variant="h6">
+                    <FormattedMessage
+                      id="navigation.transactions"
+                      defaultMessage="Transactions"
+                    />
+                  </Typography>
                 </Stack>
               </Link>
               <Link href={NavigationPath.Stats} className="nav-link">
@@ -41,7 +54,12 @@ const Header = async () => {
                   sx={{ alignItems: 'center' }}
                 >
                   <DonutSmallIcon />
-                  <Typography variant="h6">Stats</Typography>
+                  <Typography variant="h6">
+                    <FormattedMessage
+                      id="navigation.stats"
+                      defaultMessage="Stats"
+                    />
+                  </Typography>
                 </Stack>
               </Link>
               <Link href={NavigationPath.YearlyStats} className="nav-link">
@@ -51,7 +69,12 @@ const Header = async () => {
                   sx={{ alignItems: 'center' }}
                 >
                   <BarChartIcon />
-                  <Typography variant="h6">Yearly stats</Typography>
+                  <Typography variant="h6">
+                    <FormattedMessage
+                      id="navigation.yearlyStats"
+                      defaultMessage="Yearly stats"
+                    />
+                  </Typography>
                 </Stack>
               </Link>
               <Link href={NavigationPath.Settings} className="nav-link">
@@ -61,7 +84,12 @@ const Header = async () => {
                   sx={{ alignItems: 'center' }}
                 >
                   <SettingsIcon />
-                  <Typography variant="h6">Settings</Typography>
+                  <Typography variant="h6">
+                    <FormattedMessage
+                      id="navigation.settings"
+                      defaultMessage="Settings"
+                    />
+                  </Typography>
                 </Stack>
               </Link>
             </SignedIn>
