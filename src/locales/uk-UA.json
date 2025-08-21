@@ -73,5 +73,14 @@
   "transactions.deleteConfirm": "Ви впевнені, що хочете видалити цю транзакцію?",
   "balance.showInfo": "Показати інформацію про баланс",
   "filters.month": "Місяць",
-  "filters.year": "Рік"
+  "filters.year": "Рік",
+  "balance.title": "Ваш баланс",
+  "balance.initial": "Початковий баланс:",
+
+  "incomeExpense.income": "Дохід",
+  "incomeExpense.expense": "Витрати",
+  "incomeExpense.creditReceived": "кредит отримано",
+  "incomeExpense.creditReturned": "кредит повернено",
+
+  "common.plus": "plus:"
 }

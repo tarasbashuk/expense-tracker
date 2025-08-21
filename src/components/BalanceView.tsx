@@ -11,27 +11,25 @@ interface Props {
   defaultCurrency?: Currency;
 }
 
-const BalanceClient = ({ balance, initialAmount, defaultCurrency }: Props) => {
-  return (
-    <>
-      <Typography variant="h5" component="p">
-        <FormattedMessage id="balance.title" defaultMessage="Your balance" />
+const BalanceView = ({ balance, initialAmount, defaultCurrency }: Props) => (
+  <>
+    <Typography variant="h5" component="p">
+      <FormattedMessage id="balance.title" defaultMessage="Your balance" />
+    </Typography>
+    <Stack direction="row" alignItems="center" spacing={1}>
+      <HistoryIcon color="info" fontSize="small" />
+      <Typography variant="subtitle2" color="text.secondary">
+        <FormattedMessage
+          id="balance.initial"
+          defaultMessage="Initial balance:"
+        />{' '}
+        {formatCurrency(Number(initialAmount), defaultCurrency)}
       </Typography>
-      <Stack direction="row" alignItems="center" spacing={1}>
-        <HistoryIcon color="info" fontSize="small" />
-        <Typography variant="subtitle2" color="text.secondary">
-          <FormattedMessage
-            id="balance.initial"
-            defaultMessage="Initial balance:"
-          />{' '}
-          {formatCurrency(Number(initialAmount), defaultCurrency)}
-        </Typography>
-      </Stack>
-      <Typography variant="h4" component="p" gutterBottom>
-        {formatCurrency(Number(balance), defaultCurrency)}
-      </Typography>
-    </>
-  );
-};
+    </Stack>
+    <Typography variant="h4" component="p" gutterBottom>
+      {formatCurrency(Number(balance), defaultCurrency)}
+    </Typography>
+  </>
+);
 
-export default BalanceClient;
+export default BalanceView;

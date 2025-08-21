@@ -73,5 +73,14 @@
   "transactions.deleteConfirm": "Are you sure you want to delete this transaction?",
   "balance.showInfo": "Show balance info",
   "filters.month": "Month",
-  "filters.year": "Year"
+  "filters.year": "Year",
+  "balance.title": "Your balance",
+  "balance.initial": "Initial balance:",
+
+  "incomeExpense.income": "Income",
+  "incomeExpense.expense": "Expense",
+  "incomeExpense.creditReceived": "credit received",
+  "incomeExpense.creditReturned": "credit returned",
+
+  "common.plus": "plus:"
 }
