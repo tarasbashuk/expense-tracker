@@ -82,5 +82,34 @@
   "incomeExpense.creditReceived": "кредит отримано",
   "incomeExpense.creditReturned": "кредит повернено",
 
-  "common.plus": "plus:"
+  "common.plus": "plus:",
+
+  "categories.salary": "Зарплата",
+  "categories.gifts": "Подарунки",
+  "categories.creditReceived": "Отримано кредит",
+  "categories.ROI": "Дохід від інвестицій",
+  "categories.others": "Інше",
+
+  "categories.groceries": "Продукти",
+  "categories.dining": "Кафе та ресторани",
+  "categories.rent": "Оренда житла",
+  "categories.utilities": "Комунальні послуги",
+  "categories.home": "Домашні речі",
+  "categories.auto": "Авто",
+  "categories.transport": "Таксі та громадський транспорт",
+  "categories.shopping": "Покупки",
+  "categories.gadgets": "Гаджети та техніка",
+  "categories.subscriptions": "Мобільний та підписки",
+  "categories.pets": "Тварини",
+  "categories.donations": "Благодійність",
+  "categories.education": "Освіта",
+  "categories.sports": "Спорт",
+  "categories.entertainment": "Розваги",
+  "categories.beauty": "Краса та послуги",
+  "categories.healthcare": "Медицина та ліки",
+  "categories.giftsExp": "Подарунки",
+  "categories.trips": "Подорожі",
+  "categories.savings": "Заощадження",
+  "categories.investments": "Інвестиції",
+  "categories.CCRepayment": "Погашення кредитки"
 }

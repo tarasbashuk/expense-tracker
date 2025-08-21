@@ -35,6 +35,7 @@ import { DatePicker } from '@mui/x-date-pickers';
 import CurrencySelect from '../CurrencySelect';
 import TransactionTypeButtonGroup from '../shared/TransactionTypeButtonGroup';
 import { FormattedMessage, useIntl } from 'react-intl';
+import { useCategoryI18n } from '@/lib/useCategoryI18n';
 
 const style = {
   position: 'absolute',
@@ -114,6 +115,7 @@ const AddTransactionModalView: React.FC<Props> = ({
       : EXPENSE_CATEGORIES_LIST;
 
   const { formatMessage } = useIntl();
+  const { getLabel } = useCategoryI18n();
 
   return (
     <Modal
@@ -257,7 +259,7 @@ const AddTransactionModalView: React.FC<Props> = ({
                   value={category as string}
                   onChange={handleCategoryChange}
                 >
-                  {categories.map(({ value, label }) => {
+                  {categories.map(({ value }) => {
                     const IconComponent = getIconByName(
                       value as TransactionCategory,
                     );
@@ -266,7 +268,7 @@ const AddTransactionModalView: React.FC<Props> = ({
                       <MenuItem key={value} value={value}>
                         <Stack direction="row" alignItems="center">
                           <IconComponent sx={{ marginRight: '8px' }} />
-                          {label}
+                          {getLabel(value as TransactionCategory)}
                         </Stack>
                       </MenuItem>
                     );

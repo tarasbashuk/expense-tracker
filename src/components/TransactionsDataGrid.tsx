@@ -24,9 +24,10 @@ import { useIntl } from 'react-intl';
 
 import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
 import { TransactionCategory } from '@/constants/types';
-import { getCategoryLabel, getTransactionSign } from '@/lib/utils';
+import { getTransactionSign } from '@/lib/utils';
 import { useSettings } from '@/context/SettingsContexts';
 import MobileWarning from './shared/MobileWarning';
+import { useCategoryI18n } from '@/lib/useCategoryI18n';
 
 interface TransactionsDataGridProps {
   rows: Transaction[];
@@ -155,6 +156,7 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
   handleDelete,
 }) => {
   const { formatMessage } = useIntl();
+  const { getLabel } = useCategoryI18n();
   const columns: GridColDef<Transaction>[] = useMemo(
     () => [
       {
@@ -178,8 +180,7 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
           defaultMessage: 'Category',
         }),
         width: 200,
-        valueGetter: (category: TransactionCategory) =>
-          getCategoryLabel(category),
+        valueGetter: (category: TransactionCategory) => getLabel(category),
         // editable: true,
       },
       {
