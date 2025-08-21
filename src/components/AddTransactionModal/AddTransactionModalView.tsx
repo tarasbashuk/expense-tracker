@@ -359,7 +359,7 @@ const AddTransactionModalView: React.FC<Props> = ({
               </Grid>
             )}
 
-            <Grid item xs={12} sm={5} marginTop={2} sx={{ marginLeft: 'auto' }}>
+            <Grid item xs={12} sm={6} marginTop={2} sx={{ marginLeft: 'auto' }}>
               <Button
                 fullWidth
                 type="submit"
