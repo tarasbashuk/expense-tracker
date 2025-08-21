@@ -12,7 +12,7 @@ const Transactions = async () => {
   }
 
   return (
-    <Suspense fallback={<p>Loading Transaction List...</p>}>
+    <Suspense fallback={<p>Loading...</p>}>
       <TransactionList />
     </Suspense>
   );

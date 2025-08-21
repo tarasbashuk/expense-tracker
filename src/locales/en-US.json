@@ -11,6 +11,9 @@
   "common.copy": "Copy",
   "balance.label": "Balance",
 
+  "error.title": "Oops, something went wrong! 🤷🏻‍♂️",
+  "error.reload": "Reload the page",
+
   "navigation.home": "Home",
   "navigation.transactions": "Transactions",
   "navigation.stats": "Stats",
@@ -71,6 +74,7 @@
   "grid.type": "Type",
   "grid.actionMenu": "Action menu",
 
+  "yearly.title": "Yearly overview",
   "yearly.income": "Income",
   "yearly.expense": "Expense",
   "yearly.year": "Year",

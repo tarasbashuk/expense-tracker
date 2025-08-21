@@ -11,6 +11,9 @@
   "common.copy": "Копіювати",
   "balance.label": "Баланс",
 
+  "error.title": "Ой, щось пішло не так! 🤷🏻‍♂️",
+  "error.reload": "Перезавантажити сторінку",
+
   "navigation.home": "Головна",
   "navigation.transactions": "Транзакції",
   "navigation.stats": "Статистика",
@@ -71,6 +74,7 @@
   "grid.type": "Тип",
   "grid.actionMenu": "Меню дій",
 
+  "yearly.title": "Річний огляд",
   "yearly.income": "Дохід",
   "yearly.expense": "Витрати",
   "yearly.year": "Рік",
@@ -90,7 +94,7 @@
   "incomeExpense.creditReceived": "кредит отримано",
   "incomeExpense.creditReturned": "кредит повернено",
 
-  "common.plus": "plus:",
+  "common.plus": "плюс:",
   "stats.clickToSeeInfo": "Клікніть по діаграмі, щоб побачити інформацію",
   "stats.noDataForMonth": "Немає транзакцій за обраний місяць.",
 

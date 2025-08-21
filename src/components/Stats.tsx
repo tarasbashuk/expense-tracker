@@ -31,6 +31,7 @@ import MobileWarning from './shared/MobileWarning';
 import { getIconByName } from '@/lib/getCategoryIcon';
 import { ChartType, TransactionCategory } from '@/constants/types';
 import { useIntl, FormattedMessage } from 'react-intl';
+import { useCategoryI18n } from '@/lib/useCategoryI18n';
 import {
   CURRENCY_SYMBOL_MAP,
   EXPENSE_CATEGORIES_LIST,
@@ -110,6 +111,9 @@ const Stats = () => {
   );
   const [chartType, setChartType] = useState<ChartType>('pie');
 
+  const { formatMessage } = useIntl();
+  const { getLabel } = useCategoryI18n();
+
   const handleTranasctionTypeChange = (type: TransactionType) => {
     setActiveDataIndex(null);
     setTranasctionType(type);
@@ -157,19 +161,22 @@ const Stats = () => {
 
   const expenseType = transactionType === TransactionType.Expense;
 
-  const chartData = expenseType ? expenseChartData : incomeChartData;
+  const rawChartData = expenseType ? expenseChartData : incomeChartData;
+
+  // Translate category keys to localized labels
+  const chartData = rawChartData.map((item) => ({
+    ...item,
+    label: getLabel(item.label as TransactionCategory),
+  }));
 
   const activeData = chartData[activeDataIndex as number];
+  const activeRawData = rawChartData[activeDataIndex as number];
 
-  //  it's not effective, think about crating a label - key map
-  const activeCategory = ALL_CATEGORIES_LIST.find(
-    (item) => item.label === activeData?.label,
-  )?.value;
+  //  Use the category key from raw data instead of searching by label
+  const activeCategory = activeRawData?.label;
 
   const IconComponent = getIconByName(activeCategory as TransactionCategory);
   const labelColor = COLOR_MAP[activeCategory as TransactionCategory];
-
-  const { formatMessage } = useIntl();
 
   if (error) {
     return (

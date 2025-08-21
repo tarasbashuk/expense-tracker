@@ -18,6 +18,7 @@ import { getYearlyChartDims } from '@/lib/getYearlyChartDims';
 import MobileWarning from '@/components/shared/MobileWarning';
 import AdditionalBalanceInfo from './AdditionalBalanceInfo';
 import { useIntl } from 'react-intl';
+import { useSettings } from '@/context/SettingsContexts';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -29,6 +30,9 @@ const YearlyStatsContent = () => {
   const [incomeData, setIncomeData] = useState<number[]>([]);
   const [expenseData, setExpenseData] = useState<number[]>([]);
   const { formatMessage } = useIntl();
+  const { locale } = useSettings();
+  const capitalize = (s: string) =>
+    s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
   const { width, height, margin } = getYearlyChartDims({
     isExtraSmall,
@@ -82,13 +86,20 @@ const YearlyStatsContent = () => {
   return (
     <Stack alignItems="center" spacing={3} sx={{ mt: 4 }}>
       <MobileWarning />
-      <Typography variant="h4">Yearly overview</Typography>
+      <Typography variant="h4">
+        {formatMessage({
+          id: 'yearly.title',
+          defaultMessage: 'Yearly overview',
+        })}
+      </Typography>
       <FormControl sx={{ minWidth: 120 }}>
-        <InputLabel id="year-select-label">Year</InputLabel>
+        <InputLabel id="year-select-label">
+          {formatMessage({ id: 'filters.year', defaultMessage: 'Year' })}
+        </InputLabel>
         <Select
           labelId="year-select-label"
           value={year}
-          label="Year"
+          label={formatMessage({ id: 'filters.year', defaultMessage: 'Year' })}
           onChange={(e) => setYear(Number(e.target.value))}
         >
           {YEAR_LIST.map((y) => (
@@ -139,7 +150,13 @@ const YearlyStatsContent = () => {
           series={series}
           xAxis={[
             {
-              data: MONTH_LIST.map((m) => m.label),
+              data: MONTH_LIST.map((m) =>
+                capitalize(
+                  new Intl.DateTimeFormat(locale, { month: 'long' }).format(
+                    new Date(2000, Number(m.value), 1),
+                  ),
+                ),
+              ),
               scaleType: 'band',
               tickLabelStyle: {
                 angle: isExtraSmall || isSmall ? -45 : 45,

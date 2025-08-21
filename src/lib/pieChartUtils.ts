@@ -3,7 +3,6 @@ import { Transaction, TransactionType } from '@prisma/client';
 import { COLOR_MAP } from './getCategoryColor';
 import { TransactionCategory } from '@/constants/types';
 import Decimal from 'decimal.js';
-import { getCategoryLabel } from './utils';
 
 export const groupTransactionsByCategory = (
   transactions: Transaction[],
@@ -32,6 +31,6 @@ export const convertToChartData = (
   Object.entries(groupedData).map(([category, amount], index) => ({
     id: index,
     value: amount.toDecimalPlaces(0).toNumber(),
-    label: getCategoryLabel(category as TransactionCategory),
+    label: category, // Use category key instead of translated label
     color: COLOR_MAP[category as TransactionCategory],
   }));
