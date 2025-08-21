@@ -4,7 +4,7 @@ import { Currency, Settings, TransactionType } from '@prisma/client';
 
 export type UserSettings = Pick<
   Settings,
-  'theme' | 'language' | 'defaultCurrency' | 'initialAmount'
+  'theme' | 'language' | 'defaultCurrency' | 'initialAmount' | 'encryptData'
 >;
 
 export enum NavigationPath {

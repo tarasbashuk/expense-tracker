@@ -8,6 +8,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   theme: 'Light',
   defaultCurrency: 'EUR',
   initialAmount: null,
+  encryptData: false,
 };
 
 export const INCOME_CATEGORIES: { [key in IncomeCategory]: string } = {

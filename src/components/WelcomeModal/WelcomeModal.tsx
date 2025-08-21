@@ -14,6 +14,8 @@ import {
   SelectChangeEvent,
   Stack,
   Typography,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import CurrencySelect from '../CurrencySelect';
@@ -38,7 +40,7 @@ const style = {
 };
 
 const WelcomeModal = () => {
-  const { settings } = useSettings();
+  const { settings, setSettings } = useSettings();
   const { user } = useClerk();
   const { isSmall } = useMediaQueries();
 
@@ -46,8 +48,9 @@ const WelcomeModal = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [currency, setCurrency] = useState<Currency>(Currency.EUR);
-  const [initialAmount, setInititialAmount] = useState<number | undefined>();
+  const [initialAmount, setInitialAmount] = useState(0);
   const [language, setLanguage] = useState<Language>(Language.ENG);
+  const [encryptData, setEncryptData] = useState(false);
 
   useEffect(() => {
     if (settings.initialAmount === null && user?.id) {
@@ -55,12 +58,11 @@ const WelcomeModal = () => {
     }
   }, [settings.initialAmount, user?.id]);
 
-  const isSubmitDisabled = isSaving || !initialAmount;
+  const isSubmitDisabled = isSaving;
 
   const handleAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    // to prevent passing 0 value if the event.target.value is an empty string
-    const value = Number(event.target.value) || undefined;
-    setInititialAmount(value);
+    const value = event.target.value === '' ? 0 : Number(event.target.value);
+    setInitialAmount(value);
   };
   const handleCurrencyChange = (event: SelectChangeEvent) => {
     setCurrency(event.target.value as Currency);
@@ -75,13 +77,15 @@ const WelcomeModal = () => {
 
     const { settings, error } = await updateSettings({
       defaultCurrency: currency,
-      initialAmount: initialAmount as number,
       language,
+      encryptData,
+      initialAmount,
     });
 
     if (error) {
       toast.error(error);
     } else if (settings) {
+      setSettings(settings);
       toast.success('Changes were saved');
       setIsModalOpen(false);
     }
@@ -141,6 +145,26 @@ const WelcomeModal = () => {
               </FormControl>
             </Grid>
           </Grid>
+
+          <FormControlLabel
+            control={
+              <Switch
+                checked={encryptData}
+                onChange={(_, v) => setEncryptData(v)}
+              />
+            }
+            label="Encrypt data"
+          />
+
+          {encryptData && (
+            <Alert severity="warning">
+              <Typography variant="body2">
+                <strong>Important:</strong> Data encryption setting cannot be
+                changed later. Once enabled, your financial data will remain
+                encrypted and this setting cannot be disabled.
+              </Typography>
+            </Alert>
+          )}
 
           <Typography variant="body1">
             The balance, regardless of the actual transaction&apos;s currency,

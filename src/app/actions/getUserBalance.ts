@@ -13,7 +13,6 @@ async function getUserBalance(): Promise<{
   defaultCurrency?: Currency;
   error?: string;
 }> {
-  // const { userId } = auth();
   const user = await currentUser();
   const userId = user?.id;
   const userEmail = user?.primaryEmailAddress?.emailAddress;
@@ -30,12 +29,20 @@ async function getUserBalance(): Promise<{
       select: {
         initialAmount: true,
         defaultCurrency: true,
+        encryptData: true,
       },
     });
+
     const transactions = await db.transaction.findMany({
       where: { userId },
     });
-    const initialAmount = new Decimal(Number(settings?.initialAmount || 0));
+
+    let initialAmountValue = settings?.initialAmount || 0;
+    if (settings?.encryptData && decryptKey && settings.initialAmount != null) {
+      initialAmountValue = decryptFloat(settings.initialAmount, decryptKey);
+    }
+
+    const initialAmount = new Decimal(initialAmountValue);
     const defaultCurrency = settings?.defaultCurrency;
 
     const balance = transactions.reduce((sum, tr) => {

@@ -18,6 +18,8 @@
   "settings.language": "Мова",
   "settings.defaultCurrency": "Валюта за замовчуванням",
   "settings.initialAmount": "Початкова сума",
+  "settings.encryptData": "Шифрувати дані",
+  "settings.encryptDataDescription": "Це налаштування не можна змінити після початкової настройки",
   "settings.saveSettings": "Зберегти налаштування",
   "settings.settingsSaved": "Налаштування збережено успішно",
   "settings.currencyWarning": "Будь ласка, зверніть увагу, що якщо ви зміните валюту за замовчуванням пізніше, всі ваші існуючі транзакції не будуть перераховані автоматично і їх потрібно буде оновити вручну.",

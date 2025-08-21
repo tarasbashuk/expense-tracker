@@ -18,6 +18,8 @@
   "settings.language": "Language",
   "settings.defaultCurrency": "Default Currency",
   "settings.initialAmount": "Initial Amount",
+  "settings.encryptData": "Encrypt data",
+  "settings.encryptDataDescription": "This setting cannot be changed after initial setup",
   "settings.saveSettings": "Save Settings",
   "settings.settingsSaved": "Settings saved successfully",
   "settings.currencyWarning": "Please be aware that if you change the default currency later, all your existing transactions won't be recalculated automatically and will need to be updated manually.",

@@ -1,15 +1,17 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  Alert,
   Box,
+  Button,
   Card,
   CardContent,
-  Typography,
-  TextField,
-  Button,
-  Stack,
-  Alert,
+  FormControlLabel,
   InputAdornment,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
 } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { Currency, Language } from '@prisma/client';
@@ -23,19 +25,21 @@ import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
 import updateSettings from '@/app/actions/updateSettings';
 
 const SettingsPage = () => {
-  const { settings, setLocale } = useSettings();
+  const { settings, setLocale, setSettings } = useSettings();
   const { formatMessage } = useIntl();
   const [isSaving, setIsSaving] = useState(false);
 
   const [language, setLanguage] = useState<Language>(Language.ENG);
   const [currency, setCurrency] = useState<Currency>(Currency.EUR);
-  const [initialAmount, setInitialAmount] = useState<number | undefined>();
+  const [initialAmount, setInitialAmount] = useState<number>();
+  const [encryptData, setEncryptData] = useState<boolean>(false);
 
   useEffect(() => {
     if (settings) {
       setLanguage(settings.language);
       setCurrency(settings.defaultCurrency);
-      setInitialAmount(settings.initialAmount || undefined);
+      setInitialAmount(settings.initialAmount || 0);
+      setEncryptData(Boolean(settings.encryptData));
     }
   }, [settings]);
 
@@ -50,7 +54,7 @@ const SettingsPage = () => {
   };
 
   const handleAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Number(event.target.value) || undefined;
+    const value = event.target.value === '' ? 0 : Number(event.target.value);
     setInitialAmount(value);
   };
 
@@ -61,11 +65,13 @@ const SettingsPage = () => {
       defaultCurrency: currency,
       initialAmount: initialAmount as number,
       language,
+      encryptData,
     });
 
     if (error) {
       toast.error(error);
     } else if (updatedSettings) {
+      setSettings(updatedSettings);
       toast.success(
         formatMessage({
           id: 'settings.settingsSaved',
@@ -75,8 +81,6 @@ const SettingsPage = () => {
     }
     setIsSaving(false);
   };
-
-  const isSubmitDisabled = isSaving;
 
   return (
     <Box sx={{ p: { xs: 2, sm: 3 }, maxWidth: 600, mx: 'auto', width: '100%' }}>
@@ -121,7 +125,7 @@ const SettingsPage = () => {
                 defaultMessage: 'Initial Amount',
               })}
               type="number"
-              value={initialAmount || ''}
+              value={initialAmount}
               onChange={handleAmountChange}
               inputProps={{
                 min: 0,
@@ -135,6 +139,26 @@ const SettingsPage = () => {
                 ),
               }}
             />
+
+            <FormControlLabel
+              control={<Switch disabled checked={encryptData} />}
+              label={
+                <Box>
+                  <Typography variant="body2">
+                    <FormattedMessage
+                      id="settings.encryptData"
+                      defaultMessage="Encrypt data"
+                    />
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    <FormattedMessage
+                      id="settings.encryptDataDescription"
+                      defaultMessage="This setting cannot be changed after initial setup"
+                    />
+                  </Typography>
+                </Box>
+              }
+            />
           </Stack>
         </CardContent>
       </Card>
@@ -147,11 +171,7 @@ const SettingsPage = () => {
       </Alert>
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          disabled={isSubmitDisabled}
-        >
+        <Button variant="contained" onClick={handleSubmit} disabled={isSaving}>
           <FormattedMessage
             id="settings.saveSettings"
             defaultMessage="Save Settings"
