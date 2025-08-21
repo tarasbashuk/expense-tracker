@@ -15,17 +15,17 @@ const LANGUAGE_OPTIONS = [
 
 interface LanguageSelectProps {
   value: Language;
-  label?: string;
+  label: string;
   fullWidth?: boolean;
   /* eslint-disable-next-line no-unused-vars*/
   onChange: (event: SelectChangeEvent) => void;
 }
 
-const LanguageSelect = ({ value, onChange }: LanguageSelectProps) => {
+const LanguageSelect = ({ value, label, onChange }: LanguageSelectProps) => {
   return (
     <FormControl variant="standard" fullWidth>
-      <InputLabel>Language</InputLabel>
-      <Select value={value} label="Language" onChange={onChange}>
+      <InputLabel>{label}</InputLabel>
+      <Select value={value} onChange={onChange}>
         {LANGUAGE_OPTIONS.map((option) => (
           <MenuItem key={option.value} value={option.value}>
             {option.label}

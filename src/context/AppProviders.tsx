@@ -5,6 +5,7 @@ import { TransactionsProvider } from '@/context/TranasctionsContext';
 import { CurrenciesProvider } from '@/context/CurrenciesContext';
 import { DEFAULT_SETTINGS } from '@/constants/constants';
 import { getOrCreateUser } from '@/lib/userUtils';
+import { ClientProviders } from './ClientProviders';
 
 export async function AppProviders({
   children,
@@ -17,11 +18,13 @@ export async function AppProviders({
 
   return (
     <SettingsProvider initialSettings={settings || DEFAULT_SETTINGS}>
-      <TransactionsProvider initialSettings={[]}>
-        <CurrenciesProvider initialCurrencies={currencies || {}}>
-          {children}
-        </CurrenciesProvider>
-      </TransactionsProvider>
+      <ClientProviders>
+        <TransactionsProvider initialSettings={[]}>
+          <CurrenciesProvider initialCurrencies={currencies || {}}>
+            {children}
+          </CurrenciesProvider>
+        </TransactionsProvider>
+      </ClientProviders>
     </SettingsProvider>
   );
 }

@@ -14,6 +14,7 @@ import {
 import { SelectChangeEvent } from '@mui/material/Select';
 import { Currency, Language } from '@prisma/client';
 import { toast } from 'react-toastify';
+import { FormattedMessage, useIntl } from 'react-intl';
 
 import { useSettings } from '@/context/SettingsContexts';
 import CurrencySelect from '@/components/CurrencySelect';
@@ -22,7 +23,8 @@ import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
 import updateSettings from '@/app/actions/updateSettings';
 
 const SettingsPage = () => {
-  const { settings } = useSettings();
+  const { settings, setLocale } = useSettings();
+  const { formatMessage } = useIntl();
   const [isSaving, setIsSaving] = useState(false);
 
   const [language, setLanguage] = useState<Language>(Language.ENG);
@@ -38,7 +40,9 @@ const SettingsPage = () => {
   }, [settings]);
 
   const handleLanguageChange = (event: SelectChangeEvent) => {
-    setLanguage(event.target.value as Language);
+    const newLanguage = event.target.value as Language;
+    setLanguage(newLanguage);
+    setLocale(newLanguage === Language.ENG ? 'en' : 'uk');
   };
 
   const handleCurrencyChange = (event: SelectChangeEvent) => {
@@ -62,7 +66,12 @@ const SettingsPage = () => {
     if (error) {
       toast.error(error);
     } else if (updatedSettings) {
-      toast.success('Settings saved successfully');
+      toast.success(
+        formatMessage({
+          id: 'settings.settingsSaved',
+          defaultMessage: 'Settings saved successfully',
+        }),
+      );
     }
     setIsSaving(false);
   };
@@ -72,33 +81,45 @@ const SettingsPage = () => {
   return (
     <Box sx={{ p: { xs: 2, sm: 3 }, maxWidth: 600, mx: 'auto', width: '100%' }}>
       <Typography variant="h4" gutterBottom>
-        Settings
+        <FormattedMessage id="settings.title" defaultMessage="Settings" />
       </Typography>
 
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            General Settings
+            <FormattedMessage
+              id="settings.generalSettings"
+              defaultMessage="General settings"
+            />
           </Typography>
 
           <Stack spacing={3}>
             <LanguageSelect
               value={language}
-              label="Language"
+              label={formatMessage({
+                id: 'settings.language',
+                defaultMessage: 'Language',
+              })}
               onChange={handleLanguageChange}
               fullWidth
             />
 
             <CurrencySelect
               value={currency}
-              label="Default Currency"
+              label={formatMessage({
+                id: 'settings.defaultCurrency',
+                defaultMessage: 'Default Currency',
+              })}
               onChange={handleCurrencyChange}
             />
 
             <TextField
               fullWidth
               variant="standard"
-              label="Initial Amount"
+              label={formatMessage({
+                id: 'settings.initialAmount',
+                defaultMessage: 'Initial Amount',
+              })}
               type="number"
               value={initialAmount || ''}
               onChange={handleAmountChange}
@@ -119,9 +140,10 @@ const SettingsPage = () => {
       </Card>
 
       <Alert severity="warning" sx={{ mb: 3 }}>
-        Please be aware that if you change the default currency, all your
-        existing transactions won&apos;t be recalculated automatically and will
-        need to be updated manually.
+        <FormattedMessage
+          id="settings.currencyWarning"
+          defaultMessage="Please be aware that if you change the default currency, all your existing transactions won't be recalculated automatically and will need to be updated manually."
+        />
       </Alert>
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -130,7 +152,10 @@ const SettingsPage = () => {
           onClick={handleSubmit}
           disabled={isSubmitDisabled}
         >
-          Save Settings
+          <FormattedMessage
+            id="settings.saveSettings"
+            defaultMessage="Save Settings"
+          />
         </Button>
       </Box>
     </Box>

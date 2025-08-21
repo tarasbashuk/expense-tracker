@@ -1,0 +1,39 @@
+{
+  "common.save": "Зберегти",
+  "common.cancel": "Скасувати",
+  "common.loading": "Завантаження...",
+  "common.error": "Помилка",
+  "common.success": "Успішно",
+  "common.warning": "Попередження",
+  "common.info": "Інформація",
+
+  "navigation.home": "Головна",
+  "navigation.transactions": "Транзакції",
+  "navigation.stats": "Статистика",
+  "navigation.yearlyStats": "Річна статистика",
+  "navigation.settings": "Налаштування",
+
+  "settings.title": "Налаштування",
+  "settings.generalSettings": "Загальні налаштування",
+  "settings.language": "Мова",
+  "settings.defaultCurrency": "Валюта за замовчуванням",
+  "settings.initialAmount": "Початкова сума",
+  "settings.saveSettings": "Зберегти налаштування",
+  "settings.settingsSaved": "Налаштування збережено успішно",
+  "settings.currencyWarning": "Будь ласка, зверніть увагу, що якщо ви зміните валюту за замовчуванням пізніше, всі ваші існуючі транзакції не будуть перераховані автоматично і їх потрібно буде оновити вручну.",
+
+  "welcome.title": "Ласкаво просимо до додатку для відстеження витрат!",
+  "welcome.subtitle": "Будь ласка, встановіть мову, базову валюту та початкову суму:",
+  "welcome.baseCurrency": "Базова валюта",
+  "welcome.startAmount": "Початкова сума",
+  "welcome.balanceInfo": "Баланс, незалежно від валюти фактичної транзакції, буде показано в базовій валюті.",
+  "welcome.save": "Зберегти",
+
+  "languages.english": "English",
+  "languages.ukrainian": "Українська",
+
+  "currencies.EUR": "EUR",
+  "currencies.PLN": "PLN",
+  "currencies.UAH": "UAH",
+  "currencies.USD": "USD"
+}

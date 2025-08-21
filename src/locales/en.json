@@ -1,0 +1,39 @@
+{
+  "common.save": "Save",
+  "common.cancel": "Cancel",
+  "common.loading": "Loading...",
+  "common.error": "Error",
+  "common.success": "Success",
+  "common.warning": "Warning",
+  "common.info": "Information",
+
+  "navigation.home": "Home",
+  "navigation.transactions": "Transactions",
+  "navigation.stats": "Stats",
+  "navigation.yearlyStats": "Yearly stats",
+  "navigation.settings": "Settings",
+
+  "settings.title": "Settings",
+  "settings.generalSettings": "General settings",
+  "settings.language": "Language",
+  "settings.defaultCurrency": "Default Currency",
+  "settings.initialAmount": "Initial Amount",
+  "settings.saveSettings": "Save Settings",
+  "settings.settingsSaved": "Settings saved successfully",
+  "settings.currencyWarning": "Please be aware that if you change the default currency later, all your existing transactions won't be recalculated automatically and will need to be updated manually.",
+
+  "welcome.title": "Welcome to the Expense Tracker App!",
+  "welcome.subtitle": "Please set your language, base currency and initial amount:",
+  "welcome.baseCurrency": "Base currency",
+  "welcome.startAmount": "Start amount",
+  "welcome.balanceInfo": "The balance, regardless of the actual transaction's currency, will be shown in the base currency.",
+  "welcome.save": "Save",
+
+  "languages.english": "English",
+  "languages.ukrainian": "Українська",
+
+  "currencies.EUR": "EUR",
+  "currencies.PLN": "PLN",
+  "currencies.UAH": "UAH",
+  "currencies.USD": "USD"
+}

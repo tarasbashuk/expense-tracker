@@ -105,7 +105,11 @@ const WelcomeModal = () => {
             Please set your language, base currency and initial amount:
           </Typography>
 
-          <LanguageSelect value={language} onChange={handleLanguageChange} />
+          <LanguageSelect
+            label="Language"
+            value={language}
+            onChange={handleLanguageChange}
+          />
 
           <Grid container justifyContent="space-between" marginTop={4}>
             <Grid item xs={3} mr={1}>
