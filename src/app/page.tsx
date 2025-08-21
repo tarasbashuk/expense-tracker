@@ -3,6 +3,7 @@ import Guest from '@/components/Guest';
 import Balance from '@/components/Balance';
 import IncomeExpense from '@/components/IncomeExpense';
 import { Typography } from '@mui/material';
+import WelcomeMessage from '@/components/WelcomeMessage';
 
 const HomePage = async () => {
   const user = await currentUser();
@@ -13,9 +14,7 @@ const HomePage = async () => {
 
   return (
     <main>
-      <Typography variant="h4" component="h3" gutterBottom>
-        Welcome, {user.firstName}
-      </Typography>
+      <WelcomeMessage firstName={user.firstName} />
       <Balance />
       <IncomeExpense />
     </main>

@@ -7,6 +7,7 @@ import {
   Select,
   SelectChangeEvent,
 } from '@mui/material';
+import { useIntl } from 'react-intl';
 
 interface Props {
   value: Currency;
@@ -15,10 +16,16 @@ interface Props {
   onChange: (event: SelectChangeEvent) => void;
 }
 
-const CurrencySelect: FC<Props> = ({ value, onChange, label = 'Currency' }) => {
+const CurrencySelect: FC<Props> = ({ value, onChange, label }) => {
+  const { formatMessage } = useIntl();
+  const defaultLabel = formatMessage({
+    id: 'addTransaction.currency',
+    defaultMessage: 'Currency',
+  });
+
   return (
     <FormControl variant="standard" fullWidth>
-      <InputLabel>{label}</InputLabel>
+      <InputLabel>{label || defaultLabel}</InputLabel>
       <Select name="currency" value={value as string} onChange={onChange}>
         {Object.values(Currency).map((currency) => {
           return (

@@ -17,6 +17,7 @@
   "navigation.yearlyStats": "Річна статистика",
   "navigation.settings": "Налаштування",
 
+  "home.welcome": "Ласкаво просимо, {name}",
   "settings.title": "Налаштування",
   "settings.generalSettings": "Загальні налаштування",
   "settings.language": "Мова",
@@ -52,6 +53,7 @@
   "addTransaction.baseCurrency": "Базова валюта",
   "addTransaction.category": "Категорія",
   "addTransaction.text": "Опис",
+  "addTransaction.currency": "Валюта",
   "addTransaction.paidByCC": "Оплачено кредитною карткою",
   "addTransaction.recurring": "Повторювана (щомісячно)",
   "addTransaction.endDate": "Кінцева дата",

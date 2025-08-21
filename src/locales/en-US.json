@@ -17,6 +17,7 @@
   "navigation.yearlyStats": "Yearly stats",
   "navigation.settings": "Settings",
 
+  "home.welcome": "Welcome, {name}",
   "settings.title": "Settings",
   "settings.generalSettings": "General settings",
   "settings.language": "Language",
@@ -52,6 +53,7 @@
   "addTransaction.baseCurrency": "Base currency",
   "addTransaction.category": "Category",
   "addTransaction.text": "Text",
+  "addTransaction.currency": "Currency",
   "addTransaction.paidByCC": "Paid by credit card",
   "addTransaction.recurring": "Recurring (monthly)",
   "addTransaction.endDate": "End date",

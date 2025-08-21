@@ -13,7 +13,7 @@ const WelcomeMessage = ({ firstName }: Props) => {
     <Typography variant="h4" component="h3" gutterBottom>
       {formatMessage(
         { id: 'home.welcome', defaultMessage: 'Welcome, {name}' },
-        { name: firstName || '' }
+        { name: firstName || '' },
       )}
     </Typography>
   );
