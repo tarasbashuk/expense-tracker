@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import { useSettings } from '@/context/SettingsContexts';
 import { formatCurrency } from '@/lib/formatCurrency';
+import { useIntl } from 'react-intl';
 
 interface Props {
   income: number;
@@ -25,6 +26,7 @@ const AdditionalBalanceInfo: FC<Props> = ({ sx, income, expense }) => {
     settings: { defaultCurrency },
   } = useSettings();
   const [isInfoShown, setIsInfoShown] = useState(false);
+  const { formatMessage } = useIntl();
 
   const balanceNum = income - expense;
 
@@ -42,7 +44,10 @@ const AdditionalBalanceInfo: FC<Props> = ({ sx, income, expense }) => {
     >
       <FormControlLabel
         control={<Switch checked={isInfoShown} onChange={handleChange} />}
-        label="Show balance info"
+        label={formatMessage({
+          id: 'balance.showInfo',
+          defaultMessage: 'Show balance info',
+        })}
       />
       {isInfoShown && (
         <Box

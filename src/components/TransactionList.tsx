@@ -24,6 +24,7 @@ import AdditionalBalanceInfo from './AdditionalBalanceInfo';
 import getIncomeExpense from '@/app/actions/getIncomeExpense';
 import { getCheckSum } from '@/lib/utils';
 import usePrevious from '@/lib/hooks/usePrevious';
+import { useIntl } from 'react-intl';
 
 const today = new Date();
 const currentMonth = today.getMonth().toString();
@@ -49,6 +50,8 @@ const TransactionList = () => {
   const [viewType, setViewType] = useState(ViewType.List);
   const [isLoading, setIsloading] = useState(false);
 
+  const { formatMessage } = useIntl();
+
   const handleEditTransaction = useCallback(
     (transactionId: string) => {
       setTransactionId(transactionId);
@@ -69,7 +72,10 @@ const TransactionList = () => {
   const handleDeleteTransaction = useCallback(
     async (transactionId: string) => {
       const confirmed = window.confirm(
-        'Are you sure you want to delete this transaction?',
+        formatMessage({
+          id: 'transactions.deleteConfirm',
+          defaultMessage: 'Are you sure you want to delete this transaction?',
+        }),
       );
 
       if (!confirmed) return;
@@ -89,7 +95,7 @@ const TransactionList = () => {
         return updatedTransactions;
       });
     },
-    [setTransactions],
+    [setTransactions, formatMessage],
   );
 
   const handleTypeChange = useCallback(

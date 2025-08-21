@@ -4,6 +4,7 @@ import Decimal from 'decimal.js';
 import { toast } from 'react-toastify';
 import { SelectChangeEvent } from '@mui/material';
 import { isSameMonth, isSameYear } from 'date-fns';
+import { useIntl } from 'react-intl';
 
 import addUpdateTransaction from '@/app/actions/addUpdateTransaction';
 import { Currency, TransactionType } from '@prisma/client';
@@ -19,6 +20,7 @@ const AddTransactionModal: React.FC = () => {
     settings: { defaultCurrency },
   } = useSettings();
   const { currencies } = useCurrencies();
+  const { formatMessage } = useIntl();
 
   const {
     transactions,
@@ -239,7 +241,14 @@ const AddTransactionModal: React.FC = () => {
       toast.error(error);
     } else if (data) {
       toast.success(
-        selectedTransaction ? 'Changes were saved' : 'A transaction was added',
+        formatMessage({
+          id: selectedTransaction
+            ? 'addTransaction.saved'
+            : 'addTransaction.added',
+          defaultMessage: selectedTransaction
+            ? 'Changes were saved'
+            : 'A transaction was added',
+        }),
       );
 
       const isTrFromTheCurrentMonth = isSameMonth(

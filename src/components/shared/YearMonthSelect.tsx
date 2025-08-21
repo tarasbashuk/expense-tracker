@@ -19,6 +19,7 @@ import {
   YEAR_LIST,
 } from '@/constants/constants';
 import { ArrowBack, ArrowForward } from '@mui/icons-material';
+import { useIntl } from 'react-intl';
 
 interface Props {
   month: string;
@@ -31,6 +32,7 @@ interface Props {
 }
 
 const YearMonthSelect: FC<Props> = ({ sx, year, month, setMonth, setYear }) => {
+  const { formatMessage } = useIntl();
   const handleMonthChange = (event: SelectChangeEvent) => {
     setMonth(event.target.value);
   };
@@ -80,7 +82,10 @@ const YearMonthSelect: FC<Props> = ({ sx, year, month, setMonth, setYear }) => {
           id="month-select"
           value={month}
           onChange={handleMonthChange}
-          label="Month"
+          label={formatMessage({
+            id: 'filters.month',
+            defaultMessage: 'Month',
+          })}
         >
           {MONTH_LIST.map((m) => (
             <MenuItem key={m.value} value={m.value}>
@@ -97,7 +102,7 @@ const YearMonthSelect: FC<Props> = ({ sx, year, month, setMonth, setYear }) => {
           id="year-select"
           value={year}
           onChange={handleYearChange}
-          label="Year"
+          label={formatMessage({ id: 'filters.year', defaultMessage: 'Year' })}
         >
           {YEAR_LIST.map((y) => (
             <MenuItem key={y} value={y}>

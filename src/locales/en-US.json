@@ -38,5 +38,40 @@
   "currencies.EUR": "EUR",
   "currencies.PLN": "PLN",
   "currencies.UAH": "UAH",
-  "currencies.USD": "USD"
+  "currencies.USD": "USD",
+
+  "addTransaction.title": "Add transaction",
+  "addTransaction.editTitle": "Edit transaction",
+  "addTransaction.date": "Date",
+  "addTransaction.amount": "Amount",
+  "addTransaction.amountBase": "Amount in base currency",
+  "addTransaction.baseCurrency": "Base currency",
+  "addTransaction.category": "Category",
+  "addTransaction.text": "Text",
+  "addTransaction.paidByCC": "Paid by credit card",
+  "addTransaction.recurring": "Recurring (monthly)",
+  "addTransaction.endDate": "End date",
+  "addTransaction.recurringHint": "Leave empty if you want the transaction to repeat indefinitely",
+  "addTransaction.save": "Save",
+  "addTransaction.add": "Add transaction",
+  "addTransaction.saved": "Changes were saved",
+  "addTransaction.added": "A transaction was added",
+
+  "grid.date": "Date",
+  "grid.category": "Category",
+  "grid.description": "Description",
+  "grid.recurring": "Recurring",
+  "grid.amount": "Amount",
+  "grid.type": "Type",
+  "grid.actionMenu": "Action menu",
+
+  "yearly.income": "Income",
+  "yearly.expense": "Expense",
+  "yearly.year": "Year",
+  "yearly.noData": "No data for selected year",
+
+  "transactions.deleteConfirm": "Are you sure you want to delete this transaction?",
+  "balance.showInfo": "Show balance info",
+  "filters.month": "Month",
+  "filters.year": "Year"
 }

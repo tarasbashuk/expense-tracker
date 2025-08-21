@@ -38,5 +38,40 @@
   "currencies.EUR": "EUR",
   "currencies.PLN": "PLN",
   "currencies.UAH": "UAH",
-  "currencies.USD": "USD"
+  "currencies.USD": "USD",
+
+  "addTransaction.title": "Додати транзакцію",
+  "addTransaction.editTitle": "Редагувати транзакцію",
+  "addTransaction.date": "Дата",
+  "addTransaction.amount": "Сума",
+  "addTransaction.amountBase": "Сума в базовій валюті",
+  "addTransaction.baseCurrency": "Базова валюта",
+  "addTransaction.category": "Категорія",
+  "addTransaction.text": "Опис",
+  "addTransaction.paidByCC": "Оплачено кредитною карткою",
+  "addTransaction.recurring": "Повторювана (щомісячно)",
+  "addTransaction.endDate": "Кінцева дата",
+  "addTransaction.recurringHint": "Залиште порожнім, якщо транзакція має повторюватися безкінечно",
+  "addTransaction.save": "Зберегти",
+  "addTransaction.add": "Додати транзакцію",
+  "addTransaction.saved": "Зміни збережено",
+  "addTransaction.added": "Транзакцію додано",
+
+  "grid.date": "Дата",
+  "grid.category": "Категорія",
+  "grid.description": "Опис",
+  "grid.recurring": "Повторювана",
+  "grid.amount": "Сума",
+  "grid.type": "Тип",
+  "grid.actionMenu": "Меню дій",
+
+  "yearly.income": "Дохід",
+  "yearly.expense": "Витрати",
+  "yearly.year": "Рік",
+  "yearly.noData": "Немає даних за обраний рік",
+
+  "transactions.deleteConfirm": "Ви впевнені, що хочете видалити цю транзакцію?",
+  "balance.showInfo": "Показати інформацію про баланс",
+  "filters.month": "Місяць",
+  "filters.year": "Рік"
 }

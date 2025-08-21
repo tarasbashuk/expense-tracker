@@ -20,6 +20,7 @@ import { Transaction, TransactionType } from '@prisma/client';
 import { format } from 'date-fns';
 import MenuIcon from '@mui/icons-material/Menu';
 import RepeatIcon from '@mui/icons-material/Repeat';
+import { useIntl } from 'react-intl';
 
 import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
 import { TransactionCategory } from '@/constants/types';
@@ -153,11 +154,12 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
   handleEdit,
   handleDelete,
 }) => {
+  const { formatMessage } = useIntl();
   const columns: GridColDef<Transaction>[] = useMemo(
     () => [
       {
         field: 'date',
-        headerName: 'Date',
+        headerName: formatMessage({ id: 'grid.date', defaultMessage: 'Date' }),
         width: 100,
         sortComparator: (_v1, _v2, cellParams1, cellParams2) => {
           const row1 = cellParams1.api.getRow(cellParams1.id);
@@ -171,7 +173,10 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
       },
       {
         field: 'category',
-        headerName: 'Category',
+        headerName: formatMessage({
+          id: 'grid.category',
+          defaultMessage: 'Category',
+        }),
         width: 200,
         valueGetter: (category: TransactionCategory) =>
           getCategoryLabel(category),
@@ -179,13 +184,19 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
       },
       {
         field: 'text',
-        headerName: 'Description',
+        headerName: formatMessage({
+          id: 'grid.description',
+          defaultMessage: 'Description',
+        }),
         width: 260,
         // editable: true,
       },
       {
         field: 'isRecurring',
-        headerName: 'Recurring',
+        headerName: formatMessage({
+          id: 'grid.recurring',
+          defaultMessage: 'Recurring',
+        }),
         width: 80,
         align: 'center',
         headerAlign: 'center',
@@ -196,8 +207,14 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
           const recurringEndDateFormatted = row.recurringEndDate
             ? format(new Date(row.recurringEndDate), 'PP')
             : null;
-
-          const tooltip = `Recurring transaction${recurringEndDateFormatted ? ` until ${recurringEndDateFormatted}` : ' (infinite)'}`;
+          const tooltip =
+            formatMessage({
+              id: 'grid.recurringTooltip',
+              defaultMessage: 'Recurring transaction',
+            }) +
+            (recurringEndDateFormatted
+              ? ` ${formatMessage({ id: 'grid.until', defaultMessage: 'until' })} ${recurringEndDateFormatted}`
+              : ` (${formatMessage({ id: 'grid.infinite', defaultMessage: 'infinite' })})`);
 
           return (
             <Tooltip title={tooltip} arrow>
@@ -214,7 +231,10 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
       },
       {
         field: 'amount',
-        headerName: 'Amount',
+        headerName: formatMessage({
+          id: 'grid.amount',
+          defaultMessage: 'Amount',
+        }),
         type: 'number',
         width: 100,
         align: 'left',
@@ -247,7 +267,7 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
       },
       {
         field: 'type',
-        headerName: 'Type',
+        headerName: formatMessage({ id: 'grid.type', defaultMessage: 'Type' }),
         width: 80,
         valueGetter: (type) => {
           return type;
@@ -271,7 +291,7 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
         },
       },
     ],
-    [handleCopy, handleEdit, handleDelete],
+    [handleCopy, handleEdit, handleDelete, formatMessage],
   );
 
   return (

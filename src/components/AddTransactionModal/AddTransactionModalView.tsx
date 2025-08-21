@@ -34,6 +34,7 @@ import { getIconByName } from '@/lib/getCategoryIcon';
 import { DatePicker } from '@mui/x-date-pickers';
 import CurrencySelect from '../CurrencySelect';
 import TransactionTypeButtonGroup from '../shared/TransactionTypeButtonGroup';
+import { FormattedMessage, useIntl } from 'react-intl';
 
 const style = {
   position: 'absolute',
@@ -112,6 +113,8 @@ const AddTransactionModalView: React.FC<Props> = ({
       ? INCOME_CATEGORIES_LIST
       : EXPENSE_CATEGORIES_LIST;
 
+  const { formatMessage } = useIntl();
+
   return (
     <Modal
       open
@@ -122,7 +125,17 @@ const AddTransactionModalView: React.FC<Props> = ({
       <Box sx={style}>
         <Stack direction="row" alignItems="center" spacing={2} marginBottom={3}>
           <Typography variant="h4" component="h3" flexGrow={1}>
-            {isEditMode ? 'Edit transaction' : 'Add transaction'}
+            {isEditMode ? (
+              <FormattedMessage
+                id="addTransaction.editTitle"
+                defaultMessage="Edit transaction"
+              />
+            ) : (
+              <FormattedMessage
+                id="addTransaction.title"
+                defaultMessage="Add transaction"
+              />
+            )}
           </Typography>
           <IconButton
             aria-label="close"
@@ -146,7 +159,10 @@ const AddTransactionModalView: React.FC<Props> = ({
             </Grid>
             <Grid item xs={5} sm={4}>
               <DatePicker
-                label="Date"
+                label={formatMessage({
+                  id: 'addTransaction.date',
+                  defaultMessage: 'Date',
+                })}
                 name="date"
                 value={date}
                 onChange={handleDateChange}
@@ -156,15 +172,17 @@ const AddTransactionModalView: React.FC<Props> = ({
 
             <Grid item xs={8}>
               <FormControl required fullWidth variant="standard">
-                <InputLabel htmlFor="amount">Amount</InputLabel>
+                <InputLabel htmlFor="amount">
+                  <FormattedMessage
+                    id="addTransaction.amount"
+                    defaultMessage="Amount"
+                  />
+                </InputLabel>
                 <Input
                   id="amount"
                   name="amount"
                   type="number"
-                  inputProps={{
-                    min: 0,
-                    step: '0.01',
-                  }}
+                  inputProps={{ min: 0, step: '0.01' }}
                   value={amount}
                   onChange={handleAmountChange}
                   startAdornment={
@@ -187,16 +205,16 @@ const AddTransactionModalView: React.FC<Props> = ({
               <>
                 <Grid item xs={8}>
                   <FormControl required fullWidth variant="standard">
-                    <InputLabel htmlFor="amount">
-                      Amount in base currency
+                    <InputLabel htmlFor="amountDefaultCurrency">
+                      <FormattedMessage
+                        id="addTransaction.amountBase"
+                        defaultMessage="Amount in base currency"
+                      />
                     </InputLabel>
                     <Input
                       name="amountDefaultCurrency"
                       type="number"
-                      inputProps={{
-                        min: 0,
-                        step: '0.01',
-                      }}
+                      inputProps={{ min: 0, step: '0.01' }}
                       value={amountDefaultCurrency}
                       onChange={handleAmountDefaultCurrencyChange}
                       startAdornment={
@@ -210,7 +228,12 @@ const AddTransactionModalView: React.FC<Props> = ({
 
                 <Grid item xs={4}>
                   <FormControl variant="standard" fullWidth>
-                    <InputLabel>Base currency</InputLabel>
+                    <InputLabel>
+                      <FormattedMessage
+                        id="addTransaction.baseCurrency"
+                        defaultMessage="Base currency"
+                      />
+                    </InputLabel>
                     <Select disabled value={CURRENCY_SYMBOL_MAP.EUR}>
                       <MenuItem value={CURRENCY_SYMBOL_MAP.EUR}>
                         {CURRENCY_SYMBOL_MAP.EUR}
@@ -223,7 +246,12 @@ const AddTransactionModalView: React.FC<Props> = ({
 
             <Grid item xs={12}>
               <FormControl fullWidth variant="standard">
-                <InputLabel>Category</InputLabel>
+                <InputLabel>
+                  <FormattedMessage
+                    id="addTransaction.category"
+                    defaultMessage="Category"
+                  />
+                </InputLabel>
                 <Select
                   name="category"
                   value={category as string}
@@ -251,7 +279,10 @@ const AddTransactionModalView: React.FC<Props> = ({
               <TextField
                 required
                 fullWidth
-                label="Text"
+                label={formatMessage({
+                  id: 'addTransaction.text',
+                  defaultMessage: 'Text',
+                })}
                 name="text"
                 type="text"
                 variant="standard"
@@ -274,7 +305,10 @@ const AddTransactionModalView: React.FC<Props> = ({
                     <CreditCardIcon
                       sx={{ fontSize: '1.2rem', color: 'primary.main' }}
                     />
-                    Paid by credit card
+                    <FormattedMessage
+                      id="addTransaction.paidByCC"
+                      defaultMessage="Paid by credit card"
+                    />
                   </Box>
                 }
               />
@@ -290,7 +324,10 @@ const AddTransactionModalView: React.FC<Props> = ({
                     <RepeatIcon
                       sx={{ fontSize: '1.2rem', color: 'success.main' }}
                     />
-                    Recurring (monthly)
+                    <FormattedMessage
+                      id="addTransaction.recurring"
+                      defaultMessage="Recurring (monthly)"
+                    />
                   </Box>
                 }
               />
@@ -299,15 +336,21 @@ const AddTransactionModalView: React.FC<Props> = ({
             {isRecurring && (
               <Grid item xs={12}>
                 <DatePicker
-                  label="End date"
+                  label={formatMessage({
+                    id: 'addTransaction.endDate',
+                    defaultMessage: 'End date',
+                  })}
                   name="recurringEndDate"
                   value={recurringEndDate || null}
                   onChange={handleRecurringEndDateChange}
                   format={DATE_FORMATS.YYYY_MM_DD}
                   slotProps={{
                     textField: {
-                      helperText:
-                        'Leave empty if you want the transaction to repeat indefinitely',
+                      helperText: formatMessage({
+                        id: 'addTransaction.recurringHint',
+                        defaultMessage:
+                          'Leave empty if you want the transaction to repeat indefinitely',
+                      }),
                     },
                   }}
                 />
@@ -322,7 +365,17 @@ const AddTransactionModalView: React.FC<Props> = ({
                 onClick={onSubmit}
                 disabled={isSubmitDisabled}
               >
-                {isEditMode ? 'Save' : 'Add transaction'}
+                {isEditMode ? (
+                  <FormattedMessage
+                    id="addTransaction.save"
+                    defaultMessage="Save"
+                  />
+                ) : (
+                  <FormattedMessage
+                    id="addTransaction.add"
+                    defaultMessage="Add transaction"
+                  />
+                )}
               </Button>
             </Grid>
           </Grid>

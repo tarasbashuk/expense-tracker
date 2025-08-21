@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -17,6 +17,7 @@ import { useMediaQueries } from '@/lib/useMediaQueries';
 import { getYearlyChartDims } from '@/lib/getYearlyChartDims';
 import MobileWarning from '@/components/shared/MobileWarning';
 import AdditionalBalanceInfo from './AdditionalBalanceInfo';
+import { useIntl } from 'react-intl';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -27,6 +28,7 @@ const YearlyStatsContent = () => {
   const [error, setError] = useState<string | null>(null);
   const [incomeData, setIncomeData] = useState<number[]>([]);
   const [expenseData, setExpenseData] = useState<number[]>([]);
+  const { formatMessage } = useIntl();
 
   const { width, height, margin } = getYearlyChartDims({
     isExtraSmall,
@@ -58,12 +60,24 @@ const YearlyStatsContent = () => {
   const hasAnyData =
     incomeData.some((v) => v !== 0) || expenseData.some((v) => v !== 0);
 
-  const seriesForChart = hasAnyData
-    ? [
-        { data: incomeData, label: 'Income', color: '#4CAF50' },
-        { data: expenseData, label: 'Expense', color: '#2196F3' },
-      ]
-    : [];
+  const series = useMemo(
+    () => [
+      {
+        data: incomeData,
+        label: formatMessage({ id: 'yearly.income', defaultMessage: 'Income' }),
+        color: '#4CAF50',
+      },
+      {
+        data: expenseData,
+        label: formatMessage({
+          id: 'yearly.expense',
+          defaultMessage: 'Expense',
+        }),
+        color: '#2196F3',
+      },
+    ],
+    [incomeData, expenseData, formatMessage],
+  );
 
   return (
     <Stack alignItems="center" spacing={3} sx={{ mt: 4 }}>
@@ -122,7 +136,7 @@ const YearlyStatsContent = () => {
       >
         <BarChart
           loading={isLoading}
-          series={seriesForChart}
+          series={series}
           xAxis={[
             {
               data: MONTH_LIST.map((m) => m.label),
@@ -138,7 +152,12 @@ const YearlyStatsContent = () => {
           height={height}
           margin={margin}
           slotProps={{
-            noDataOverlay: { message: 'No data for selected year' },
+            noDataOverlay: {
+              message: formatMessage({
+                id: 'yearly.noData',
+                defaultMessage: 'No data for selected year',
+              }),
+            },
             legend: {
               direction: 'row',
               position: { vertical: 'top', horizontal: 'middle' },
