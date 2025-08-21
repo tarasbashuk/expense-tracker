@@ -49,6 +49,7 @@ const CurrentSum = () => {
   let expense = 0;
   const apiRef = useGridApiContext();
   const { settings } = useSettings();
+  const { formatMessage } = useIntl();
   const currentRows = gridPaginatedVisibleSortedGridRowEntriesSelector(apiRef);
   const currencySymbol = CURRENCY_SYMBOL_MAP[settings?.defaultCurrency];
 
@@ -69,10 +70,18 @@ const CurrentSum = () => {
       }}
     >
       <Typography variant="body1" sx={{ fontWeight: 600 }}>
-        Income: {income.toFixed(2)} {currencySymbol}
+        {formatMessage({
+          id: 'incomeExpense.income',
+          defaultMessage: 'Income',
+        })}
+        : {income.toFixed(2)} {currencySymbol}
       </Typography>
       <Typography variant="body1" sx={{ fontWeight: 600 }}>
-        Expense: {expense.toFixed(2)} {currencySymbol}
+        {formatMessage({
+          id: 'incomeExpense.expense',
+          defaultMessage: 'Expense',
+        })}
+        : {expense.toFixed(2)} {currencySymbol}
       </Typography>
     </Box>
   );
@@ -86,6 +95,7 @@ const DefaultCurrencyHeader = () => {
 
 const ActionMenu: FC<ActionMenuProps> = ({ onCopy, onEdit, onDelete }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const { formatMessage } = useIntl();
 
   const isOpen = Boolean(anchorEl);
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
@@ -119,7 +129,7 @@ const ActionMenu: FC<ActionMenuProps> = ({ onCopy, onEdit, onDelete }) => {
             handleClose();
           }}
         >
-          Edit
+          {formatMessage({ id: 'common.edit', defaultMessage: 'Edit' })}
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -127,7 +137,7 @@ const ActionMenu: FC<ActionMenuProps> = ({ onCopy, onEdit, onDelete }) => {
             handleClose();
           }}
         >
-          Copy
+          {formatMessage({ id: 'common.copy', defaultMessage: 'Copy' })}
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -135,7 +145,7 @@ const ActionMenu: FC<ActionMenuProps> = ({ onCopy, onEdit, onDelete }) => {
             handleClose();
           }}
         >
-          Delete
+          {formatMessage({ id: 'common.delete', defaultMessage: 'Delete' })}
         </MenuItem>
       </Menu>
       <IconButton
@@ -292,7 +302,7 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
         },
       },
     ],
-    [handleCopy, handleEdit, handleDelete, formatMessage],
+    [formatMessage, getLabel, handleEdit, handleCopy, handleDelete],
   );
 
   return (

@@ -155,7 +155,7 @@ const TransactionList = () => {
   return (
     <>
       <Typography variant="h4" component="h3" gutterBottom>
-        History
+        {formatMessage({ id: 'transactions.title', defaultMessage: 'History' })}
       </Typography>
       <YearMonthSelect
         year={year}
@@ -168,7 +168,10 @@ const TransactionList = () => {
 
       {!transactions.length && !isLoading && (
         <Typography variant="h5" component="p" gutterBottom mt={4}>
-          No records for selected period
+          {formatMessage({
+            id: 'transactions.noRecords',
+            defaultMessage: 'No records for selected period',
+          })}
         </Typography>
       )}
 

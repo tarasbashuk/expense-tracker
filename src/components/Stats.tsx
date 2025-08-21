@@ -30,6 +30,7 @@ import getIncomeExpense from '@/app/actions/getIncomeExpense';
 import MobileWarning from './shared/MobileWarning';
 import { getIconByName } from '@/lib/getCategoryIcon';
 import { ChartType, TransactionCategory } from '@/constants/types';
+import { useIntl, FormattedMessage } from 'react-intl';
 import {
   CURRENCY_SYMBOL_MAP,
   EXPENSE_CATEGORIES_LIST,
@@ -168,6 +169,8 @@ const Stats = () => {
   const IconComponent = getIconByName(activeCategory as TransactionCategory);
   const labelColor = COLOR_MAP[activeCategory as TransactionCategory];
 
+  const { formatMessage } = useIntl();
+
   if (error) {
     return (
       <Typography variant="h5" component="p" color="error" my="4">
@@ -240,7 +243,10 @@ const Stats = () => {
                   <QuestionMarkIcon />
                 </Avatar>
               </ListItemAvatar>
-              Click on chart to see the info
+              <FormattedMessage
+                id="stats.clickToSeeInfo"
+                defaultMessage="Click on chart to see the info"
+              />
             </ListItem>
           )}
           <AdditionalBalanceInfo
@@ -307,7 +313,11 @@ const Stats = () => {
       ) : (
         !isLoading && (
           <Typography variant="h6" color="textSecondary">
-            No transactions available for the selected month.
+            {formatMessage({
+              id: 'stats.noDataForMonth',
+              defaultMessage:
+                'No transactions available for the selected month.',
+            })}
           </Typography>
         )
       )}

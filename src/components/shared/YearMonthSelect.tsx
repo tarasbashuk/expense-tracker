@@ -20,6 +20,7 @@ import {
 } from '@/constants/constants';
 import { ArrowBack, ArrowForward } from '@mui/icons-material';
 import { useIntl } from 'react-intl';
+import { useSettings } from '@/context/SettingsContexts';
 
 interface Props {
   month: string;
@@ -31,8 +32,12 @@ interface Props {
   /* eslint-enable */
 }
 
+const capitalize = (s: string) =>
+  s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+
 const YearMonthSelect: FC<Props> = ({ sx, year, month, setMonth, setYear }) => {
   const { formatMessage } = useIntl();
+  const { locale } = useSettings();
   const handleMonthChange = (event: SelectChangeEvent) => {
     setMonth(event.target.value);
   };
@@ -76,7 +81,9 @@ const YearMonthSelect: FC<Props> = ({ sx, year, month, setMonth, setYear }) => {
         <ArrowBack />
       </IconButton>
       <FormControl variant="standard" size="small" sx={{ minWidth: 150 }}>
-        <InputLabel id="month-select-label">Month</InputLabel>
+        <InputLabel id="month-select-label">
+          {formatMessage({ id: 'filters.month', defaultMessage: 'Month' })}
+        </InputLabel>
         <Select
           labelId="month-select-label"
           id="month-select"
@@ -89,14 +96,20 @@ const YearMonthSelect: FC<Props> = ({ sx, year, month, setMonth, setYear }) => {
         >
           {MONTH_LIST.map((m) => (
             <MenuItem key={m.value} value={m.value}>
-              {m.label}
+              {capitalize(
+                new Intl.DateTimeFormat(locale, { month: 'long' }).format(
+                  new Date(2000, Number(m.value), 1),
+                ),
+              )}
             </MenuItem>
           ))}
         </Select>
       </FormControl>
 
       <FormControl variant="standard" size="small" sx={{ minWidth: 100 }}>
-        <InputLabel id="year-select-label">Year</InputLabel>
+        <InputLabel id="year-select-label">
+          {formatMessage({ id: 'filters.year', defaultMessage: 'Year' })}
+        </InputLabel>
         <Select
           labelId="year-select-label"
           id="year-select"

@@ -66,7 +66,11 @@ const AdditionalBalanceInfo: FC<Props> = ({ sx, income, expense }) => {
             flexWrap="nowrap"
           >
             <Typography variant="body1" component="div">
-              Income:
+              {formatMessage({
+                id: 'incomeExpense.income',
+                defaultMessage: 'Income',
+              })}
+              :
             </Typography>
             <Typography
               ml={1}
@@ -91,7 +95,11 @@ const AdditionalBalanceInfo: FC<Props> = ({ sx, income, expense }) => {
             justifyContent="start"
           >
             <Typography variant="body1" component="div">
-              Expense:
+              {formatMessage({
+                id: 'incomeExpense.expense',
+                defaultMessage: 'Expense',
+              })}
+              :
             </Typography>
             <Typography
               ml={1}
@@ -117,7 +125,11 @@ const AdditionalBalanceInfo: FC<Props> = ({ sx, income, expense }) => {
             sx={{ mt: { xs: 1, sm: 0 } }}
           >
             <Typography fontWeight={600} variant="body1" component="div">
-              Balance:
+              {formatMessage({
+                id: 'balance.label',
+                defaultMessage: 'Balance',
+              })}
+              :
             </Typography>
             <Typography
               ml={1}

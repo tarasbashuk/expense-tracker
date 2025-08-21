@@ -6,6 +6,10 @@
   "common.success": "Успішно",
   "common.warning": "Попередження",
   "common.info": "Інформація",
+  "common.delete": "Видалити",
+  "common.edit": "Редагувати",
+  "common.copy": "Копіювати",
+  "balance.label": "Баланс",
 
   "navigation.home": "Головна",
   "navigation.transactions": "Транзакції",
@@ -74,6 +78,8 @@
   "balance.showInfo": "Показати інформацію про баланс",
   "filters.month": "Місяць",
   "filters.year": "Рік",
+  "transactions.title": "Історія",
+  "transactions.noRecords": "Немає записів за обраний період",
   "balance.title": "Ваш баланс",
   "balance.initial": "Початковий баланс:",
 
@@ -83,6 +89,8 @@
   "incomeExpense.creditReturned": "кредит повернено",
 
   "common.plus": "plus:",
+  "stats.clickToSeeInfo": "Клікніть по діаграмі, щоб побачити інформацію",
+  "stats.noDataForMonth": "Немає транзакцій за обраний місяць.",
 
   "categories.salary": "Зарплата",
   "categories.gifts": "Подарунки",
@@ -111,5 +119,7 @@
   "categories.trips": "Подорожі",
   "categories.savings": "Заощадження",
   "categories.investments": "Інвестиції",
-  "categories.CCRepayment": "Погашення кредитки"
+  "categories.CCRepayment": "Погашення кредитки",
+  "transactionType.expense": "ВИТРАТИ",
+  "transactionType.income": "ДОХІД"
 }

@@ -6,6 +6,10 @@
   "common.success": "Success",
   "common.warning": "Warning",
   "common.info": "Information",
+  "common.delete": "Delete",
+  "common.edit": "Edit",
+  "common.copy": "Copy",
+  "balance.label": "Balance",
 
   "navigation.home": "Home",
   "navigation.transactions": "Transactions",
@@ -74,6 +78,8 @@
   "balance.showInfo": "Show balance info",
   "filters.month": "Month",
   "filters.year": "Year",
+  "transactions.title": "History",
+  "transactions.noRecords": "No records for selected period",
   "balance.title": "Your balance",
   "balance.initial": "Initial balance:",
 
@@ -83,6 +89,8 @@
   "incomeExpense.creditReturned": "credit returned",
 
   "common.plus": "plus:",
+  "stats.clickToSeeInfo": "Click on chart to see the info",
+  "stats.noDataForMonth": "No transactions available for the selected month.",
   "categories.salary": "Salary",
   "categories.gifts": "Gifts",
   "categories.creditReceived": "Credit Received",
@@ -110,5 +118,7 @@
   "categories.trips": "Trips",
   "categories.savings": "Savings",
   "categories.investments": "Investments",
-  "categories.CCRepayment": "Credit Card Repayment"
+  "categories.CCRepayment": "Credit Card Repayment",
+  "transactionType.expense": "EXPENSE",
+  "transactionType.income": "INCOME"
 }

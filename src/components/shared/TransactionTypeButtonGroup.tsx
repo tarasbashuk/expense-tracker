@@ -1,6 +1,8 @@
+'use client';
 import { FC } from 'react';
 import { ToggleButtonGroup, ToggleButton, SxProps } from '@mui/material';
 import { TransactionType } from '@prisma/client';
+import { useIntl } from 'react-intl';
 
 interface Props {
   transactionType: TransactionType;
@@ -16,13 +18,13 @@ const TransactionTypeButtonGroup: FC<Props> = ({
   transactionType,
   setTranasctionType,
 }) => {
+  const { formatMessage } = useIntl();
+
   const handleTypeChange = (
     _event: React.MouseEvent<HTMLElement>,
     newType: TransactionType,
   ) => {
-    // If a user click on already selected type button, the newTypes cames as null
     if (!newType) return;
-
     setTranasctionType(newType);
   };
 
@@ -36,10 +38,16 @@ const TransactionTypeButtonGroup: FC<Props> = ({
       onChange={handleTypeChange}
     >
       <ToggleButton sx={buttonsSx} value={TransactionType.Expense}>
-        Expense
+        {formatMessage({
+          id: 'transactionType.expense',
+          defaultMessage: 'Expense',
+        })}
       </ToggleButton>
       <ToggleButton sx={buttonsSx} value={TransactionType.Income}>
-        Income
+        {formatMessage({
+          id: 'transactionType.income',
+          defaultMessage: 'Income',
+        })}
       </ToggleButton>
     </ToggleButtonGroup>
   );
