@@ -29,10 +29,11 @@ import { FormattedMessage, useIntl } from 'react-intl';
 
 const style = {
   position: 'absolute',
-  top: { xs: '7%', sm: '50%' },
-  left: '50%',
-  transform: { xs: 'translate(-50%, 0%)', sm: 'translate(-50%, -50%)' },
-  width: { xs: '90%', sm: 550 },
+  top: { xs: '0', sm: '50%' },
+  left: { xs: '0', sm: '50%' },
+  transform: { xs: 'none', sm: 'translate(-50%, -50%)' },
+  width: { xs: '100%', sm: 550 },
+  height: { xs: '100%', sm: 'auto' },
   bgcolor: 'background.paper',
   border: 'none',
   borderRadius: 4,
