@@ -3,9 +3,11 @@ import React, { useState } from 'react';
 import { Alert, Box, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useMediaQueries } from '@/lib/useMediaQueries';
+import { useIntl } from 'react-intl';
 
 const MobileWarning: React.FC = () => {
   const { isExtraSmall } = useMediaQueries();
+  const { formatMessage } = useIntl();
 
   const [open, setOpen] = useState(true);
 
@@ -40,8 +42,11 @@ const MobileWarning: React.FC = () => {
             }
             onClose={handleClose}
           >
-            This page is not optimized for mobile screens. For the best
-            experience, please view it on a larger device.
+            {formatMessage({
+              id: 'mobile.warning',
+              defaultMessage:
+                'This page is not optimized for mobile screens. For the best experience, please view it on a larger device.',
+            })}
           </Alert>
         </Box>
       )}
