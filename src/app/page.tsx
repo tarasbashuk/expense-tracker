@@ -3,7 +3,6 @@ import Guest from '@/components/Guest';
 import Balance from '@/components/Balance';
 import IncomeExpense from '@/components/IncomeExpense';
 import WelcomeMessage from '@/components/WelcomeMessage';
-import DebugErrorButton from '@/components/DebugErrorButton';
 
 const HomePage = async () => {
   const user = await currentUser();
@@ -14,7 +13,6 @@ const HomePage = async () => {
 
   return (
     <main>
-      <DebugErrorButton />
       <WelcomeMessage firstName={user.firstName} />
       <Balance />
       <IncomeExpense />
