@@ -17,7 +17,6 @@ import {
   useGridApiContext,
 } from '@mui/x-data-grid';
 import { Transaction, TransactionType } from '@prisma/client';
-import { format } from 'date-fns';
 import MenuIcon from '@mui/icons-material/Menu';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import { useIntl } from 'react-intl';
@@ -310,7 +309,7 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
         },
       },
     ],
-    [formatMessage, getLabel, handleEdit, handleCopy, handleDelete],
+    [formatMessage, getLabel, handleEdit, handleCopy, handleDelete, locale],
   );
 
   return (

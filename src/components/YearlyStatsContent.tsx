@@ -61,9 +61,6 @@ const YearlyStatsContent = () => {
     fetchYearlyData();
   }, [year]);
 
-  const hasAnyData =
-    incomeData.some((v) => v !== 0) || expenseData.some((v) => v !== 0);
-
   const series = useMemo(
     () => [
       {

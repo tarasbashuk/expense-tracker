@@ -88,11 +88,6 @@ const getChartDims = ({
   };
 };
 
-const ALL_CATEGORIES_LIST = [
-  ...INCOME_CATEGORIES_LIST,
-  ...EXPENSE_CATEGORIES_LIST,
-];
-
 const Stats = () => {
   const { settings } = useSettings();
   const { isExtraSmall, isSmall, isMedium } = useMediaQueries();
