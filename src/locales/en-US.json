@@ -74,7 +74,10 @@
   "grid.until": "until",
   "grid.infinite": "infinite",
   "grid.amount": "Amount",
+  "grid.amountDefaultCurrency": "Amount, {currency}",
   "grid.type": "Type",
+  "grid.income": "Income",
+  "grid.expense": "Expense",
   "grid.actionMenu": "Action menu",
 
   "yearly.title": "Yearly overview",

@@ -90,8 +90,12 @@ const CurrentSum = () => {
 
 const DefaultCurrencyHeader = () => {
   const { settings } = useSettings();
+  const { formatMessage } = useIntl();
 
-  return `Amount, ${CURRENCY_SYMBOL_MAP[settings?.defaultCurrency]}`;
+  return formatMessage(
+    { id: 'grid.amountDefaultCurrency', defaultMessage: 'Amount, {currency}' },
+    { currency: CURRENCY_SYMBOL_MAP[settings?.defaultCurrency] },
+  );
 };
 
 const ActionMenu: FC<ActionMenuProps> = ({ onCopy, onEdit, onDelete }) => {
@@ -282,7 +286,10 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
         headerName: formatMessage({ id: 'grid.type', defaultMessage: 'Type' }),
         width: 80,
         valueGetter: (type) => {
-          return type;
+          return formatMessage({
+            id: type === 'Income' ? 'grid.income' : 'grid.expense',
+            defaultMessage: type === 'Income' ? 'Income' : 'Expense',
+          });
         },
       },
       {

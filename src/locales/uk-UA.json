@@ -74,7 +74,10 @@
   "grid.until": "до",
   "grid.infinite": "безкінечно",
   "grid.amount": "Сума",
+  "grid.amountDefaultCurrency": "Сума, {currency}",
   "grid.type": "Тип",
+  "grid.income": "Дохід",
+  "grid.expense": "Витрати",
   "grid.actionMenu": "Меню дій",
 
   "yearly.title": "Річний огляд",
