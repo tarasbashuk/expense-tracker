@@ -75,7 +75,7 @@ const YearMonthSelect: FC<Props> = ({ sx, year, month, setMonth, setYear }) => {
       <IconButton
         aria-label="previous"
         onClick={goToPrevMonth}
-        sx={{ marginRight: 2 }}
+        sx={{ xs: { marginRight: 0 }, sm: { marginRight: 2 } }}
         disabled={isPrevDisabled}
       >
         <ArrowBack />
@@ -128,7 +128,7 @@ const YearMonthSelect: FC<Props> = ({ sx, year, month, setMonth, setYear }) => {
       <IconButton
         aria-label="next"
         onClick={goToNextMonth}
-        sx={{ marginLeft: 2 }}
+        sx={{ xs: { marginLeft: 0 }, sm: { marginLeft: 2 } }}
         disabled={isNextDisabled}
       >
         <ArrowForward />

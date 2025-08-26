@@ -91,7 +91,7 @@ const TransactionItem: FC<Props> = ({
               <Typography
                 noWrap
                 sx={{
-                  width: { xs: '150px', sm: '250px' },
+                  width: { xs: '130px', sm: '250px' },
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
