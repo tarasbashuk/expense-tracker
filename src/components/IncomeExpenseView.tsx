@@ -85,11 +85,11 @@ const IncomeExpenseView = ({
             <Typography
               variant="h6"
               component="div"
-              sx={{ whiteSpace: 'nowrap' }}
+              // sx={{ whiteSpace: 'nowrap' }}
             >
               <FormattedMessage
                 id="incomeExpense.creditReceived"
-                defaultMessage="credit received"
+                defaultMessage="credit taken"
               />
             </Typography>
             <Typography
@@ -105,11 +105,11 @@ const IncomeExpenseView = ({
             <Typography
               variant="h6"
               component="div"
-              sx={{ whiteSpace: 'nowrap' }}
+              // sx={{ whiteSpace: 'nowrap' }}
             >
               <FormattedMessage
                 id="incomeExpense.creditReturned"
-                defaultMessage="credit returned"
+                defaultMessage="credit back"
               />
             </Typography>
             <Typography

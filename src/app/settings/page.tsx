@@ -83,7 +83,15 @@ const SettingsPage = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 }, maxWidth: 600, mx: 'auto', width: '100%' }}>
+    <Box
+      sx={{
+        p: { xs: 2, sm: 3 },
+        pb: { xs: 8, sm: 3 },
+        maxWidth: 600,
+        mx: 'auto',
+        width: '100%',
+      }}
+    >
       <Typography variant="h4" gutterBottom>
         <FormattedMessage id="settings.title" defaultMessage="Settings" />
       </Typography>

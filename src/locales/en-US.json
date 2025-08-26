@@ -91,8 +91,8 @@
 
   "incomeExpense.income": "Income",
   "incomeExpense.expense": "Expense",
-  "incomeExpense.creditReceived": "credit received",
-  "incomeExpense.creditReturned": "credit returned",
+  "incomeExpense.creditReceived": "credit taken",
+  "incomeExpense.creditReturned": "credit back",
 
   "common.plus": "plus:",
   "stats.clickToSeeInfo": "Click on chart to see the info",
