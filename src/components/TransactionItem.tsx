@@ -2,6 +2,7 @@
 import { FC } from 'react';
 import { format } from 'date-fns';
 import { Transaction, TransactionType } from '@prisma/client';
+import { useIntl } from 'react-intl';
 import {
   Avatar,
   Divider,
@@ -22,7 +23,8 @@ import { green, red } from '@mui/material/colors';
 import { TransactionCategory } from '@/constants/types';
 import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
 import { useSettings } from '@/context/SettingsContexts';
-import { getTransactionSign } from '@/lib/utils';
+import { getTransactionSign, formatDate } from '@/lib/utils';
+import { Locale } from '@/locales';
 
 interface Props {
   transaction: Transaction;
@@ -39,6 +41,7 @@ const TransactionItem: FC<Props> = ({
 }) => {
   // TODO: pass as prop
   const { settings } = useSettings();
+  const { locale } = useIntl();
   const {
     id,
     date,
@@ -54,7 +57,7 @@ const TransactionItem: FC<Props> = ({
   const sign = getTransactionSign(type);
   const IconComponent = getIconByName(category as TransactionCategory);
   const labelColor = type === TransactionType.Expense ? red[500] : green[500];
-  const formattedDate = format(date, 'PP');
+  const formattedDate = formatDate(date, locale as Locale);
   const isSecondaryAmountShown = currency !== settings.defaultCurrency;
 
   // Format recurring end date for tooltip

@@ -24,8 +24,9 @@ import { useIntl } from 'react-intl';
 
 import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
 import { TransactionCategory } from '@/constants/types';
-import { getTransactionSign } from '@/lib/utils';
+import { getTransactionSign, formatDate } from '@/lib/utils';
 import { useSettings } from '@/context/SettingsContexts';
+import { Locale } from '@/locales';
 import MobileWarning from './shared/MobileWarning';
 import { useCategoryI18n } from '@/lib/useCategoryI18n';
 
@@ -165,14 +166,14 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
   handleEdit,
   handleDelete,
 }) => {
-  const { formatMessage } = useIntl();
+  const { formatMessage, locale } = useIntl();
   const { getLabel } = useCategoryI18n();
   const columns: GridColDef<Transaction>[] = useMemo(
     () => [
       {
         field: 'date',
         headerName: formatMessage({ id: 'grid.date', defaultMessage: 'Date' }),
-        width: 100,
+        width: 130,
         sortComparator: (_v1, _v2, cellParams1, cellParams2) => {
           const row1 = cellParams1.api.getRow(cellParams1.id);
           const row2 = cellParams2.api.getRow(cellParams2.id);
@@ -181,7 +182,7 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
 
           return gridDateComparator(val1, val2, cellParams1, cellParams2);
         },
-        valueGetter: (date: string) => format(date, 'PP'),
+        valueGetter: (date: string) => formatDate(date, locale as Locale),
       },
       {
         field: 'category',
@@ -216,7 +217,7 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
           if (!row.isRecurring) return null;
 
           const recurringEndDateFormatted = row.recurringEndDate
-            ? format(new Date(row.recurringEndDate), 'PP')
+            ? formatDate(new Date(row.recurringEndDate), locale as Locale)
             : null;
           const tooltip =
             formatMessage({
