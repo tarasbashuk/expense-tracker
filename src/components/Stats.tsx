@@ -32,11 +32,7 @@ import { getIconByName } from '@/lib/getCategoryIcon';
 import { ChartType, TransactionCategory } from '@/constants/types';
 import { useIntl, FormattedMessage } from 'react-intl';
 import { useCategoryI18n } from '@/lib/useCategoryI18n';
-import {
-  CURRENCY_SYMBOL_MAP,
-  EXPENSE_CATEGORIES_LIST,
-  INCOME_CATEGORIES_LIST,
-} from '@/constants/constants';
+import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
 import { useSettings } from '@/context/SettingsContexts';
 import { COLOR_MAP } from '@/lib/getCategoryColor';
 
