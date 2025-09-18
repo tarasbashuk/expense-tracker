@@ -8,14 +8,26 @@ interface Props {
 
 const WelcomeMessage = ({ firstName }: Props) => {
   const { formatMessage } = useIntl();
+  const smallScreen =
+    window.matchMedia('(max-width: 480px)').matches &&
+    window.devicePixelRatio === 1;
+
+  const matchMedia = window.matchMedia('(max-width: 480px)').matches;
 
   return (
-    <Typography variant="h4" component="h3" gutterBottom>
-      {formatMessage(
-        { id: 'home.welcome', defaultMessage: 'Welcome, {name}' },
-        { name: firstName || '' },
-      )}
-    </Typography>
+    <>
+      Small screen - {`${smallScreen}`}
+      <br />
+      matchMedia 480 - {`${matchMedia}`}
+      <br />
+      DPR - {window.devicePixelRatio}
+      <Typography variant="h4" component="h3" gutterBottom>
+        {formatMessage(
+          { id: 'home.welcome', defaultMessage: 'Welcome, {name}' },
+          { name: firstName || '' },
+        )}
+      </Typography>
+    </>
   );
 };
 
