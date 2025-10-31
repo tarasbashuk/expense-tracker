@@ -2,13 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import {
-  addMonths,
-  startOfDay,
-  endOfDay,
-  isLastDayOfMonth,
-  endOfMonth,
-} from 'date-fns';
+import { addMonths, startOfDay, endOfDay, subMonths } from 'date-fns';
 import * as Sentry from '@sentry/nextjs';
 import Decimal from 'decimal.js';
 
@@ -32,22 +26,11 @@ export async function GET(request: NextRequest) {
     }
 
     const today = new Date();
-    const oneMonthAgo = new Date(today);
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-    // Determine search date range based on whether today is the last day of the month
-    let searchEndDate;
-
-    // Always search from the same day one month ago
+    // Use subMonths to avoid JS Date overflow (e.g., Oct 31 - 1 month => Sep 30)
+    const oneMonthAgo = subMonths(today, 1);
+    // Always search for exactly one day (the day exactly one month ago)
     const searchStartDate = startOfDay(oneMonthAgo);
-
-    if (isLastDayOfMonth(today)) {
-      // Last day of month: search until the end of previous month
-      searchEndDate = endOfMonth(oneMonthAgo);
-    } else {
-      // Regular day: search only for the specific day
-      searchEndDate = endOfDay(oneMonthAgo);
-    }
+    const searchEndDate = endOfDay(oneMonthAgo);
 
     // Fetch Monobank rates ONCE for all transactions (with cache)
     let rates;
