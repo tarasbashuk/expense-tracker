@@ -193,7 +193,6 @@ export async function GET(request: NextRequest) {
       processed: recurringTransactions.length,
       created: createdTransactions.length,
       date: oneMonthAgo.toISOString().split('T')[0], // Log which date was processed
-      isLastDayOfMonth: isLastDayOfMonth(today),
       searchRange: {
         from: searchStartDate.toISOString().split('T')[0],
         to: searchEndDate.toISOString().split('T')[0],
