@@ -30,6 +30,8 @@ export async function GET(request: NextRequest) {
 
     // If previous month doesn't have today's day-of-month (e.g., 31 -> 30), skip run
     if (today.getDate() !== oneMonthAgo.getDate()) {
+      console.log('Previous month does not have this day-of-month');
+
       return NextResponse.json({
         success: true,
         processed: 0,
