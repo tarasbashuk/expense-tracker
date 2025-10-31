@@ -26,8 +26,20 @@ export async function GET(request: NextRequest) {
     }
 
     const today = new Date();
-    // Use subMonths to avoid JS Date overflow (e.g., Oct 31 - 1 month => Sep 30)
     const oneMonthAgo = subMonths(today, 1);
+
+    // If previous month doesn't have today's day-of-month (e.g., 31 -> 30), skip run
+    if (today.getDate() !== oneMonthAgo.getDate()) {
+      return NextResponse.json({
+        success: true,
+        processed: 0,
+        created: 0,
+        skipped: true,
+        reason: 'Previous month does not have this day-of-month',
+        date: oneMonthAgo.toISOString().split('T')[0],
+      });
+    }
+
     // Always search for exactly one day (the day exactly one month ago)
     const searchStartDate = startOfDay(oneMonthAgo);
     const searchEndDate = endOfDay(oneMonthAgo);
