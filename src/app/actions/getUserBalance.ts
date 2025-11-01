@@ -1,5 +1,4 @@
 'use server';
-import { DO_NOT_ENCRYPT_LIST } from '@/constants/constants';
 import { ExpenseCategory, IncomeCategory } from '@/constants/types';
 import { decryptFloat } from '@/lib/crypto';
 import { db } from '@/lib/db';
@@ -15,9 +14,7 @@ async function getUserBalance(): Promise<{
 }> {
   const user = await currentUser();
   const userId = user?.id;
-  const userEmail = user?.primaryEmailAddress?.emailAddress;
   const decryptKey = user?.primaryEmailAddressId;
-  const shouldDecrypt = !DO_NOT_ENCRYPT_LIST.includes(userEmail!);
 
   if (!userId) {
     return { error: 'User not found' };
@@ -32,6 +29,8 @@ async function getUserBalance(): Promise<{
         encryptData: true,
       },
     });
+
+    const shouldDecrypt = Boolean(settings?.encryptData && decryptKey);
 
     const transactions = await db.transaction.findMany({
       where: { userId },

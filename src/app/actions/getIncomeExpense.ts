@@ -1,5 +1,5 @@
 'use server';
-import { DATE_FORMATS, DO_NOT_ENCRYPT_LIST } from '@/constants/constants';
+import { DATE_FORMATS } from '@/constants/constants';
 import { decryptFloat } from '@/lib/crypto';
 import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
@@ -22,13 +22,19 @@ async function getIncomeExpense(
   let formattedStart, formattedEnd;
   const user = await currentUser();
   const userId = user?.id;
-  const userEmail = user?.primaryEmailAddress?.emailAddress;
   const decryptKey = user?.primaryEmailAddressId;
-  const shouldDecrypt = !DO_NOT_ENCRYPT_LIST.includes(userEmail!);
 
   if (!userId) {
     return { error: 'User not found' };
   }
+
+  // Get encryptData setting from user settings
+  const settings = await db.settings.findUnique({
+    where: { clerkUserId: userId },
+    select: { encryptData: true },
+  });
+
+  const shouldDecrypt = Boolean(settings?.encryptData && decryptKey);
 
   //To treat Jan (0) as a proper month
   if (year && month?.toString()) {

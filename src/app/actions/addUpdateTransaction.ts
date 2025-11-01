@@ -4,7 +4,6 @@ import { currentUser } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { Transaction, TransactionType } from '@prisma/client';
 import { IncomeCategory, TransactionFormData } from '@/constants/types';
-import { DO_NOT_ENCRYPT_LIST } from '@/constants/constants';
 import { decrypt, decryptFloat, encrypt, encryptFloat } from '@/lib/crypto';
 
 interface TransactionResult {
@@ -31,9 +30,7 @@ async function addUpdateTransaction(
   // const { userId } = auth();
   const user = await currentUser();
   const userId = user?.id;
-  const userEmail = user?.primaryEmailAddress?.emailAddress;
   const encryptKey = user?.primaryEmailAddressId;
-  const shouldEncrypt = !DO_NOT_ENCRYPT_LIST.includes(userEmail!);
 
   if (
     !text ||
@@ -54,6 +51,14 @@ async function addUpdateTransaction(
   if (!userId) {
     return { error: 'User not found' };
   }
+
+  // Get encryptData setting from user settings
+  const settings = await db.settings.findUnique({
+    where: { clerkUserId: userId },
+    select: { encryptData: true },
+  });
+
+  const shouldEncrypt = Boolean(settings?.encryptData && encryptKey);
 
   let amountDefaultCurrencyValue = amountDefaultCurrency || amount;
   let creditIncomeText = `Credit income for: ${text}`;
