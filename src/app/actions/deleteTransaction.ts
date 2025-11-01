@@ -14,7 +14,7 @@ async function deleteTransaction(transactionId: string): Promise<{
   }
 
   try {
-    const deletetTr = await db.transaction.delete({
+    const deletedTr = await db.transaction.delete({
       where: {
         id: transactionId,
         userId,
@@ -22,14 +22,14 @@ async function deleteTransaction(transactionId: string): Promise<{
     });
 
     const isCreditExpenseTr =
-      deletetTr.isCreditTransaction &&
-      deletetTr.type === TransactionType.Expense;
+      deletedTr.isCreditTransaction &&
+      deletedTr.type === TransactionType.Expense;
 
     // Deleting respective Income credit transaction
     if (isCreditExpenseTr) {
       await db.transaction.delete({
         where: {
-          CCExpenseTransactionId: deletetTr.id,
+          CCExpenseTransactionId: deletedTr.id,
           userId,
         },
       });
@@ -37,6 +37,8 @@ async function deleteTransaction(transactionId: string): Promise<{
 
     return { message: 'Transaction deleted' };
   } catch (error) {
+    console.error(error);
+
     return { error: 'Database error' };
   }
 }

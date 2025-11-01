@@ -176,6 +176,7 @@ export async function GET(request: NextRequest) {
           isRecurring: true,
           recurringEndDate: transaction.recurringEndDate,
           userId: transaction.userId,
+          CCExpenseTransactionId: transaction.CCExpenseTransactionId,
         },
       });
 

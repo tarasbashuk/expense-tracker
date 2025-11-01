@@ -14,8 +14,8 @@ interface TransactionResult {
 
 async function addUpdateTransaction(
   formData: TransactionFormData,
-  isDefaultAmmountRequired: boolean,
-  transacionId?: string,
+  isDefaultAmountRequired: boolean,
+  transactionId?: string,
 ): Promise<TransactionResult> {
   const {
     text,
@@ -41,7 +41,7 @@ async function addUpdateTransaction(
     !category ||
     !currency ||
     !date ||
-    (isDefaultAmmountRequired && !amountDefaultCurrency)
+    (isDefaultAmountRequired && !amountDefaultCurrency)
   ) {
     return { error: 'Category, text or amount is missing' };
   }
@@ -61,7 +61,7 @@ async function addUpdateTransaction(
     formData.isCreditTransaction && formData.type === TransactionType.Expense;
 
   // When editing transaction in the default amount we need to set value manually
-  if (!isDefaultAmmountRequired && transacionId) {
+  if (!isDefaultAmountRequired && transactionId) {
     amountDefaultCurrencyValue = amount;
   }
 
@@ -76,12 +76,12 @@ async function addUpdateTransaction(
   }
 
   try {
-    let transacionData;
+    let transactionData;
 
-    if (transacionId) {
-      transacionData = await db.transaction.update({
+    if (transactionId) {
+      transactionData = await db.transaction.update({
         where: {
-          id: transacionId,
+          id: transactionId,
         },
         data: {
           ...formData,
@@ -93,7 +93,7 @@ async function addUpdateTransaction(
 
       const expenseTransaction = await db.transaction.findUnique({
         where: {
-          CCExpenseTransactionId: transacionId,
+          CCExpenseTransactionId: transactionId,
         },
       });
       const isExpenseTransactionExist = expenseTransaction !== null;
@@ -103,11 +103,11 @@ async function addUpdateTransaction(
 
       //If CC is used we update a credit income transaction under the hood
       if (isCreditExpenseTransaction && !transactionBecomeNonCredit) {
-        // This could happened when a user first create a non-credit transaction, but than change it to a credit one
+        // This could happen when a user first create a non-credit transaction, but than change it to a credit one
         if (isExpenseTransactionExist) {
           await db.transaction.update({
             where: {
-              CCExpenseTransactionId: transacionId,
+              CCExpenseTransactionId: transactionId,
             },
             data: {
               currency: formData.currency,
@@ -125,7 +125,7 @@ async function addUpdateTransaction(
               category: IncomeCategory.CreditReceived,
               type: TransactionType.Income,
               text: creditIncomeText,
-              CCExpenseTransactionId: transacionId,
+              CCExpenseTransactionId: transactionId,
               amountDefaultCurrency: amountDefaultCurrencyValue,
             },
           });
@@ -136,13 +136,13 @@ async function addUpdateTransaction(
       if (transactionBecomeNonCredit) {
         await db.transaction.delete({
           where: {
-            CCExpenseTransactionId: transacionId,
+            CCExpenseTransactionId: transactionId,
             userId,
           },
         });
       }
     } else {
-      transacionData = await db.transaction.create({
+      transactionData = await db.transaction.create({
         data: {
           ...formData,
           userId,
@@ -161,7 +161,7 @@ async function addUpdateTransaction(
             category: IncomeCategory.CreditReceived,
             type: TransactionType.Income,
             text: creditIncomeText,
-            CCExpenseTransactionId: transacionData.id,
+            CCExpenseTransactionId: transactionData.id,
             amountDefaultCurrency: amountDefaultCurrencyValue,
           },
         });
@@ -174,15 +174,15 @@ async function addUpdateTransaction(
       data:
         shouldEncrypt && encryptKey
           ? {
-              ...transacionData,
-              text: decrypt(transacionData.text, encryptKey),
-              amount: decryptFloat(transacionData.amount, encryptKey),
+              ...transactionData,
+              text: decrypt(transactionData.text, encryptKey),
+              amount: decryptFloat(transactionData.amount, encryptKey),
               amountDefaultCurrency: decryptFloat(
-                transacionData.amountDefaultCurrency,
+                transactionData.amountDefaultCurrency,
                 encryptKey,
               ),
             }
-          : transacionData,
+          : transactionData,
     };
   } catch (error: any) {
     console.log('error', error);
