@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { PieValueType } from '@mui/x-charts';
+import { legendClasses } from '@mui/x-charts/ChartsLegend';
 import { TransactionType } from '@prisma/client';
 import {
   Avatar,
@@ -65,9 +66,9 @@ const getChartDims = ({
 
   if (isMedium) {
     return {
-      cx: '20%',
+      cx: '50%',
       cy: '50%',
-      width: 800,
+      width: 400,
       height: 450,
       innerRadius: 20,
       outerRadius: 140,
@@ -75,12 +76,44 @@ const getChartDims = ({
   }
 
   return {
-    cx: '25%',
+    cx: '50%',
     cy: '50%',
-    width: 950,
+    width: 500,
     height: 450,
     innerRadius: 30,
     outerRadius: 200,
+  };
+};
+
+const getBarChartDims = ({
+  isExtraSmall,
+  isSmall,
+  isMedium,
+}: Record<string, boolean>) => {
+  if (isExtraSmall) {
+    return {
+      width: 320,
+      height: 470,
+    };
+  }
+
+  if (isSmall) {
+    return {
+      width: 420,
+      height: 540,
+    };
+  }
+
+  if (isMedium) {
+    return {
+      width: 920,
+      height: 570,
+    };
+  }
+
+  return {
+    width: 1050,
+    height: 570,
   };
 };
 
@@ -122,7 +155,14 @@ const Stats = () => {
     }
   };
 
-  const { cx, cy, width, height, innerRadius, outerRadius } = getChartDims({
+  const pieChartDims = getChartDims({
+    isExtraSmall,
+    isSmall,
+    isMedium,
+  });
+  const { cx, cy, innerRadius, outerRadius } = pieChartDims;
+
+  const barChartDims = getBarChartDims({
     isExtraSmall,
     isSmall,
     isMedium,
@@ -213,7 +253,7 @@ const Stats = () => {
       {isLoading && <CircularProgress sx={{ my: 5 }} />}
 
       {!isLoading && !!chartData.length ? (
-        <Box>
+        <Box sx={{ overflow: 'visible' }}>
           {activeData ? (
             <Box>
               <ListItem>
@@ -254,14 +294,30 @@ const Stats = () => {
           />
           {chartType === 'pie' ? (
             <PieChart
-              margin={{ right: 3 }}
+              margin={{ right: 0 }}
+              hideLegend={isExtraSmall || isSmall}
               slotProps={{
                 legend: {
-                  hidden: isExtraSmall || isSmall,
-                  direction: 'column',
+                  direction: 'vertical',
                   position: {
-                    vertical: 'top',
-                    horizontal: 'right',
+                    vertical: 'middle',
+                    horizontal: 'end',
+                  },
+                  sx: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flexWrap: 'wrap',
+                    maxHeight: '500px',
+                    width: 'auto',
+                    alignItems: 'flex-start',
+                    marginLeft: 1,
+                    [`.${legendClasses.series}`]: {
+                      marginBottom: 0.5,
+                      whiteSpace: 'nowrap',
+                      [`& .${legendClasses.label}`]: {
+                        whiteSpace: 'nowrap',
+                      },
+                    },
                   },
                 },
               }}
@@ -276,13 +332,13 @@ const Stats = () => {
                   cornerRadius: 5,
                 },
               ]}
-              width={width}
-              height={height}
+              width={pieChartDims.width}
+              height={pieChartDims.height}
               onItemClick={handleItemClick}
             />
           ) : (
             <BarChart
-              margin={{ top: 20, right: 50, left: 40, bottom: 130 }}
+              margin={{ top: 20, right: 50, left: 40, bottom: 120 }}
               series={[
                 {
                   data: chartData.map((item) => item.value),
@@ -294,17 +350,20 @@ const Stats = () => {
               ]}
               xAxis={[
                 {
-                  data: chartData.map((item) => item.label),
+                  id: 'categories',
+                  data: chartData.map((item) => String(item.label)),
                   scaleType: 'band',
+                  height: 120,
                   tickLabelStyle: {
                     angle: 45,
                     textAnchor: 'start',
+                    fontSize: 11,
                   },
+                  tickLabelInterval: 'auto',
                 },
               ]}
-              width={width}
-              height={height}
-              onAxisClick={handleItemClick}
+              width={barChartDims.width}
+              height={barChartDims.height}
             />
           )}
         </Box>
