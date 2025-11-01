@@ -8,9 +8,10 @@ import Decimal from 'decimal.js';
 
 import { getCurrenciesFromMap } from '@/lib/currenciesRate.utils';
 import { CURRENCY_ISO_MAP } from '@/constants/constants';
-import { Currency } from '@prisma/client';
+import { Currency, TransactionType } from '@prisma/client';
 import { getMonobankRates } from '@/lib/monobankRatesCache';
 import { sendRecurringTransactionsEmail } from '@/lib/email';
+import { IncomeCategory } from '@/constants/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -64,6 +65,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Find recurring transactions based on the determined date range
+    // Exclude income transactions with CCExpenseTransactionId - they are created automatically for credit transactions
     const recurringTransactions = await db.transaction.findMany({
       where: {
         isRecurring: true,
@@ -76,6 +78,9 @@ export async function GET(request: NextRequest) {
           { recurringEndDate: null }, // Infinite
           { recurringEndDate: { gt: new Date() } }, // Not ended yet
         ],
+        // Don't process income transactions that are linked to credit transactions
+        // They will be created automatically when processing the credit expense transaction
+        CCExpenseTransactionId: null,
       },
     });
 
@@ -176,11 +181,36 @@ export async function GET(request: NextRequest) {
           isRecurring: true,
           recurringEndDate: transaction.recurringEndDate,
           userId: transaction.userId,
-          CCExpenseTransactionId: transaction.CCExpenseTransactionId,
         },
       });
 
       createdTransactions.push(newTransaction);
+
+      // If this is a credit expense transaction, create corresponding income transaction
+      const isCreditExpenseTransaction =
+        transaction.isCreditTransaction &&
+        transaction.type === TransactionType.Expense;
+
+      if (isCreditExpenseTransaction) {
+        const creditIncomeText = `Credit income for: ${transaction.text}`;
+
+        await db.transaction.create({
+          data: {
+            text: creditIncomeText,
+            amount: transaction.amount,
+            amountDefaultCurrency,
+            date: nextMonthDate,
+            category: IncomeCategory.CreditReceived,
+            currency: transaction.currency,
+            type: TransactionType.Income,
+            isCreditTransaction: true,
+            isRecurring: true,
+            recurringEndDate: transaction.recurringEndDate,
+            userId: transaction.userId,
+            CCExpenseTransactionId: newTransaction.id,
+          },
+        });
+      }
     }
 
     Sentry.captureMessage(
