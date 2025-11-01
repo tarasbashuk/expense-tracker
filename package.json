@@ -21,6 +21,7 @@
     "@prisma/client": "^5.17.0",
     "@sentry/nextjs": "^8.41.0",
     "@types/nodemailer": "^6.4.17",
+    "@vercel/speed-insights": "^1.2.0",
     "axios": "^1.7.7",
     "crypto-js": "^4.2.0",
     "date-fns": "^3.6.0",
