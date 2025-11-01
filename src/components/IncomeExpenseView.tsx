@@ -29,7 +29,13 @@ const IncomeExpenseView = ({
     <Card>
       <CardContent>
         <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box display="flex" flexDirection="column" flex={1} p={1}>
+          <Box
+            display="flex"
+            flexDirection="column"
+            flex={1}
+            p={1}
+            sx={{ minWidth: 0, width: '50%' }}
+          >
             <Typography variant="h6" component="div">
               <FormattedMessage
                 id="incomeExpense.income"
@@ -39,7 +45,12 @@ const IncomeExpenseView = ({
             <Typography
               variant="h5"
               component="div"
-              sx={{ color: 'success.main', whiteSpace: 'nowrap' }}
+              sx={{
+                color: 'success.main',
+                whiteSpace: 'nowrap',
+                textAlign: 'right',
+                fontVariantNumeric: 'tabular-nums',
+              }}
             >
               {formatCurrency(income ?? 0)}
             </Typography>
@@ -47,7 +58,13 @@ const IncomeExpenseView = ({
 
           <Divider orientation="vertical" flexItem sx={{ marginX: '1px' }} />
 
-          <Box display="flex" flexDirection="column" flex={1} p={1}>
+          <Box
+            display="flex"
+            flexDirection="column"
+            flex={1}
+            p={1}
+            sx={{ minWidth: 0, width: '50%' }}
+          >
             <Typography variant="h6" component="div">
               <FormattedMessage
                 id="incomeExpense.expense"
@@ -57,7 +74,12 @@ const IncomeExpenseView = ({
             <Typography
               variant="h5"
               component="div"
-              sx={{ color: 'error.main', whiteSpace: 'nowrap' }}
+              sx={{
+                color: 'error.main',
+                whiteSpace: 'nowrap',
+                textAlign: 'right',
+                fontVariantNumeric: 'tabular-nums',
+              }}
             >
               {formatCurrency(expense ?? 0)}
             </Typography>
@@ -81,7 +103,13 @@ const IncomeExpenseView = ({
           />
         </Box>
         <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box display="flex" flexDirection="column" flex={1} p={1}>
+          <Box
+            display="flex"
+            flexDirection="column"
+            flex={1}
+            p={1}
+            sx={{ minWidth: 0, width: '50%' }}
+          >
             <Typography
               variant="h6"
               component="div"
@@ -95,13 +123,24 @@ const IncomeExpenseView = ({
             <Typography
               variant="h5"
               component="div"
-              sx={{ color: 'error.main', whiteSpace: 'nowrap' }}
+              sx={{
+                color: 'error.main',
+                whiteSpace: 'nowrap',
+                textAlign: 'right',
+                fontVariantNumeric: 'tabular-nums',
+              }}
             >
               {formatCurrency(creditReceived ?? 0)}
             </Typography>
           </Box>
           <Divider orientation="vertical" flexItem sx={{ marginX: '1px' }} />
-          <Box display="flex" flexDirection="column" flex={1} p={1}>
+          <Box
+            display="flex"
+            flexDirection="column"
+            flex={1}
+            p={1}
+            sx={{ minWidth: 0, width: '50%' }}
+          >
             <Typography
               variant="h6"
               component="div"
@@ -115,7 +154,12 @@ const IncomeExpenseView = ({
             <Typography
               variant="h5"
               component="div"
-              sx={{ color: 'success.main' }}
+              sx={{
+                color: 'success.main',
+                whiteSpace: 'nowrap',
+                textAlign: 'right',
+                fontVariantNumeric: 'tabular-nums',
+              }}
             >
               {formatCurrency(creditReturned ?? 0)}
             </Typography>
