@@ -41,23 +41,44 @@ export const getOrCreateUser = async (): Promise<User | null> => {
     return null;
   }
 
-  // Check if user exists by email (from development instance)
-  // If so, update clerkUserId to production clerkUserId
+  // Check if user exists by email (might be from different Clerk instance)
   const existingUserByEmail = await db.user.findUnique({
     where: { email },
   });
 
   if (existingUserByEmail) {
-    // User exists from development, migrate to production Clerk ID
-    // Transactions and Settings will be automatically updated via ON UPDATE CASCADE
-    const updatedUser = await db.user.update({
-      where: { email },
-      data: {
-        clerkUserId: clerkUser.id, // Only update clerkUserId - foreign keys handle the rest
-      },
-    });
+    // Only migrate ONCE when entering production for the first time
+    // After migration to production, keep production clerkUserId permanently
+    const isProduction = process.env.NODE_ENV === 'production';
 
-    return updatedUser;
+    if (isProduction && existingUserByEmail.clerkUserId !== clerkUser.id) {
+      // First time entering production - migrate once (dev -> prod)
+      const updatedUser = await db.user.update({
+        where: { email },
+        data: {
+          clerkUserId: clerkUser.id,
+        },
+      });
+
+      return updatedUser;
+    }
+
+    // In development: if clerkUserId doesn't match, user was already migrated to production
+    // Return existing user (but transactions won't be accessible due to clerkUserId mismatch)
+    // RECOMMENDATION: Use a separate test account in Clerk for development (different email)
+    // This way you'll have separate development and production users with their own data
+    if (!isProduction && existingUserByEmail.clerkUserId !== clerkUser.id) {
+      console.warn(
+        `⚠️  User with email ${email} already migrated to production. ` +
+        `Local development will not have access to transactions. ` +
+        `Use a separate test account in Clerk for development.`,
+      );
+
+      return existingUserByEmail;
+    }
+
+    // clerkUserId matches - return existing user
+    return existingUserByEmail;
   }
 
   // User doesn't exist, create new one
