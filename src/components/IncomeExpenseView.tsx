@@ -39,7 +39,7 @@ const IncomeExpenseView = ({
             <Typography
               variant="h5"
               component="div"
-              sx={{ color: 'success.main' }}
+              sx={{ color: 'success.main', whiteSpace: 'nowrap' }}
             >
               {formatCurrency(income ?? 0)}
             </Typography>
@@ -57,7 +57,7 @@ const IncomeExpenseView = ({
             <Typography
               variant="h5"
               component="div"
-              sx={{ color: 'error.main' }}
+              sx={{ color: 'error.main', whiteSpace: 'nowrap' }}
             >
               {formatCurrency(expense ?? 0)}
             </Typography>
@@ -85,7 +85,7 @@ const IncomeExpenseView = ({
             <Typography
               variant="h6"
               component="div"
-              // sx={{ whiteSpace: 'nowrap' }}
+              sx={{ whiteSpace: 'nowrap' }}
             >
               <FormattedMessage
                 id="incomeExpense.creditReceived"
@@ -95,7 +95,7 @@ const IncomeExpenseView = ({
             <Typography
               variant="h5"
               component="div"
-              sx={{ color: 'error.main' }}
+              sx={{ color: 'error.main', whiteSpace: 'nowrap' }}
             >
               {formatCurrency(creditReceived ?? 0)}
             </Typography>
@@ -105,7 +105,7 @@ const IncomeExpenseView = ({
             <Typography
               variant="h6"
               component="div"
-              // sx={{ whiteSpace: 'nowrap' }}
+              sx={{ whiteSpace: 'nowrap' }}
             >
               <FormattedMessage
                 id="incomeExpense.creditReturned"
