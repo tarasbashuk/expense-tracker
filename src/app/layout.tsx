@@ -74,7 +74,7 @@ export default async function RootLayout({
     <ClerkProvider>
       <AppProviders>
         <html lang="en">
-          <body className={roboto.className}>
+          <body className={roboto.className} suppressHydrationWarning>
             <CssBaseline />
             <Header />
             <main className="container">{children}</main>

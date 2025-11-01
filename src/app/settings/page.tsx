@@ -31,7 +31,9 @@ const SettingsPage = () => {
 
   const [language, setLanguage] = useState<Language>(Language.ENG);
   const [currency, setCurrency] = useState<Currency>(Currency.EUR);
-  const [initialAmount, setInitialAmount] = useState<number>();
+  const [initialAmount, setInitialAmount] = useState<number | undefined>(
+    settings?.initialAmount || 0,
+  );
   const [encryptData, setEncryptData] = useState<boolean>(false);
 
   useEffect(() => {
@@ -133,7 +135,7 @@ const SettingsPage = () => {
                 defaultMessage: 'Initial Amount',
               })}
               type="number"
-              value={initialAmount}
+              value={initialAmount ?? ''}
               onChange={handleAmountChange}
               inputProps={{
                 min: 0,

@@ -187,7 +187,7 @@ const AddTransactionModalView: React.FC<Props> = ({
                   name="amount"
                   type="number"
                   inputProps={{ min: 0, step: '0.01' }}
-                  value={amount}
+                  value={amount ?? ''}
                   onChange={handleAmountChange}
                   startAdornment={
                     <InputAdornment position="start">
@@ -219,7 +219,7 @@ const AddTransactionModalView: React.FC<Props> = ({
                       name="amountDefaultCurrency"
                       type="number"
                       inputProps={{ min: 0, step: '0.01' }}
-                      value={amountDefaultCurrency}
+                      value={amountDefaultCurrency ?? ''}
                       onChange={handleAmountDefaultCurrencyChange}
                       startAdornment={
                         <InputAdornment position="start">
@@ -290,7 +290,7 @@ const AddTransactionModalView: React.FC<Props> = ({
                 name="text"
                 type="text"
                 variant="standard"
-                value={text}
+                value={text ?? ''}
                 onChange={handleTextChange}
               />
             </Grid>

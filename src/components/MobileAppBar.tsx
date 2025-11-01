@@ -19,7 +19,7 @@ import DonutSmallIcon from '@mui/icons-material/DonutSmall';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 import { LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { FormattedMessage } from 'react-intl';
 
 import AddTransactionModal from './AddTransactionModal/AddTransactionModal';
