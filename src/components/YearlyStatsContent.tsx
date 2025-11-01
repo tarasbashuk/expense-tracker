@@ -155,6 +155,7 @@ const YearlyStatsContent = () => {
                 ),
               ),
               scaleType: 'band',
+              height: 120,
               tickLabelStyle: {
                 angle: isExtraSmall || isSmall ? -45 : 45,
                 textAnchor: isExtraSmall || isSmall ? 'end' : 'start',
@@ -173,9 +174,8 @@ const YearlyStatsContent = () => {
               }),
             },
             legend: {
-              direction: 'row',
-              position: { vertical: 'top', horizontal: 'middle' },
-              padding: 0,
+              direction: 'horizontal',
+              position: { vertical: 'top', horizontal: 'center' },
             },
           }}
         />

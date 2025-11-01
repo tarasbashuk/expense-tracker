@@ -17,7 +17,7 @@ export const getYearlyChartDims = ({
   if (isExtraSmall) {
     return {
       width: 350,
-      height: 300,
+      height: 420,
       margin: {
         top: 30,
         right: 20,
@@ -30,7 +30,7 @@ export const getYearlyChartDims = ({
   if (isSmall || isMedium) {
     return {
       width: 700,
-      height: 400,
+      height: 520,
       margin: {
         top: 30,
         right: 50,
@@ -42,7 +42,7 @@ export const getYearlyChartDims = ({
 
   return {
     width: 900,
-    height: 400,
+    height: 520,
     margin: {
       top: 30,
       right: 70,
