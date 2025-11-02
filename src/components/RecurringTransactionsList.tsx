@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { toast } from 'react-toastify';
 import {
   Box,
   Card,
@@ -9,16 +10,16 @@ import {
   Typography,
   Alert,
 } from '@mui/material';
+import { red } from '@mui/material/colors';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { Transaction } from '@prisma/client';
+
 import getRecurringTransactions from '@/app/actions/getRecurringTransactions';
 import TransactionItem from '@/components/TransactionItem';
 import { formatCurrency } from '@/lib/formatCurrency';
-import { red } from '@mui/material/colors';
-import { Locale } from '@/locales';
 import { useTransactions } from '@/context/TranasctionsContext';
 import deleteTransaction from '@/app/actions/deleteTransaction';
-import { toast } from 'react-toastify';
+
 
 const RecurringTransactionsList = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);

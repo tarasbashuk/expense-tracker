@@ -10,6 +10,7 @@ import ReceiptIcon from '@mui/icons-material/Receipt';
 import DonutSmallIcon from '@mui/icons-material/DonutSmall';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import SettingsIcon from '@mui/icons-material/Settings';
+import RepeatIcon from '@mui/icons-material/Repeat';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 import { NavigationPath } from '@/constants/types';
 import { FormattedMessage } from 'react-intl';
@@ -73,6 +74,21 @@ const Header = () => {
                     <FormattedMessage
                       id="navigation.yearlyStats"
                       defaultMessage="Yearly stats"
+                    />
+                  </Typography>
+                </Stack>
+              </Link>
+              <Link href={NavigationPath.Recurring} className="nav-link">
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ alignItems: 'center' }}
+                >
+                  <RepeatIcon />
+                  <Typography variant="h6">
+                    <FormattedMessage
+                      id="navigation.recurring"
+                      defaultMessage="Recurring"
                     />
                   </Typography>
                 </Stack>

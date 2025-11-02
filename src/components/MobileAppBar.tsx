@@ -17,6 +17,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import DonutSmallIcon from '@mui/icons-material/DonutSmall';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import RepeatIcon from '@mui/icons-material/Repeat';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -130,6 +131,20 @@ const MobileAppBar = () => {
                     <FormattedMessage
                       id="navigation.yearlyStats"
                       defaultMessage="Yearly stats"
+                    />
+                  </Typography>
+                </Stack>
+              </MenuItem>
+              <MenuItem
+                onClick={() => handleNav(NavigationPath.Recurring)}
+                sx={{ py: 1.5 }}
+              >
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <RepeatIcon />
+                  <Typography>
+                    <FormattedMessage
+                      id="navigation.recurring"
+                      defaultMessage="Recurring"
                     />
                   </Typography>
                 </Stack>

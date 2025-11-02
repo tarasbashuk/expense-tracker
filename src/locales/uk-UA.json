@@ -18,6 +18,7 @@
   "navigation.transactions": "Транзакції",
   "navigation.stats": "Статистика",
   "navigation.yearlyStats": "Річна",
+  "navigation.recurring": "Повторювані",
   "navigation.settings": "Налаштування",
 
   "home.welcome": "Вітаю, {name}",
@@ -138,5 +139,12 @@
   "categories.investments": "Інвестиції",
   "categories.CCRepayment": "Погашення кредитки",
   "transactionType.expense": "ВИТРАТИ",
-  "transactionType.income": "ДОХІД"
+  "transactionType.income": "ДОХІД",
+
+  "recurring.title": "Повторювані транзакції",
+  "recurring.description": "Очікувані транзакції на {month}",
+  "recurring.error": "Помилка завантаження повторюваних транзакцій: {error}",
+  "recurring.noTransactions": "Повторюваних транзакцій за поточний період не знайдено",
+  "recurring.totalExpense": "Загальні витрати",
+  "recurring.transactions": "Транзакції ({count})"
 }

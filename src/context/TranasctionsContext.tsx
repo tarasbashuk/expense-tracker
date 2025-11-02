@@ -60,7 +60,7 @@ export const useTransactions = () => {
 
   if (!context) {
     throw new Error(
-      'useTransactions must be used within a TranasctionsProvider',
+      'useTransactions must be used within a Transactions Provider',
     );
   }
 

@@ -13,6 +13,7 @@ export enum NavigationPath {
   Stats = '/stats',
   Settings = '/settings',
   YearlyStats = '/yearly-stats',
+  Recurring = '/recurring',
 }
 
 export enum IncomeCategory {

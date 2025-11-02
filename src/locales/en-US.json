@@ -18,6 +18,7 @@
   "navigation.transactions": "Transactions",
   "navigation.stats": "Stats",
   "navigation.yearlyStats": "Yearly stats",
+  "navigation.recurring": "Recurring",
   "navigation.settings": "Settings",
 
   "home.welcome": "Welcome, {name}",
@@ -137,5 +138,12 @@
   "categories.investments": "Investments",
   "categories.CCRepayment": "Credit Card Repayment",
   "transactionType.expense": "EXPENSE",
-  "transactionType.income": "INCOME"
+  "transactionType.income": "INCOME",
+
+  "recurring.title": "Recurring Transactions",
+  "recurring.description": "Expected transactions for {month}",
+  "recurring.error": "Error loading recurring transactions: {error}",
+  "recurring.noTransactions": "No recurring transactions found for the current period",
+  "recurring.totalExpense": "Total Expenses",
+  "recurring.transactions": "Transactions ({count})"
 }
