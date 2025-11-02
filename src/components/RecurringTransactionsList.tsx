@@ -19,7 +19,7 @@ import TransactionItem from '@/components/TransactionItem';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { useTransactions } from '@/context/TranasctionsContext';
 import deleteTransaction from '@/app/actions/deleteTransaction';
-
+import { useMediaQueries } from '@/lib/useMediaQueries';
 
 const RecurringTransactionsList = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -27,6 +27,7 @@ const RecurringTransactionsList = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const { locale, formatMessage } = useIntl();
+  const { isExtraSmall, isSmall } = useMediaQueries();
   const {
     setTransactionId,
     setIsTransactionModalOpen,
@@ -67,7 +68,11 @@ const RecurringTransactionsList = () => {
 
   // Refresh data when modal closes after editing
   useEffect(() => {
-    if (!isTransactionModalOpen && wasEditingRef.current && transactions.length > 0) {
+    if (
+      !isTransactionModalOpen &&
+      wasEditingRef.current &&
+      transactions.length > 0
+    ) {
       // Modal was closed after editing, refresh data
       wasEditingRef.current = false;
       const timer = setTimeout(() => {
@@ -114,10 +119,14 @@ const RecurringTransactionsList = () => {
       );
       // Recalculate total
       setTotalExpense((prevTotal) => {
-        const deletedTransaction = transactions.find((t) => t.id === transactionId);
+        const deletedTransaction = transactions.find(
+          (t) => t.id === transactionId,
+        );
 
         if (deletedTransaction?.amountDefaultCurrency) {
-          return prevTotal - (deletedTransaction.amountDefaultCurrency as number);
+          return (
+            prevTotal - (deletedTransaction.amountDefaultCurrency as number)
+          );
         }
 
         return prevTotal;
@@ -128,7 +137,12 @@ const RecurringTransactionsList = () => {
 
   if (isLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
         <CircularProgress />
       </Box>
     );
@@ -145,20 +159,22 @@ const RecurringTransactionsList = () => {
       </Alert>
     );
   }
-
-  // Show current month since recurring transactions from last month will be created for current month
+  
   const currentDate = new Date();
 
-  // Format as "November, 2025" (month name + year)
   const currentMonthFormatted = new Intl.DateTimeFormat(
     locale === 'uk-UA' ? 'uk-UA' : 'en-US',
-    { month: 'long', year: 'numeric' }
+    { month: 'long', year: 'numeric' },
   ).format(currentDate);
 
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
+        <Typography
+          variant={isExtraSmall || isSmall ? 'h5' : 'h4'}
+          component="h1"
+          gutterBottom
+        >
           <FormattedMessage
             id="recurring.title"
             defaultMessage="Recurring Transactions"
@@ -188,7 +204,11 @@ const RecurringTransactionsList = () => {
         <>
           <Card sx={{ mb: 3 }}>
             <CardContent>
-              <Box display="flex" justifyContent="space-between" alignItems="center">
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+              >
                 <Typography variant="h6">
                   <FormattedMessage
                     id="recurring.totalExpense"
@@ -233,4 +253,3 @@ const RecurringTransactionsList = () => {
 };
 
 export default RecurringTransactionsList;
-
