@@ -159,7 +159,7 @@ const RecurringTransactionsList = () => {
       </Alert>
     );
   }
-  
+
   const currentDate = new Date();
 
   const currentMonthFormatted = new Intl.DateTimeFormat(
@@ -168,7 +168,11 @@ const RecurringTransactionsList = () => {
   ).format(currentDate);
 
   return (
-    <Box>
+    <Box
+      sx={{
+        width: '100%',
+      }}
+    >
       <Box sx={{ mb: 3 }}>
         <Typography
           variant={isExtraSmall || isSmall ? 'h5' : 'h4'}
