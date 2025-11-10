@@ -151,7 +151,7 @@ const AddTransactionModalView: React.FC<Props> = ({
         </Stack>
         <form>
           <Grid container spacing={2} justifyContent="space-between">
-            <Grid item xs={4} sm={8}>
+            <Grid item xs={12} sm={8}>
               <TransactionTypeButtonGroup
                 transactionType={transactionType}
                 setTranasctionType={handleTypeChange}
@@ -161,7 +161,7 @@ const AddTransactionModalView: React.FC<Props> = ({
                 }}
               />
             </Grid>
-            <Grid item xs={5} sm={4}>
+            <Grid item xs={12} sm={4}>
               <DatePicker
                 label={formatMessage({
                   id: 'addTransaction.date',
@@ -171,6 +171,11 @@ const AddTransactionModalView: React.FC<Props> = ({
                 value={date}
                 onChange={handleDateChange}
                 format={DATE_FORMATS.YYYY_MM_DD}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                  },
+                }}
               />
             </Grid>
 
