@@ -215,125 +215,68 @@ const RecurringTransactionsList = () => {
         </Typography>
       </Box>
 
-      {/* Monthly Forecast Card */}
-      {forecast && (
+      {/* Forecast based on history */}
+      {forecast && forecast.categoryForecasts.length > 0 && (
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               <FormattedMessage
-                id="recurring.forecast.title"
-                defaultMessage="Monthly Forecast"
+                id="recurring.forecast.historyTitle"
+                defaultMessage="Forecast Based on History"
               />
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               <FormattedMessage
-                id="recurring.forecast.description"
-                defaultMessage="Based on average spending over the last year"
+                id="recurring.forecast.historyDescription"
+                defaultMessage="Average monthly spending over the last year"
               />
             </Typography>
 
             {/* Category forecasts */}
-            {forecast.categoryForecasts.length > 0 && (
-              <Box sx={{ mb: 2 }}>
-                {forecast.categoryForecasts.map((item) => (
-                  <Box
-                    key={item.category}
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    sx={{ py: 0.5 }}
-                  >
-                    <Typography variant="body2">
-                      {getLabel(item.category as any)}
-                    </Typography>
-                    <Typography variant="body2" fontWeight="medium">
-                      {formatCurrency(item.averageAmount)}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-            )}
+            <Box sx={{ mb: 2 }}>
+              {forecast.categoryForecasts.map((item) => (
+                <Box
+                  key={item.category}
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  sx={{ py: 0.5 }}
+                >
+                  <Typography variant="body2">
+                    {getLabel(item.category as any)}
+                  </Typography>
+                  <Typography variant="body2" fontWeight="medium">
+                    {formatCurrency(item.averageAmount)}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
 
             {/* Total forecast from categories */}
-            {forecast.categoryForecasts.length > 0 && (
-              <>
-                <Divider sx={{ my: 1 }} />
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  sx={{ py: 0.5 }}
-                >
-                  <Typography variant="body2" fontWeight="medium">
-                    <FormattedMessage
-                      id="recurring.forecast.categoriesTotal"
-                      defaultMessage="Total Forecast"
-                    />
-                  </Typography>
-                  <Typography variant="body2" fontWeight="medium">
-                    {formatCurrency(
-                      forecast.categoryForecasts.reduce(
-                        (sum, item) => sum + item.averageAmount,
-                        0,
-                      ),
-                    )}
-                  </Typography>
-                </Box>
-              </>
-            )}
-
-            {/* Recurring total */}
-            {totalExpense > 0 && (
-              <>
-                {forecast.categoryForecasts.length > 0 && <Divider sx={{ my: 1 }} />}
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  sx={{ py: 0.5 }}
-                >
-                  <Typography variant="body2" fontWeight="medium">
-                    <FormattedMessage
-                      id="recurring.forecast.recurring"
-                      defaultMessage="Recurring Transactions"
-                    />
-                  </Typography>
-                  <Typography variant="body2" fontWeight="medium">
-                    {formatCurrency(totalExpense)}
-                  </Typography>
-                </Box>
-              </>
-            )}
-
-            {/* Total forecast */}
-            {forecast.categoryForecasts.length > 0 || totalExpense > 0 ? (
-              <>
-                <Divider sx={{ my: 1.5 }} />
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Typography variant="h6">
-                    <FormattedMessage
-                      id="recurring.forecast.total"
-                      defaultMessage="Total"
-                    />
-                  </Typography>
-                  <Typography
-                    variant="h6"
-                    sx={{ color: red[500], fontWeight: 'bold' }}
-                  >
-                    {formatCurrency(
-                      forecast.categoryForecasts.reduce(
-                        (sum, item) => sum + item.averageAmount,
-                        0,
-                      ) + totalExpense,
-                    )}
-                  </Typography>
-                </Box>
-              </>
-            ) : null}
+            <Divider sx={{ my: 1 }} />
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <Typography variant="h6">
+                <FormattedMessage
+                  id="recurring.forecast.categoriesTotal"
+                  defaultMessage="Total Forecast"
+                />
+              </Typography>
+              <Typography
+                variant="h5"
+                sx={{ color: red[500], fontWeight: 'bold' }}
+              >
+                {formatCurrency(
+                  forecast.categoryForecasts.reduce(
+                    (sum, item) => sum + item.averageAmount,
+                    0,
+                  ),
+                )}
+              </Typography>
+            </Box>
           </CardContent>
         </Card>
       )}

@@ -50,7 +50,7 @@ async function getMonthlyForecast(): Promise<MonthlyForecast> {
     const oneYearAgoStart = new Date(format(oneYearAgoStartDate, DATE_FORMATS.YYYY_MM_DD));
     const lastMonthEnd = new Date(format(lastMonthEndDate, DATE_FORMATS.YYYY_MM_DD));
     // Get all expense transactions from last year
-    // Exclude recurring transactions, Others category, and CCRepayment
+    // Include recurring transactions, exclude Others category and CCRepayment
     const transactions = await db.transaction.findMany({
       where: {
         userId,
@@ -59,7 +59,7 @@ async function getMonthlyForecast(): Promise<MonthlyForecast> {
           gte: oneYearAgoStart,
           lte: lastMonthEnd,
         },
-        isRecurring: false, // Exclude recurring transactions
+        // Include recurring transactions in forecast
         category: {
           notIn: [ExpenseCategory.Others, ExpenseCategory.CCRepayment],
         },
