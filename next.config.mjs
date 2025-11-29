@@ -53,6 +53,13 @@ const sentryConfig = shouldUploadSourceMaps
       sourcemaps: {
         deleteSourcemapsAfterUpload: true,
       },
+
+      // Don't fail build if source map upload fails (handles Sentry API downtime)
+      errorHandler: (err, invokeErr, compilation) => {
+        console.warn('⚠️  Sentry source map upload failed:', err.message);
+        console.warn('⚠️  Build will continue without uploading source maps to Sentry');
+        // Don't throw - allow build to continue
+      },
     }
   : {
       // Disable source map upload for local builds
@@ -62,4 +69,14 @@ const sentryConfig = shouldUploadSourceMaps
       silent: true,
     };
 
-export default withSentryConfig(nextConfig, sentryConfig);
+// Wrap withSentryConfig to catch any initialization errors
+let config;
+try {
+  config = withSentryConfig(nextConfig, sentryConfig);
+} catch (error) {
+  console.warn('⚠️  Sentry configuration failed:', error.message);
+  console.warn('⚠️  Continuing build without Sentry source map upload');
+  config = nextConfig;
+}
+
+export default config;
