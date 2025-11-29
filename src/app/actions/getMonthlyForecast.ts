@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
 import { TransactionType } from '@prisma/client';
 import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { decrypt, decryptFloat } from '@/lib/crypto';
+import { decryptFloat } from '@/lib/crypto';
 import { ExpenseCategory } from '@/constants/types';
 
 interface CategoryForecast {
@@ -44,9 +44,11 @@ async function getMonthlyForecast(): Promise<MonthlyForecast> {
     const now = new Date();
     // Get date range for last 6 months
     const sixMonthsAgo = subMonths(now, 6);
+    console.log('%csixMonthsAgo:', 'color: #0e3f99; font-size: 18px', sixMonthsAgo);
     const sixMonthsAgoStart = startOfMonth(sixMonthsAgo);
+    console.log('%csixMonthsAgoStart:', 'color: #0e3f99; font-size: 18px', sixMonthsAgoStart);
     const lastMonthEnd = endOfMonth(subMonths(now, 1));
-
+    console.log('%clastMonthEnd:', 'color: #0e3f99; font-size: 18px', lastMonthEnd);
     // Get all expense transactions from last 6 months
     // Exclude recurring transactions, Others category, and CCRepayment
     const transactions = await db.transaction.findMany({

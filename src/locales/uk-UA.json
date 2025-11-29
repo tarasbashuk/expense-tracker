@@ -145,6 +145,10 @@
   "recurring.description": "Очікувані транзакції на {month}",
   "recurring.error": "Помилка завантаження повторюваних транзакцій: {error}",
   "recurring.noTransactions": "Повторюваних транзакцій за поточний період не знайдено",
-  "recurring.totalExpense": "Загальні витрати",
-  "recurring.transactions": "Транзакції ({count})"
+  "recurring.totalExpense": "Загальні повторювальні витрати",
+  "recurring.transactions": "Транзакції ({count})",
+  "recurring.forecast.title": "Місячний прогноз",
+  "recurring.forecast.description": "На основі середніх витрат за останні 6 місяців",
+  "recurring.forecast.recurring": "Повторювані транзакції",
+  "recurring.forecast.total": "Загальний прогноз"
 }

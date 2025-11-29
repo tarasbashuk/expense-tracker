@@ -15,19 +15,33 @@ import { FormattedMessage, useIntl } from 'react-intl';
 import { Transaction } from '@prisma/client';
 
 import getRecurringTransactions from '@/app/actions/getRecurringTransactions';
+import getMonthlyForecast from '@/app/actions/getMonthlyForecast';
 import TransactionItem from '@/components/TransactionItem';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { useTransactions } from '@/context/TranasctionsContext';
 import deleteTransaction from '@/app/actions/deleteTransaction';
 import { useMediaQueries } from '@/lib/useMediaQueries';
+import { useCategoryI18n } from '@/lib/useCategoryI18n';
+import { Divider } from '@mui/material';
+
+interface CategoryForecast {
+  category: string;
+  averageAmount: number;
+}
 
 const RecurringTransactionsList = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [totalExpense, setTotalExpense] = useState<number>(0);
+  const [forecast, setForecast] = useState<{
+    categoryForecasts: CategoryForecast[];
+    recurringTotal: number;
+    totalForecast: number;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const { locale, formatMessage } = useIntl();
   const { isExtraSmall, isSmall } = useMediaQueries();
+  const { getLabel } = useCategoryI18n();
   const {
     setTransactionId,
     setIsTransactionModalOpen,
@@ -39,25 +53,37 @@ const RecurringTransactionsList = () => {
   // Track if modal was opened for editing (to refresh after save)
   const wasEditingRef = useRef(false);
 
-  const fetchTransactions = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
-    const result = await getRecurringTransactions();
+    const [transactionsResult, forecastResult] = await Promise.all([
+      getRecurringTransactions(),
+      getMonthlyForecast(),
+    ]);
 
-    if (result.error) {
-      setError(result.error);
+    if (transactionsResult.error) {
+      setError(transactionsResult.error);
     } else {
-      const fetchedTransactions = result.transactions || [];
+      const fetchedTransactions = transactionsResult.transactions || [];
       setTransactions(fetchedTransactions);
       // Update context so AddTransactionModal can find the transaction for editing
       setContextTransactions(fetchedTransactions);
-      setTotalExpense(result.totalExpense || 0);
+      setTotalExpense(transactionsResult.totalExpense || 0);
     }
+
+    if (!forecastResult.error) {
+      setForecast({
+        categoryForecasts: forecastResult.categoryForecasts,
+        recurringTotal: forecastResult.recurringTotal,
+        totalForecast: forecastResult.totalForecast,
+      });
+    }
+
     setIsLoading(false);
   }, [setContextTransactions]);
 
   useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
+    fetchData();
+  }, [fetchData]);
 
   // Track when modal opens for editing
   useEffect(() => {
@@ -76,7 +102,7 @@ const RecurringTransactionsList = () => {
       // Modal was closed after editing, refresh data
       wasEditingRef.current = false;
       const timer = setTimeout(() => {
-        fetchTransactions();
+        fetchData();
       }, 500); // Small delay to ensure save is complete
 
       return () => clearTimeout(timer);
@@ -85,7 +111,7 @@ const RecurringTransactionsList = () => {
     if (!isTransactionModalOpen) {
       wasEditingRef.current = false;
     }
-  }, [isTransactionModalOpen, fetchTransactions, transactions.length]);
+  }, [isTransactionModalOpen, fetchData, transactions.length]);
 
   const handleEdit = useCallback(
     (transactionId: string) => {
@@ -193,6 +219,92 @@ const RecurringTransactionsList = () => {
         </Typography>
       </Box>
 
+      {/* Monthly Forecast Card */}
+      {forecast && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              <FormattedMessage
+                id="recurring.forecast.title"
+                defaultMessage="Monthly Forecast"
+              />
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              <FormattedMessage
+                id="recurring.forecast.description"
+                defaultMessage="Based on average spending over the last 6 months"
+              />
+            </Typography>
+
+            {/* Category forecasts */}
+            {forecast.categoryForecasts.length > 0 && (
+              <Box sx={{ mb: 2 }}>
+                {forecast.categoryForecasts.map((item) => (
+                  <Box
+                    key={item.category}
+                    display="flex"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    sx={{ py: 0.5 }}
+                  >
+                    <Typography variant="body2">
+                      {getLabel(item.category as any)}
+                    </Typography>
+                    <Typography variant="body2" fontWeight="medium">
+                      {formatCurrency(item.averageAmount)}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            )}
+
+            {/* Recurring total */}
+            {forecast.recurringTotal > 0 && (
+              <>
+                {forecast.categoryForecasts.length > 0 && <Divider sx={{ my: 1 }} />}
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  sx={{ py: 0.5 }}
+                >
+                  <Typography variant="body2" fontWeight="medium">
+                    <FormattedMessage
+                      id="recurring.forecast.recurring"
+                      defaultMessage="Recurring Transactions"
+                    />
+                  </Typography>
+                  <Typography variant="body2" fontWeight="medium">
+                    {formatCurrency(forecast.recurringTotal)}
+                  </Typography>
+                </Box>
+              </>
+            )}
+
+            {/* Total forecast */}
+            <Divider sx={{ my: 1.5 }} />
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <Typography variant="h6">
+                <FormattedMessage
+                  id="recurring.forecast.total"
+                  defaultMessage="Total Forecast"
+                />
+              </Typography>
+              <Typography
+                variant="h6"
+                sx={{ color: red[500], fontWeight: 'bold' }}
+              >
+                {formatCurrency(forecast.totalForecast)}
+              </Typography>
+            </Box>
+          </CardContent>
+        </Card>
+      )}
+
       {transactions.length === 0 ? (
         <Card>
           <CardContent>
@@ -206,29 +318,6 @@ const RecurringTransactionsList = () => {
         </Card>
       ) : (
         <>
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Typography variant="h6">
-                  <FormattedMessage
-                    id="recurring.totalExpense"
-                    defaultMessage="Total Expenses"
-                  />
-                </Typography>
-                <Typography
-                  variant="h5"
-                  sx={{ color: red[500], fontWeight: 'bold' }}
-                >
-                  {formatCurrency(totalExpense)}
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -248,8 +337,51 @@ const RecurringTransactionsList = () => {
                   />
                 ))}
               </List>
+
+              <Box
+                sx={{ mt: 3 }}
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <Typography variant="h6">
+                  <FormattedMessage
+                    id="recurring.totalExpense"
+                    defaultMessage="Total Recurring expensess"
+                  />
+                </Typography>
+                <Typography
+                  variant="h5"
+                  sx={{ color: red[500], fontWeight: 'bold' }}
+                >
+                  {formatCurrency(totalExpense)}
+                </Typography>
+              </Box>
             </CardContent>
           </Card>
+
+          {/*<Card sx={{ mb: 3 }}>*/}
+          {/*  <CardContent>*/}
+          {/*    <Box*/}
+          {/*      display="flex"*/}
+          {/*      justifyContent="space-between"*/}
+          {/*      alignItems="center"*/}
+          {/*    >*/}
+          {/*      <Typography variant="h6">*/}
+          {/*        <FormattedMessage*/}
+          {/*          id="recurring.totalExpense"*/}
+          {/*          defaultMessage="Total Recurring expensess"*/}
+          {/*        />*/}
+          {/*      </Typography>*/}
+          {/*      <Typography*/}
+          {/*        variant="h5"*/}
+          {/*        sx={{ color: red[500], fontWeight: 'bold' }}*/}
+          {/*      >*/}
+          {/*        {formatCurrency(totalExpense)}*/}
+          {/*      </Typography>*/}
+          {/*    </Box>*/}
+          {/*  </CardContent>*/}
+          {/*</Card>*/}
         </>
       )}
     </Box>

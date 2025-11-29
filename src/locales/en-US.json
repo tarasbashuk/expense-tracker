@@ -144,6 +144,10 @@
   "recurring.description": "Expected transactions for {month}",
   "recurring.error": "Error loading recurring transactions: {error}",
   "recurring.noTransactions": "No recurring transactions found for the current period",
-  "recurring.totalExpense": "Total Expenses",
-  "recurring.transactions": "Transactions ({count})"
+  "recurring.totalExpense": "Total Recurring expenses",
+  "recurring.transactions": "Transactions ({count})",
+  "recurring.forecast.title": "Monthly Forecast",
+  "recurring.forecast.description": "Based on average spending over the last 6 months",
+  "recurring.forecast.recurring": "Recurring Transactions",
+  "recurring.forecast.total": "Total Forecast"
 }
