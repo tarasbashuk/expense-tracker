@@ -1,13 +1,47 @@
 import { withSentryConfig } from '@sentry/nextjs';
+
+// Handle unhandled promise rejections from Sentry CLI to prevent build failures
+if (typeof process !== 'undefined') {
+  const originalUnhandledRejection = process.listeners('unhandledRejection');
+  process.removeAllListeners('unhandledRejection');
+  process.on('unhandledRejection', (reason, promise) => {
+    // Check if this is a Sentry CLI error
+    if (
+      reason &&
+      typeof reason === 'object' &&
+      'cmd' in reason &&
+      typeof reason.cmd === 'string' &&
+      reason.cmd.includes('sentry-cli')
+    ) {
+      console.warn(
+        '⚠️  Sentry CLI error detected:',
+        reason.message || 'Unknown error',
+      );
+      console.warn(
+        '⚠️  Build will continue without uploading source maps to Sentry',
+      );
+      
+      // Don't throw - allow build to continue
+      return;
+    }
+    // Re-emit other unhandled rejections
+    originalUnhandledRejection.forEach((listener) => {
+      listener(reason, promise);
+    });
+  });
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
 };
 
 // Only upload source maps in CI/production and when Sentry auth token is available
+// Can be disabled with SENTRY_DISABLE_SOURCE_MAPS=true to avoid build failures
 const shouldUploadSourceMaps =
-  process.env.CI ||
-  (process.env.NODE_ENV === 'production' && process.env.SENTRY_AUTH_TOKEN);
+  !process.env.SENTRY_DISABLE_SOURCE_MAPS &&
+  (process.env.CI ||
+    (process.env.NODE_ENV === 'production' && process.env.SENTRY_AUTH_TOKEN));
 
 const sentryConfig = shouldUploadSourceMaps
   ? {
@@ -57,7 +91,9 @@ const sentryConfig = shouldUploadSourceMaps
       // Don't fail build if source map upload fails (handles Sentry API downtime)
       errorHandler: (err, invokeErr, compilation) => {
         console.warn('⚠️  Sentry source map upload failed:', err.message);
-        console.warn('⚠️  Build will continue without uploading source maps to Sentry');
+        console.warn(
+          '⚠️  Build will continue without uploading source maps to Sentry',
+        );
         // Don't throw - allow build to continue
       },
     }
