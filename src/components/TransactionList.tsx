@@ -47,7 +47,7 @@ const TransactionList = () => {
     setIsCopyTransactionFlow,
     setIsTransactionModalOpen,
   } = useTransactions();
-  // Workoraund for re-fething expense/income data
+  // Workaround for re-fetching expense/income data
   const checkSum = getCheckSum(transactions);
   const prevCheckSum = usePrevious(checkSum);
 

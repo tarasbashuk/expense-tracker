@@ -20,7 +20,11 @@ export async function getYearlyStats(
   try {
     const startDate = new Date(Date.UTC(year, 0, 1));
     const endDate = new Date(Date.UTC(year + 1, 0, 0));
-    const { transactions = [] } = await getTransactions(startDate, endDate);
+    const { transactions = [] } = await getTransactions(
+      startDate,
+      endDate,
+      true,
+    );
 
     // Initialize 12-month arrays with zeros
     const monthlyIncomeTotals: number[] = new Array(12).fill(0);
