@@ -34,8 +34,6 @@ const RecurringTransactionsList = () => {
   const [totalExpense, setTotalExpense] = useState<number>(0);
   const [forecast, setForecast] = useState<{
     categoryForecasts: CategoryForecast[];
-    recurringTotal: number;
-    totalForecast: number;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -73,8 +71,6 @@ const RecurringTransactionsList = () => {
     if (!forecastResult.error) {
       setForecast({
         categoryForecasts: forecastResult.categoryForecasts,
-        recurringTotal: forecastResult.recurringTotal,
-        totalForecast: forecastResult.totalForecast,
       });
     }
 
@@ -259,7 +255,7 @@ const RecurringTransactionsList = () => {
             )}
 
             {/* Recurring total */}
-            {forecast.recurringTotal > 0 && (
+            {totalExpense > 0 && (
               <>
                 {forecast.categoryForecasts.length > 0 && <Divider sx={{ my: 1 }} />}
                 <Box
@@ -275,32 +271,41 @@ const RecurringTransactionsList = () => {
                     />
                   </Typography>
                   <Typography variant="body2" fontWeight="medium">
-                    {formatCurrency(forecast.recurringTotal)}
+                    {formatCurrency(totalExpense)}
                   </Typography>
                 </Box>
               </>
             )}
 
             {/* Total forecast */}
-            <Divider sx={{ my: 1.5 }} />
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Typography variant="h6">
-                <FormattedMessage
-                  id="recurring.forecast.total"
-                  defaultMessage="Total Forecast"
-                />
-              </Typography>
-              <Typography
-                variant="h6"
-                sx={{ color: red[500], fontWeight: 'bold' }}
-              >
-                {formatCurrency(forecast.totalForecast)}
-              </Typography>
-            </Box>
+            {forecast.categoryForecasts.length > 0 || totalExpense > 0 ? (
+              <>
+                <Divider sx={{ my: 1.5 }} />
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
+                  <Typography variant="h6">
+                    <FormattedMessage
+                      id="recurring.forecast.total"
+                      defaultMessage="Total Forecast"
+                    />
+                  </Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{ color: red[500], fontWeight: 'bold' }}
+                  >
+                    {formatCurrency(
+                      forecast.categoryForecasts.reduce(
+                        (sum, item) => sum + item.averageAmount,
+                        0,
+                      ) + totalExpense,
+                    )}
+                  </Typography>
+                </Box>
+              </>
+            ) : null}
           </CardContent>
         </Card>
       )}
@@ -359,29 +364,6 @@ const RecurringTransactionsList = () => {
               </Box>
             </CardContent>
           </Card>
-
-          {/*<Card sx={{ mb: 3 }}>*/}
-          {/*  <CardContent>*/}
-          {/*    <Box*/}
-          {/*      display="flex"*/}
-          {/*      justifyContent="space-between"*/}
-          {/*      alignItems="center"*/}
-          {/*    >*/}
-          {/*      <Typography variant="h6">*/}
-          {/*        <FormattedMessage*/}
-          {/*          id="recurring.totalExpense"*/}
-          {/*          defaultMessage="Total Recurring expensess"*/}
-          {/*        />*/}
-          {/*      </Typography>*/}
-          {/*      <Typography*/}
-          {/*        variant="h5"*/}
-          {/*        sx={{ color: red[500], fontWeight: 'bold' }}*/}
-          {/*      >*/}
-          {/*        {formatCurrency(totalExpense)}*/}
-          {/*      </Typography>*/}
-          {/*    </Box>*/}
-          {/*  </CardContent>*/}
-          {/*</Card>*/}
         </>
       )}
     </Box>

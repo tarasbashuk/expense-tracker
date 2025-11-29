@@ -13,8 +13,6 @@ interface CategoryForecast {
 
 interface MonthlyForecast {
   categoryForecasts: CategoryForecast[];
-  recurringTotal: number;
-  totalForecast: number;
   error?: string;
 }
 
@@ -26,8 +24,6 @@ async function getMonthlyForecast(): Promise<MonthlyForecast> {
   if (!userId) {
     return {
       categoryForecasts: [],
-      recurringTotal: 0,
-      totalForecast: 0,
       error: 'User not found',
     };
   }
@@ -44,11 +40,9 @@ async function getMonthlyForecast(): Promise<MonthlyForecast> {
     const now = new Date();
     // Get date range for last 6 months
     const sixMonthsAgo = subMonths(now, 6);
-    console.log('%csixMonthsAgo:', 'color: #0e3f99; font-size: 18px', sixMonthsAgo);
     const sixMonthsAgoStart = startOfMonth(sixMonthsAgo);
-    console.log('%csixMonthsAgoStart:', 'color: #0e3f99; font-size: 18px', sixMonthsAgoStart);
     const lastMonthEnd = endOfMonth(subMonths(now, 1));
-    console.log('%clastMonthEnd:', 'color: #0e3f99; font-size: 18px', lastMonthEnd);
+
     // Get all expense transactions from last 6 months
     // Exclude recurring transactions, Others category, and CCRepayment
     const transactions = await db.transaction.findMany({
@@ -66,30 +60,8 @@ async function getMonthlyForecast(): Promise<MonthlyForecast> {
       },
     });
 
-    // Get recurring transactions total from last month (same logic as getRecurringTransactions)
-    // These are the recurring transactions that will be expected in the current month
-    const lastMonth = subMonths(now, 1);
-    const lastMonthStart = startOfMonth(lastMonth);
-    const recurringTransactions = await db.transaction.findMany({
-      where: {
-        userId,
-        type: TransactionType.Expense,
-        isRecurring: true,
-        date: {
-          gte: lastMonthStart,
-          lte: lastMonthEnd,
-        },
-        OR: [
-          { recurringEndDate: null },
-          { recurringEndDate: { gt: now } },
-        ],
-        CCExpenseTransactionId: null,
-      },
-    });
-
     // Decrypt if needed
     let processedTransactions = transactions;
-    let processedRecurring = recurringTransactions;
 
     if (shouldDecrypt && decryptKey) {
       processedTransactions = transactions.map((transaction) => ({
@@ -99,21 +71,7 @@ async function getMonthlyForecast(): Promise<MonthlyForecast> {
           decryptKey,
         ),
       }));
-
-      processedRecurring = recurringTransactions.map((transaction) => ({
-        ...transaction,
-        amountDefaultCurrency: decryptFloat(
-          transaction.amountDefaultCurrency,
-          decryptKey,
-        ),
-      }));
     }
-
-    // Calculate recurring total
-    const recurringTotal = processedRecurring.reduce(
-      (sum, t) => sum + (Number(t.amountDefaultCurrency) || 0),
-      0,
-    );
 
     // Group transactions by category and calculate averages
     const categoryMap = new Map<string, number[]>();
@@ -144,25 +102,14 @@ async function getMonthlyForecast(): Promise<MonthlyForecast> {
     // Sort by average amount descending
     categoryForecasts.sort((a, b) => b.averageAmount - a.averageAmount);
 
-    // Calculate total forecast
-    const totalForecast =
-      categoryForecasts.reduce(
-        (sum, forecast) => sum + forecast.averageAmount,
-        0,
-      ) + recurringTotal;
-
     return {
       categoryForecasts,
-      recurringTotal,
-      totalForecast: Math.round(totalForecast * 100) / 100,
     };
   } catch (error) {
     console.error('Error fetching monthly forecast:', error);
 
     return {
       categoryForecasts: [],
-      recurringTotal: 0,
-      totalForecast: 0,
       error: 'Database error',
     };
   }
