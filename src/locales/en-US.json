@@ -147,7 +147,7 @@
   "recurring.totalExpense": "Total Recurring expenses",
   "recurring.transactions": "Transactions ({count})",
   "recurring.forecast.title": "Monthly Forecast",
-  "recurring.forecast.description": "Based on average spending over the last 6 months",
+  "recurring.forecast.description": "Based on average spending over the last year",
   "recurring.forecast.recurring": "Recurring Transactions",
   "recurring.forecast.total": "Total Forecast"
 }

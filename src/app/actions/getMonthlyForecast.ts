@@ -2,7 +2,7 @@
 import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
 import { TransactionType } from '@prisma/client';
-import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
+import { startOfMonth, endOfMonth, subMonths, subYears, format } from 'date-fns';
 import { decryptFloat } from '@/lib/crypto';
 import { ExpenseCategory } from '@/constants/types';
 import { DATE_FORMATS } from '@/constants/constants';
@@ -39,22 +39,22 @@ async function getMonthlyForecast(): Promise<MonthlyForecast> {
 
   try {
     const now = new Date();
-    // Get date range for last 6 months
-    const sixMonthsAgo = subMonths(now, 6);
-    const sixMonthsAgoStartDate = startOfMonth(sixMonthsAgo);
+    // Get date range for last year
+    const oneYearAgo = subYears(now, 1);
+    const oneYearAgoStartDate = startOfMonth(oneYearAgo);
     const lastMonthEndDate = endOfMonth(subMonths(now, 1));
-
+    
     // Format dates the same way as getIncomeExpense
-    const sixMonthsAgoStart = new Date(format(sixMonthsAgoStartDate, DATE_FORMATS.YYYY_MM_DD));
+    const oneYearAgoStart = new Date(format(oneYearAgoStartDate, DATE_FORMATS.YYYY_MM_DD));
     const lastMonthEnd = new Date(format(lastMonthEndDate, DATE_FORMATS.YYYY_MM_DD));
-    // Get all expense transactions from last 6 months
+    // Get all expense transactions from last year
     // Exclude recurring transactions, Others category, and CCRepayment
     const transactions = await db.transaction.findMany({
       where: {
         userId,
         type: TransactionType.Expense,
         date: {
-          gte: sixMonthsAgoStart,
+          gte: oneYearAgoStart,
           lte: lastMonthEnd,
         },
         isRecurring: false, // Exclude recurring transactions

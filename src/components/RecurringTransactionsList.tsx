@@ -228,7 +228,7 @@ const RecurringTransactionsList = () => {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               <FormattedMessage
                 id="recurring.forecast.description"
-                defaultMessage="Based on average spending over the last 6 months"
+                defaultMessage="Based on average spending over the last year"
               />
             </Typography>
 
