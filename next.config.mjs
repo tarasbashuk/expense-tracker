@@ -4,53 +4,62 @@ const nextConfig = {
   reactStrictMode: true,
 };
 
-export default withSentryConfig(nextConfig, {
-  // For all available options, see:
-  // https://github.com/getsentry/sentry-webpack-plugin#options
+// Only upload source maps in CI/production and when Sentry auth token is available
+const shouldUploadSourceMaps =
+  process.env.CI ||
+  (process.env.NODE_ENV === 'production' && process.env.SENTRY_AUTH_TOKEN);
 
-  org: 'taras-bashuk',
-  project: 'expense-tracker',
+const sentryConfig = shouldUploadSourceMaps
+  ? {
+      // For all available options, see:
+      // https://github.com/getsentry/sentry-webpack-plugin#options
 
-  // Only print logs for uploading source maps in CI
-  silent: !process.env.CI,
+      org: 'taras-bashuk',
+      project: 'expense-tracker',
 
-  // For all available options, see:
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+      // Only print logs for uploading source maps in CI
+      silent: !process.env.CI,
 
-  // Upload a larger set of source maps for prettier stack traces (increases build time)
-  widenClientFileUpload: true,
+      // For all available options, see:
+      // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-  // Automatically annotate React components to show their full name in breadcrumbs and session replay
-  reactComponentAnnotation: {
-    enabled: true,
-  },
+      // Upload a larger set of source maps for prettier stack traces (increases build time)
+      widenClientFileUpload: true,
 
-  // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-  // This can increase your server load as well as your hosting bill.
-  // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-  // side errors will fail.
-  // tunnelRoute: "/monitoring",
+      // Automatically annotate React components to show their full name in breadcrumbs and session replay
+      reactComponentAnnotation: {
+        enabled: true,
+      },
 
-  // Hides source maps from generated client bundles
-  hideSourceMaps: true,
+      // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+      // This can increase your server load as well as your hosting bill.
+      // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
+      // side errors will fail.
+      // tunnelRoute: "/monitoring",
 
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
+      // Hides source maps from generated client bundles
+      hideSourceMaps: true,
 
-  // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-  // See the following for more information:
-  // https://docs.sentry.io/product/crons/
-  // https://vercel.com/docs/cron-jobs
-  automaticVercelMonitors: true,
+      // Automatically tree-shake Sentry logger statements to reduce bundle size
+      disableLogger: true,
 
-  // Don't fail build if source map upload fails (useful when Sentry API is down)
-  errorHandler: (err, invokeErr, compilation) => {
-    console.warn('Sentry source map upload failed:', err.message);
-    // Don't throw - allow build to continue
-  },
+      // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
+      // See the following for more information:
+      // https://docs.sentry.io/product/crons/
+      // https://vercel.com/docs/cron-jobs
+      automaticVercelMonitors: true,
 
-  // Automatically delete source maps after upload (recommended for production)
-  sourcemaps: {
-    deleteSourcemapsAfterUpload: true,
-  },
-});
+      // Automatically delete source maps after upload (recommended for production)
+      sourcemaps: {
+        deleteSourcemapsAfterUpload: true,
+      },
+    }
+  : {
+      // Disable source map upload for local builds
+      sourcemaps: {
+        disable: true,
+      },
+      silent: true,
+    };
+
+export default withSentryConfig(nextConfig, sentryConfig);
