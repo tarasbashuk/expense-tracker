@@ -5,7 +5,7 @@ import { Transaction } from '@prisma/client';
 import { format } from 'date-fns';
 import { DATE_FORMATS } from '@/constants/constants';
 import { decrypt, decryptFloat } from '@/lib/crypto';
-import { IncomeCategory } from '@/constants/types';
+import { IncomeCategory, ExpenseCategory } from '@/constants/types';
 
 async function getTransactions(
   startDate: Date,
@@ -46,7 +46,10 @@ async function getTransactions(
           excludeCreditIncome
             ? {
                 NOT: {
-                  category: IncomeCategory.CreditReceived,
+                  OR: [
+                    { category: IncomeCategory.CreditReceived },
+                    { category: ExpenseCategory.CCRepayment },
+                  ],
                 },
               }
             : {},
