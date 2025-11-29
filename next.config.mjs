@@ -20,7 +20,7 @@ if (typeof process !== 'undefined') {
       console.warn(
         '⚠️  Build will continue without uploading source maps to Sentry',
       );
-      
+
       // Don't throw - allow build to continue
       return;
     }
