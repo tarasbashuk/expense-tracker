@@ -42,4 +42,15 @@ export default withSentryConfig(nextConfig, {
   // https://docs.sentry.io/product/crons/
   // https://vercel.com/docs/cron-jobs
   automaticVercelMonitors: true,
+
+  // Don't fail build if source map upload fails (useful when Sentry API is down)
+  errorHandler: (err, invokeErr, compilation) => {
+    console.warn('Sentry source map upload failed:', err.message);
+    // Don't throw - allow build to continue
+  },
+
+  // Automatically delete source maps after upload (recommended for production)
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
 });
