@@ -149,6 +149,7 @@
   "recurring.transactions": "Транзакції ({count})",
   "recurring.forecast.title": "Місячний прогноз",
   "recurring.forecast.description": "На основі середніх витрат за останній рік",
+  "recurring.forecast.categoriesTotal": "Загальний прогноз",
   "recurring.forecast.recurring": "Повторювані транзакції",
-  "recurring.forecast.total": "Загальний прогноз"
+  "recurring.forecast.total": "Всього"
 }

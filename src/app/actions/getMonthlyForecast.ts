@@ -17,6 +17,8 @@ interface MonthlyForecast {
   error?: string;
 }
 
+const MONTHS_IN_YEAR = 12;
+
 async function getMonthlyForecast(): Promise<MonthlyForecast> {
   const user = await currentUser();
   const userId = user?.id;
@@ -43,7 +45,7 @@ async function getMonthlyForecast(): Promise<MonthlyForecast> {
     const oneYearAgo = subYears(now, 1);
     const oneYearAgoStartDate = startOfMonth(oneYearAgo);
     const lastMonthEndDate = endOfMonth(subMonths(now, 1));
-    
+
     // Format dates the same way as getIncomeExpense
     const oneYearAgoStart = new Date(format(oneYearAgoStartDate, DATE_FORMATS.YYYY_MM_DD));
     const lastMonthEnd = new Date(format(lastMonthEndDate, DATE_FORMATS.YYYY_MM_DD));
@@ -90,16 +92,16 @@ async function getMonthlyForecast(): Promise<MonthlyForecast> {
       categoryMap.get(category)!.push(amount);
     });
 
-    // Calculate average for each category
+    // Calculate average monthly spending for each category (total for year / months in year)
     const categoryForecasts: CategoryForecast[] = Array.from(
       categoryMap.entries(),
     ).map(([category, amounts]) => {
-      const averageAmount =
-        amounts.reduce((sum, amount) => sum + amount, 0) / amounts.length;
+      const totalAmount = amounts.reduce((sum, amount) => sum + amount, 0);
+      const averageMonthlyAmount = totalAmount / MONTHS_IN_YEAR;
 
       return {
         category,
-        averageAmount: Math.round(averageAmount * 100) / 100, // Round to 2 decimals
+        averageAmount: Math.round(averageMonthlyAmount * 100) / 100, // Round to 2 decimals
       };
     });
 
