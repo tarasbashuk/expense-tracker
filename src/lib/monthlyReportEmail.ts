@@ -1,4 +1,6 @@
 import nodemailer from 'nodemailer';
+import { formatCurrency } from '@/lib/formatCurrency';
+import { Currency } from '@prisma/client';
 
 interface TopExpense {
   text: string;
@@ -20,10 +22,12 @@ interface MonthlyReportData {
   totalTransactions: number;
   totalExpenses: number;
   totalIncomes: number;
+  totalDonations: number;
   topExpenses: TopExpense[];
   topCategories: TopCategory[];
   expenseCategories: Record<string, string>;
   incomeCategories: Record<string, string>;
+  defaultCurrency?: Currency;
 }
 
 export async function sendMonthlyReportEmail(data: MonthlyReportData) {
@@ -41,12 +45,9 @@ export async function sendMonthlyReportEmail(data: MonthlyReportData) {
     },
   });
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(amount);
-  };
+  // Use user's default currency with fallback to EUR
+  const currency = data.defaultCurrency || Currency.EUR;
+  const formatCurrencyForEmail = (amount: number) => formatCurrency(amount, currency);
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -169,6 +170,26 @@ export async function sendMonthlyReportEmail(data: MonthlyReportData) {
         .negative {
             color: #e74c3c;
         }
+        .donations-box {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: white;
+        }
+        .donations-box h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            opacity: 0.95;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .donations-box .value {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
@@ -178,6 +199,18 @@ export async function sendMonthlyReportEmail(data: MonthlyReportData) {
             <p>${data.month} - Hello ${data.userName}!</p>
         </div>
 
+        ${
+          data.totalDonations > 0
+            ? `
+        <div class="donations-box">
+            <h3>💝 Donations This Month</h3>
+            <div class="value">${formatCurrencyForEmail(data.totalDonations)}</div>
+            <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">Thank you for your generosity! 🙏</p>
+        </div>
+        `
+            : ''
+        }
+
         <div class="stats-grid">
             <div class="stat-card">
                 <h3>Total Transactions</h3>
@@ -185,16 +218,16 @@ export async function sendMonthlyReportEmail(data: MonthlyReportData) {
             </div>
             <div class="stat-card">
                 <h3>Total Expenses</h3>
-                <div class="value">${formatCurrency(data.totalExpenses)}</div>
+                <div class="value">${formatCurrencyForEmail(data.totalExpenses)}</div>
             </div>
             <div class="stat-card">
                 <h3>Total Income</h3>
-                <div class="value">${formatCurrency(data.totalIncomes)}</div>
+                <div class="value">${formatCurrencyForEmail(data.totalIncomes)}</div>
             </div>
             <div class="stat-card">
                 <h3>Net Balance</h3>
                 <div class="value ${data.totalIncomes - data.totalExpenses >= 0 ? 'positive' : 'negative'}">
-                    ${formatCurrency(data.totalIncomes - data.totalExpenses)}
+                    ${formatCurrencyForEmail(data.totalIncomes - data.totalExpenses)}
                 </div>
             </div>
         </div>
@@ -219,7 +252,7 @@ export async function sendMonthlyReportEmail(data: MonthlyReportData) {
                           },
                         )}</div>
                     </div>
-                    <div class="expense-amount">${formatCurrency(expense.amountDefaultCurrency)}</div>
+                    <div class="expense-amount">${formatCurrencyForEmail(expense.amountDefaultCurrency)}</div>
                 </div>
             `,
               )

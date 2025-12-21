@@ -22,13 +22,18 @@ export async function GET(request: NextRequest) {
     const lastMonthStart = startOfMonth(lastMonth);
     const lastMonthEnd = endOfMonth(lastMonth);
 
-    // Get all users
+    // Get all users with their settings
     const users = await db.user.findMany({
       select: {
         clerkUserId: true,
         email: true,
         firstName: true,
         lastName: true,
+        settings: {
+          select: {
+            defaultCurrency: true,
+          },
+        },
       },
     });
 
@@ -74,6 +79,13 @@ export async function GET(request: NextRequest) {
           0,
         );
 
+        // Calculate total donations
+        const donations = expenses.filter((t) => t.category === 'donations');
+        const totalDonations = donations.reduce(
+          (sum, t) => sum + t.amountDefaultCurrency,
+          0,
+        );
+
         // Top 5 expenses by amount (excluding CCRepayment)
         const topExpenses = expenses
           .sort((a, b) => b.amountDefaultCurrency - a.amountDefaultCurrency)
@@ -105,10 +117,12 @@ export async function GET(request: NextRequest) {
           totalTransactions: transactions.length,
           totalExpenses,
           totalIncomes,
+          totalDonations,
           topExpenses,
           topCategories,
           expenseCategories: EXPENSE_CATEGORIES,
           incomeCategories: INCOME_CATEGORIES,
+          defaultCurrency: user.settings?.defaultCurrency,
         });
 
         reportsSent.push(user.email);
