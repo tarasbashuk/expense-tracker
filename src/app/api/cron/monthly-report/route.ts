@@ -6,6 +6,7 @@ import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import * as Sentry from '@sentry/nextjs';
 import { sendMonthlyReportEmail } from '@/lib/monthlyReportEmail';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/constants/constants';
+import { processYearlyReportForUsers } from '../yearly-report/processYearlyReport';
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,6 +22,11 @@ export async function GET(request: NextRequest) {
     const lastMonth = subMonths(today, 1);
     const lastMonthStart = startOfMonth(lastMonth);
     const lastMonthEnd = endOfMonth(lastMonth);
+
+    // Check if we should also send yearly report (if it's January 1st)
+    const isJanuary = today.getMonth() === 0; // 0 = January
+    const isFirstDay = today.getDate() === 1;
+    const shouldSendYearlyReport = isJanuary && isFirstDay;
 
     // Get all users with their settings
     const users = await db.user.findMany({
@@ -136,10 +142,31 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    Sentry.captureMessage(
-      `Monthly report processed. Reports sent: ${reportsSent.length}`,
-      'info',
-    );
+    // If it's January 1st, also send yearly report
+    if (shouldSendYearlyReport) {
+      try {
+        Sentry.captureMessage(
+          'Yearly report triggered from monthly report',
+          'info',
+        );
+
+        const yearlyResult = await processYearlyReportForUsers(users);
+
+        Sentry.captureMessage(
+          `Yearly report processed. Reports sent: ${yearlyResult.reportsSent.length}`,
+          'info',
+        );
+      } catch (error) {
+        console.error('Failed to process yearly report:', error);
+        Sentry.captureException(error);
+      }
+    }
+
+    const message = shouldSendYearlyReport
+      ? `Monthly and yearly reports processed. Reports sent: ${reportsSent.length}`
+      : `Monthly report processed. Reports sent: ${reportsSent.length}`;
+
+    Sentry.captureMessage(message, 'info');
 
     return NextResponse.json({
       success: true,
@@ -148,6 +175,7 @@ export async function GET(request: NextRequest) {
         month: 'long',
         year: 'numeric',
       }),
+      yearlyReportSent: shouldSendYearlyReport,
     });
   } catch (error) {
     Sentry.captureException(error);

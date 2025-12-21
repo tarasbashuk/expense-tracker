@@ -7,10 +7,6 @@
     {
       "path": "/api/cron/monthly-report",
       "schedule": "0 9 1 * *"
-    },
-    {
-      "path": "/api/cron/yearly-report",
-      "schedule": "0 9 1 1 *"
     }
   ]
 }
