@@ -11,7 +11,7 @@ interface TransactionResult {
   error?: string;
 }
 
-async function addUpdateTransaction(
+export async function addUpdateTransaction(
   formData: TransactionFormData,
   isDefaultAmountRequired: boolean,
   transactionId?: string,
@@ -195,5 +195,3 @@ async function addUpdateTransaction(
     return { error: error?.response?.message || 'Unable to save transaction' };
   }
 }
-
-export default addUpdateTransaction;

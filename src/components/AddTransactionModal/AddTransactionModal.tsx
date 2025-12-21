@@ -6,7 +6,7 @@ import { SelectChangeEvent } from '@mui/material';
 import { isSameMonth, isSameYear } from 'date-fns';
 import { useIntl } from 'react-intl';
 
-import addUpdateTransaction from '@/app/actions/addUpdateTransaction';
+import { addUpdateTransaction } from '@/app/actions/addUpdateTransaction';
 import { Currency, TransactionType } from '@prisma/client';
 import { TransactionCategory, TransactionFormData } from '@/constants/types';
 import { useSettings } from '@/context/SettingsContexts';
