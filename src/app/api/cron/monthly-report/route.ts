@@ -23,10 +23,13 @@ export async function GET(request: NextRequest) {
     const lastMonthStart = startOfMonth(lastMonth);
     const lastMonthEnd = endOfMonth(lastMonth);
 
-    // Check if we should also send yearly report (if it's January 1st)
+    // Check if we should also send yearly report (if it's January)
+    // Since cron runs on the 1st of each month, we only need to check the month
+    // Allow forcing yearly report via query parameter for testing
+    const { searchParams } = new URL(request.url);
+    const forceYearly = searchParams.get('forceYearly') === 'true';
     const isJanuary = today.getMonth() === 0; // 0 = January
-    const isFirstDay = today.getDate() === 1;
-    const shouldSendYearlyReport = isJanuary && isFirstDay;
+    const shouldSendYearlyReport = forceYearly || isJanuary;
 
     // Get all users with their settings
     const users = await db.user.findMany({
