@@ -4,6 +4,8 @@ import { currentUser } from '@clerk/nextjs/server';
 
 import RecurringTransactionsList from '@/components/RecurringTransactionsList';
 
+export const dynamic = 'force-dynamic';
+
 const RecurringTransactions = async () => {
   const user = await currentUser();
 

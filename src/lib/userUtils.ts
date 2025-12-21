@@ -3,13 +3,33 @@ import { db } from './db';
 
 import type { User } from '@prisma/client';
 import { DEFAULT_SETTINGS } from '@/constants/constants';
+import * as Sentry from '@sentry/nextjs';
 
 const getClerkUser = async () => {
   try {
     const user = await currentUser();
 
     return user;
-  } catch (error) {
+  } catch (error: unknown) {
+    // During build time, Clerk may throw errors because headers are not available
+    // This is expected behavior and can be safely ignored
+    const isDynamicServerError =
+      error &&
+      typeof error === 'object' &&
+      (('digest' in error && error.digest === 'DYNAMIC_SERVER_USAGE') ||
+        ('message' in error &&
+          typeof error.message === 'string' &&
+          error.message.includes('headers')));
+
+    if (isDynamicServerError || process.env.NODE_ENV === 'production') {
+      // Silently return null during build or when headers are not available
+      return null;
+    }
+
+    // Log and report unexpected errors
+    console.error('Error getting Clerk user:', error);
+    Sentry.captureException(error);
+
     return null;
   }
 };
@@ -101,9 +121,16 @@ export const getOrCreateUser = async (): Promise<User | null> => {
     });
 
     return newUser;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // If user was created by another request (race condition), fetch it
-    if (error?.code === 'P2002') {
+    // Prisma error code P2002 = unique constraint violation
+    const isPrismaUniqueError =
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === 'P2002';
+
+    if (isPrismaUniqueError) {
       console.warn('Race condition detected, fetching existing user');
       const user = await db.user.findUnique({
         where: { clerkUserId: id },

@@ -13,6 +13,8 @@ import './globals.css';
 
 const roboto = Roboto({ weight: '400', subsets: ['latin'] });
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Expense Tracker',
   description: 'Track your expenses and create a budget',

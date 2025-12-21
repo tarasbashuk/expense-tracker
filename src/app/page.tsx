@@ -4,6 +4,8 @@ import Balance from '@/components/Balance';
 import IncomeExpense from '@/components/IncomeExpense';
 import WelcomeMessage from '@/components/WelcomeMessage';
 
+export const dynamic = 'force-dynamic';
+
 const HomePage = async () => {
   const user = await currentUser();
 

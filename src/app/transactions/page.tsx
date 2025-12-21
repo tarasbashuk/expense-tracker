@@ -4,6 +4,8 @@ import { currentUser } from '@clerk/nextjs/server';
 
 import TransactionList from '@/components/TransactionList';
 
+export const dynamic = 'force-dynamic';
+
 const Transactions = async () => {
   const user = await currentUser();
 

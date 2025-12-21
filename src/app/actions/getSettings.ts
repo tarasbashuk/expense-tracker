@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
 import { UserSettings } from '@/constants/types';
 import { decryptFloat } from '@/lib/crypto';
+import * as Sentry from '@sentry/nextjs';
 
 async function getSettings(): Promise<{
   settings?: UserSettings | null;
@@ -41,6 +42,9 @@ async function getSettings(): Promise<{
       settings: { ...settings, initialAmount } as UserSettings,
     };
   } catch (error) {
+    console.error('Error getting settings:', error);
+    Sentry.captureException(error);
+
     return { error: 'Database error' };
   }
 }

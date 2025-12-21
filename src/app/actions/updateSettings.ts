@@ -5,6 +5,7 @@ import { UserSettings } from '@/constants/types';
 import { Currency, Language } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { encryptFloat, decryptFloat } from '@/lib/crypto';
+import * as Sentry from '@sentry/nextjs';
 
 async function updateSettings({
   initialAmount,
@@ -70,6 +71,9 @@ async function updateSettings({
 
     return { settings };
   } catch (error) {
+    console.error('Error updating settings:', error);
+    Sentry.captureException(error);
+
     return { error: 'Database error' };
   }
 }

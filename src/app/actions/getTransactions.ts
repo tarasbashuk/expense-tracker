@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { DATE_FORMATS } from '@/constants/constants';
 import { decrypt, decryptFloat } from '@/lib/crypto';
 import { IncomeCategory, ExpenseCategory } from '@/constants/types';
+import * as Sentry from '@sentry/nextjs';
 
 async function getTransactions(
   startDate: Date,
@@ -83,6 +84,9 @@ async function getTransactions(
 
     return { transactions };
   } catch (error) {
+    console.error('Error getting transactions:', error);
+    Sentry.captureException(error);
+
     return { error: 'Database error' };
   }
 }

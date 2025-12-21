@@ -94,6 +94,7 @@ export async function GET(request: NextRequest) {
             }
             acc[category].total += t.amountDefaultCurrency;
             acc[category].count += 1;
+
             return acc;
           },
           {} as Record<string, { total: number; count: number }>,
@@ -108,6 +109,7 @@ export async function GET(request: NextRequest) {
             }
             acc[category].total += t.amountDefaultCurrency;
             acc[category].count += 1;
+
             return acc;
           },
           {} as Record<string, { total: number; count: number }>,

@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
 import { Currency, TransactionType } from '@prisma/client';
 import Decimal from 'decimal.js';
+import * as Sentry from '@sentry/nextjs';
 
 async function getUserBalance(): Promise<{
   balance?: string;
@@ -74,6 +75,9 @@ async function getUserBalance(): Promise<{
       initialAmount: initialAmount.toFixed(2),
     };
   } catch (error) {
+    console.error('Error getting user balance:', error);
+    Sentry.captureException(error);
+
     return { error: 'Database error' };
   }
 }

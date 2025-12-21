@@ -7,6 +7,7 @@ import { TransactionType } from '@prisma/client';
 import Decimal from 'decimal.js';
 import { format } from 'date-fns';
 import { ExpenseCategory, IncomeCategory } from '@/constants/types';
+import * as Sentry from '@sentry/nextjs';
 
 async function getIncomeExpense(
   year?: number,
@@ -103,6 +104,9 @@ async function getIncomeExpense(
       creditReceived: creditReceived.toNumber(),
     };
   } catch (error) {
+    console.error('Error getting income/expense:', error);
+    Sentry.captureException(error);
+
     return { error: 'Database error' };
   }
 }
