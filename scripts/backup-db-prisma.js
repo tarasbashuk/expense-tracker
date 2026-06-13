@@ -6,10 +6,14 @@
  * Usage: node scripts/backup-db-prisma.js [description]
  */
 
-const { PrismaClient } = require('@prisma/client');
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { PrismaClient } from '@prisma/client';
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
 function loadEnvFile(filePath) {
@@ -154,4 +158,3 @@ async function createBackup() {
 }
 
 createBackup();
-
