@@ -19,6 +19,7 @@ model User {
   updatedAt    DateTime      @updatedAt
   settings     Settings?
   transactions Transaction[]
+  merchantRules MerchantCategoryRule[]
 }
 
 model Transaction {
@@ -56,6 +57,21 @@ model Settings {
   user            User     @relation(fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
 
   @@index([clerkUserId])
+}
+
+model MerchantCategoryRule {
+  id              String   @id @default(uuid())
+  userId          String
+  merchantPattern String
+  category        String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  useCount        Int      @default(1)
+  user            User     @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
+
+  @@unique([userId, merchantPattern])
+  @@index([userId])
+  @@index([userId, updatedAt])
 }
 
 enum Currency {

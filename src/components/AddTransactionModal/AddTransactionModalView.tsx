@@ -122,7 +122,13 @@ const AddTransactionModalView: React.FC<Props> = ({
   return (
     <Modal
       open
-      onClose={handleClose}
+      onClose={(_, reason) => {
+        if (reason === 'backdropClick') {
+          return;
+        }
+
+        handleClose();
+      }}
       aria-labelledby="modal-modal-title"
       aria-describedby="modal-modal-description"
     >
