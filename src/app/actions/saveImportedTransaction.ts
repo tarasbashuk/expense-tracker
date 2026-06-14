@@ -86,6 +86,7 @@ export default async function saveImportedTransaction(
       amount,
       currency,
       type,
+      category,
       warnings: [],
     },
     await getExistingTransactionsForImport(userId, [
@@ -96,6 +97,7 @@ export default async function saveImportedTransaction(
         amount,
         currency,
         type,
+        category,
         warnings: [],
       },
     ]),

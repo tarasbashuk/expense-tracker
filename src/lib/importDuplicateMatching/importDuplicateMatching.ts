@@ -1,5 +1,6 @@
 import { Currency, Transaction, TransactionType } from '@prisma/client';
 
+import { ExpenseCategory } from '@/constants/types';
 import { db } from '@/lib/db';
 import { normalizeMerchantPattern } from '@/lib/merchantRules/merchantRules';
 
@@ -10,6 +11,7 @@ type ImportCandidate = {
   amount: number | null;
   currency: Currency | null;
   type: TransactionType | null;
+  category: string;
   matchReason?: string;
   warnings: string[];
 };
@@ -20,12 +22,16 @@ type DuplicateMatch = {
   level: DuplicateMatchLevel;
   transaction: Pick<
     Transaction,
-    'id' | 'text' | 'amount' | 'currency' | 'type' | 'date'
+    'id' | 'text' | 'amount' | 'currency' | 'type' | 'date' | 'category'
   >;
   reason: string;
 };
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const DUPLICATE_DATE_WINDOW_DAYS = 2;
+const MERCHANT_EXACT_AMOUNT_SCORE = 0.6;
+const MERCHANT_POSSIBLE_AMOUNT_SCORE = 0.45;
+const DINING_AMOUNT_TOLERANCE = 0.1;
 
 const parseImportDate = (value: string | null) => {
   if (!value) return null;
@@ -87,6 +93,23 @@ const isRoundedAmountMatch = (
   Math.round(candidateAmount) === Math.round(transactionAmount) &&
   Math.abs(candidateAmount - transactionAmount) < 1;
 
+const isDiningCategory = (category: string | null | undefined) =>
+  category === ExpenseCategory.Dining;
+
+const isAmountWithinDiningTolerance = (
+  candidateAmount: number,
+  transactionAmount: number,
+) => {
+  const largerAmount = Math.max(candidateAmount, transactionAmount);
+
+  if (largerAmount <= 0) return false;
+
+  return (
+    Math.abs(candidateAmount - transactionAmount) / largerAmount <=
+    DINING_AMOUNT_TOLERANCE
+  );
+};
+
 const describeMatch = (
   transaction: DuplicateMatch['transaction'],
   level: DuplicateMatchLevel,
@@ -131,7 +154,7 @@ export const findDuplicateMatch = (
 
     const dayDistance = getDayDistance(candidateDate, transaction.date);
 
-    if (dayDistance > 1) {
+    if (dayDistance > DUPLICATE_DATE_WINDOW_DAYS) {
       continue;
     }
 
@@ -142,16 +165,28 @@ export const findDuplicateMatch = (
       transaction.amount,
     );
 
-    if (exactAmount && merchantScore >= 0.6) {
+    if (exactAmount && merchantScore >= MERCHANT_EXACT_AMOUNT_SCORE) {
+      if (dayDistance > 0) {
+        bestPossibleMatch = {
+          level: 'possibleDuplicate',
+          transaction,
+          reason: describeMatch(
+            transaction,
+            'possibleDuplicate',
+            `Date is within ${DUPLICATE_DATE_WINDOW_DAYS} days, with same currency, type, amount, and similar merchant.`,
+          ),
+        };
+
+        continue;
+      }
+
       return {
         level: 'alreadyExists',
         transaction,
         reason: describeMatch(
           transaction,
           'alreadyExists',
-          dayDistance === 0
-            ? 'Same date, currency, type, amount, and similar merchant.'
-            : 'Date is within 1 day, with same currency, type, amount, and similar merchant.',
+          'Same date, currency, type, amount, and similar merchant.',
         ),
       };
     }
@@ -168,14 +203,38 @@ export const findDuplicateMatch = (
       };
     }
 
-    if (roundedAmount && merchantScore >= 0.45) {
+    if (!exactAmount && roundedAmount && dayDistance === 0) {
+      const details =
+        merchantScore >= MERCHANT_POSSIBLE_AMOUNT_SCORE
+          ? 'Same date, currency, type, and amount matches when rounded to whole units.'
+          : 'Same date, currency, and type; amount matches when rounded to whole units, but merchant is not a strong match.';
+
+      bestPossibleMatch = {
+        level: 'possibleDuplicate',
+        transaction,
+        reason: describeMatch(transaction, 'possibleDuplicate', details),
+      };
+    }
+
+    const diningAmountMatch =
+      dayDistance === 0 &&
+      !exactAmount &&
+      !roundedAmount &&
+      (isDiningCategory(candidate.category) ||
+        isDiningCategory(transaction.category)) &&
+      merchantScore >= MERCHANT_POSSIBLE_AMOUNT_SCORE &&
+      isAmountWithinDiningTolerance(candidate.amount, transaction.amount);
+
+    if (diningAmountMatch) {
       bestPossibleMatch = {
         level: 'possibleDuplicate',
         transaction,
         reason: describeMatch(
           transaction,
           'possibleDuplicate',
-          'Date is within 1 day and amount matches when rounded to whole units.',
+          `Same date and similar dining merchant; amount is within ${Math.round(
+            DINING_AMOUNT_TOLERANCE * 100,
+          )}% of an existing transaction, which may include tips or manual rounding.`,
         ),
       };
     }
@@ -216,6 +275,7 @@ export const getExistingTransactionsForImport = async (
       currency: true,
       type: true,
       date: true,
+      category: true,
     },
   });
 };
