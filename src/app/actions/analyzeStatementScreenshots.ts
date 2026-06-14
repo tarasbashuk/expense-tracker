@@ -2,7 +2,7 @@
 
 import OpenAI from 'openai';
 import { currentUser } from '@clerk/nextjs/server';
-import { Currency, TransactionType } from '@prisma/client';
+import { Currency, Language, TransactionType } from '@prisma/client';
 
 import { db } from '@/lib/db';
 import { getCurrenciesFromMap } from '@/lib/currenciesRate.utils';
@@ -89,12 +89,13 @@ const schema = {
           },
           date: {
             type: ['string', 'null'],
-            description: 'Transaction date as YYYY-MM-DD when visible.',
+            description:
+              'Normalize any visible or inferred transaction/receipt date to YYYY-MM-DD. Source dates may use any locale or format.',
           },
           text: {
             type: 'string',
             description:
-              'Clean user-facing transaction text, usually merchant name.',
+              'Clean user-facing transaction text, usually merchant/store name.',
           },
           rawDescription: {
             type: 'string',
@@ -103,7 +104,7 @@ const schema = {
           amount: {
             type: ['number', 'null'],
             description:
-              'Absolute transaction amount. Use positive values; type/status carries meaning.',
+              'Absolute transaction or receipt total amount. Use positive values; type/status carries meaning.',
           },
           currency: {
             type: ['string', 'null'],
@@ -167,17 +168,25 @@ const clampConfidence = (value: number) => {
   return Math.min(1, Math.max(0, value));
 };
 
-const buildPrompt = (referenceDate: string, userMerchantRules: string) => {
+const buildPrompt = (
+  referenceDate: string,
+  userMerchantRules: string,
+  responseLanguage: Language,
+) => {
   const expenseCategories = EXPENSE_CATEGORIES_LIST.map(
     ({ value, label }) => `${value}: ${label}`,
   ).join('\n');
   const incomeCategories = INCOME_CATEGORIES_LIST.map(
     ({ value, label }) => `${value}: ${label}`,
   ).join('\n');
+  const responseLanguageName =
+    responseLanguage === Language.UKR ? 'Ukrainian' : 'English';
 
-  return `Extract visible bank transactions from the uploaded mobile banking screenshots.
+  return `Extract financial transactions from the uploaded screenshots. The screenshots can be mobile banking history, card transaction lists, payment confirmations, receipts, invoices, or a mix of these.
 
 Reference date for relative labels such as "Today" or "Yesterday": ${referenceDate}.
+
+Response language for explanatory text: ${responseLanguageName}.
 
 Supported currencies: ${Object.values(Currency).join(', ')}.
 
@@ -198,15 +207,28 @@ User-specific merchant rules:
 ${userMerchantRules}
 
 Rules:
-- Extract only transaction rows that are visible in the screenshots.
-- Return one row per visible transaction.
-- Use YYYY-MM-DD dates. If a date group says "Yesterday", resolve it from the reference date.
+- Write matchReason and warnings in ${responseLanguageName}.
+- Keep structured enum fields exactly as specified: status, currency, type, and category must not be translated.
+- Keep merchant/store names in text and rawDescription in their original visible language; do not translate merchant names.
+- First decide what each screenshot shows: bank/card transaction history, receipt/invoice/payment document, or irrelevant content.
+- Extract only transactions or receipts that are visible in the screenshots.
+- For bank/card history, return one row per visible transaction.
+- For receipts/invoices/payment confirmations, return one row per receipt/document using the merchant/store name and the final paid total. Do not return individual receipt line items yet.
+- If multiple uploaded screenshots are clearly different parts of the same single receipt/document, merge them into one transaction when confidence is high. If unsure, use status="needsReview" and add a warning.
+- Source dates can appear in any locale or format. Always output date as YYYY-MM-DD.
+- If a date group says "Yesterday", resolve it from the reference date.
+- For ambiguous numeric dates such as 06/07/2026, infer locale from screenshot language/bank region when possible; otherwise use status="needsReview" and add a warning.
 - Amounts should be absolute positive numbers. Use type=Expense for negative/debit card payments and type=Income for real positive income/refunds.
+- If both an original/local merchant amount and a converted/account-settlement amount are visible, use the original/local merchant amount and currency as amount/currency. Add a warning that a converted account amount was also visible.
+- If only the account/displayed converted amount is visible, use that amount/currency and add a warning when the original merchant currency may be hidden or cut off.
+- For receipts, use the actual receipt/payment currency. Do not replace it with a card/account conversion currency.
 - Mark currency exchange, own transfers, internal transfers, card settlements, and balance movements as status="ignored". Do not classify currency exchange as income or expense.
 - Do NOT mark visible card purchases as ignored only because they are under Upcoming Transactions, Card blockade, Card authorization, or pending/hold sections.
 - Upcoming/card authorization purchases with a visible merchant and amount should usually be status="new", type=Expense, with the best category inferred from the merchant.
 - Use status="needsReview" for upcoming/card authorization rows only when the row is partially cut off, the amount/currency/date is ambiguous, or it may be a refund.
 - If a positive card row looks like a refund, use status="needsReview" and type=Income.
+- For a mixed retail receipt, choose the dominant category by total value when visible. If the mix is unclear, use the merchant/store category and add a warning such as "Mixed receipt; category may need review."
+- Do not split supermarket/retail receipts into groceries/home/shopping sub-transactions in this version.
 - Preserve merchant names exactly enough to be useful, but remove obvious card processor noise only if confidence is high.
 - If merchant/category is uncertain, use category="others" and lower confidence.
 - Do not invent merchant details that are not visible.
@@ -230,7 +252,7 @@ export default async function analyzeStatementScreenshots(
 
   const settings = await db.settings.findUnique({
     where: { clerkUserId: userId },
-    select: { defaultCurrency: true, encryptData: true },
+    select: { defaultCurrency: true, encryptData: true, language: true },
   });
 
   if (settings?.encryptData) {
@@ -307,6 +329,7 @@ export default async function analyzeStatementScreenshots(
               text: buildPrompt(
                 referenceDate,
                 formatMerchantRulesForPrompt(merchantRules),
+                settings?.language || Language.ENG,
               ),
             },
             ...imageParts.map(({ index: _index, ...part }) => part),

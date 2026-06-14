@@ -5,6 +5,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { Currency, Transaction, TransactionType } from '@prisma/client';
 
 import { db } from '@/lib/db';
+import { IncomeCategory } from '@/constants/types';
 import { getMonobankRates } from '@/lib/monobankRatesCache';
 import { getCurrenciesFromMap } from '@/lib/currenciesRate.utils';
 import { convertAmountToDefaultCurrency } from '@/lib/currency/convertAmountToDefaultCurrency';
@@ -23,6 +24,7 @@ type SaveImportedTransactionInput = {
   currency: Currency | null;
   type: TransactionType | null;
   category: string;
+  isCreditTransaction?: boolean;
 };
 
 type SaveImportedTransactionResult = {
@@ -47,8 +49,16 @@ export default async function saveImportedTransaction(
     return { error: 'User not found' };
   }
 
-  const { date, text, amount, amountDefaultCurrency, currency, type, category } =
-    input;
+  const {
+    date,
+    text,
+    amount,
+    amountDefaultCurrency,
+    currency,
+    type,
+    category,
+    isCreditTransaction,
+  } = input;
 
   if (
     !date ||
@@ -141,6 +151,9 @@ export default async function saveImportedTransaction(
 
   const shouldEncrypt = Boolean(settings.encryptData && encryptKey);
   const storedText = shouldEncrypt && encryptKey ? encrypt(text, encryptKey) : text;
+  const creditIncomeText = `Credit income for: ${text}`;
+  const storedCreditIncomeText =
+    shouldEncrypt && encryptKey ? encrypt(creditIncomeText, encryptKey) : creditIncomeText;
   const storedAmount =
     shouldEncrypt && encryptKey ? encryptFloat(amount, encryptKey) : amount;
   const storedAmountDefaultCurrency =
@@ -159,11 +172,32 @@ export default async function saveImportedTransaction(
         category,
         currency,
         type,
-        isCreditTransaction: false,
+        isCreditTransaction: Boolean(
+          isCreditTransaction && type === TransactionType.Expense,
+        ),
         isRecurring: false,
         recurringEndDate: null,
       },
     });
+
+    if (isCreditTransaction && type === TransactionType.Expense) {
+      await db.transaction.create({
+        data: {
+          userId,
+          text: storedCreditIncomeText,
+          amount: storedAmount,
+          amountDefaultCurrency: storedAmountDefaultCurrency,
+          date: parsedDate,
+          category: IncomeCategory.CreditReceived,
+          currency,
+          type: TransactionType.Income,
+          isCreditTransaction: true,
+          isRecurring: false,
+          recurringEndDate: null,
+          CCExpenseTransactionId: transaction.id,
+        },
+      });
+    }
 
     await upsertMerchantCategoryRule({
       userId,

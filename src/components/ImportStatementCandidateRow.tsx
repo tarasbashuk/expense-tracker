@@ -4,8 +4,10 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Chip,
   FormControl,
+  FormControlLabel,
   InputLabel,
   MenuItem,
   Select,
@@ -13,6 +15,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
 import { Currency, TransactionType } from '@prisma/client';
 import { useIntl } from 'react-intl';
 
@@ -29,6 +32,7 @@ import { useCategoryI18n } from '@/lib/useCategoryI18n';
 export type ImportRow = Omit<ScreenshotImportCandidate, 'status'> & {
   id: string;
   status: ScreenshotImportCandidate['status'] | 'saved';
+  isCreditTransaction: boolean;
 };
 
 type ImportStatementCandidateRowProps = {
@@ -37,6 +41,7 @@ type ImportStatementCandidateRowProps = {
   onTextChange: (_text: string) => void;
   onCurrencyChange: (_currency: Currency) => void;
   onCategoryChange: (_category: string) => void;
+  onIsCreditTransactionChange: (_isCreditTransaction: boolean) => void;
   onAmountDefaultCurrencyChange: (_amount: number | null) => void;
   onSave: () => void;
 };
@@ -63,6 +68,7 @@ export default function ImportStatementCandidateRow({
   onTextChange,
   onCurrencyChange,
   onCategoryChange,
+  onIsCreditTransactionChange,
   onAmountDefaultCurrencyChange,
   onSave,
 }: ImportStatementCandidateRowProps) {
@@ -226,6 +232,33 @@ export default function ImportStatementCandidateRow({
           <Typography variant="body2" color="text.secondary">
             {row.matchReason || row.rawDescription}
           </Typography>
+        )}
+
+        {row.type === TransactionType.Expense && (
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={row.isCreditTransaction}
+                disabled={
+                  row.status === 'ignored' ||
+                  row.status === 'saved' ||
+                  row.status === 'alreadyExists'
+                }
+                onChange={(event) =>
+                  onIsCreditTransactionChange(event.target.checked)
+                }
+              />
+            }
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CreditCardIcon sx={{ fontSize: '1.2rem', color: 'primary.main' }} />
+                {formatMessage({
+                  id: 'addTransaction.paidByCC',
+                  defaultMessage: 'Paid by credit card',
+                })}
+              </Box>
+            }
+          />
         )}
 
         {row.warnings.map((warning) => (

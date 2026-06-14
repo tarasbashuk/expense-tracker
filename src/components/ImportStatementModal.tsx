@@ -141,6 +141,7 @@ export default function ImportStatementModal({
         (result.rows || []).map((row, index) => ({
           ...row,
           id: `${row.sourceImageIndex}-${row.date || 'no-date'}-${row.amount || 'no-amount'}-${index}`,
+          isCreditTransaction: false,
         })),
       );
       setWarnings(result.warnings || []);
@@ -193,6 +194,13 @@ export default function ImportStatementModal({
     updateRow(id, (row) => ({ ...row, category }));
   };
 
+  const handleRowIsCreditTransactionChange = (
+    id: string,
+    isCreditTransaction: boolean,
+  ) => {
+    updateRow(id, (row) => ({ ...row, isCreditTransaction }));
+  };
+
   const handleRowAmountDefaultCurrencyChange = (
     id: string,
     amountDefaultCurrency: number | null,
@@ -212,6 +220,7 @@ export default function ImportStatementModal({
       currency: row.currency,
       type: row.type,
       category: row.category,
+      isCreditTransaction: row.isCreditTransaction,
     });
 
     if (result.error) {
@@ -398,6 +407,12 @@ export default function ImportStatementModal({
                   }
                   onCategoryChange={(category) =>
                     handleRowCategoryChange(row.id, category)
+                  }
+                  onIsCreditTransactionChange={(isCreditTransaction) =>
+                    handleRowIsCreditTransactionChange(
+                      row.id,
+                      isCreditTransaction,
+                    )
                   }
                   onAmountDefaultCurrencyChange={(amountDefaultCurrency) =>
                     handleRowAmountDefaultCurrencyChange(
