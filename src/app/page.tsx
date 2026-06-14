@@ -1,4 +1,6 @@
 import { currentUser } from '@clerk/nextjs/server';
+import Box from '@mui/material/Box';
+
 import Guest from '@/components/Guest';
 import Balance from '@/components/Balance';
 import IncomeExpense from '@/components/IncomeExpense';
@@ -14,11 +16,14 @@ const HomePage = async () => {
   }
 
   return (
-    <main>
+    <Box component="section" sx={{
+      width: { xs: '100%', sm: 'auto' },
+      maxWidth: { xs: '100%', sm: 410 },
+    }}>
       <WelcomeMessage firstName={user.firstName} />
       <Balance />
       <IncomeExpense />
-    </main>
+    </Box>
   );
 };
 
