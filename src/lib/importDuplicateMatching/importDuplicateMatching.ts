@@ -32,6 +32,18 @@ const DUPLICATE_DATE_WINDOW_DAYS = 2;
 const MERCHANT_EXACT_AMOUNT_SCORE = 0.6;
 const MERCHANT_POSSIBLE_AMOUNT_SCORE = 0.45;
 const DINING_AMOUNT_TOLERANCE = 0.1;
+const MIN_STRONG_MERCHANT_TOKEN_LENGTH = 5;
+const GENERIC_MERCHANT_TOKENS = new Set([
+  'CARD',
+  'COMPRA',
+  'PAYMENT',
+  'PURCHASE',
+  'ONLINE',
+  'MARKET',
+  'STORE',
+  'SHOP',
+  'WWW',
+]);
 
 const parseImportDate = (value: string | null) => {
   if (!value) return null;
@@ -80,7 +92,19 @@ const getMerchantScore = (candidateText: string, transactionText: string) => {
     ),
   );
 
-  return matchingTokens.length / Math.max(candidateTokens.length, existingTokens.length);
+  const tokenScore =
+    matchingTokens.length / Math.max(candidateTokens.length, existingTokens.length);
+  const hasStrongSharedMerchantToken = matchingTokens.some(
+    (token) =>
+      token.length >= MIN_STRONG_MERCHANT_TOKEN_LENGTH &&
+      !GENERIC_MERCHANT_TOKENS.has(token),
+  );
+
+  if (hasStrongSharedMerchantToken) {
+    return Math.max(tokenScore, MERCHANT_EXACT_AMOUNT_SCORE);
+  }
+
+  return tokenScore;
 };
 
 const isExactAmountMatch = (candidateAmount: number, transactionAmount: number) =>
