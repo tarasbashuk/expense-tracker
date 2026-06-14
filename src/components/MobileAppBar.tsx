@@ -12,6 +12,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import MenuIcon from '@mui/icons-material/Menu';
 import AddIcon from '@mui/icons-material/Add';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import SettingsIcon from '@mui/icons-material/Settings';
 import HomeIcon from '@mui/icons-material/Home';
 import ReceiptIcon from '@mui/icons-material/Receipt';
@@ -24,17 +25,22 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { FormattedMessage } from 'react-intl';
 
 import AddTransactionModal from './AddTransactionModal/AddTransactionModal';
+import ImportStatementModal from './ImportStatementModal';
 import { useTransactions } from '@/context/TranasctionsContext';
 import WelcomeModal from './WelcomeModal/WelcomeModal';
 import { NavigationPath } from '@/constants/types';
 
-const fabStyles = {
+const fabContainerStyles = {
   position: 'fixed',
   zIndex: 1200,
   left: { xs: 0, sm: 'unset' },
   right: { xs: 0, sm: 20 },
   bottom: { xs: 30, sm: 15 },
   margin: '0 auto',
+  width: { xs: 'fit-content', sm: 'auto' },
+  display: 'flex',
+  gap: 1.5,
+  alignItems: 'center',
 };
 
 const appBarStyles = {
@@ -48,6 +54,7 @@ const appBarStyles = {
 const MobileAppBar = () => {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const { isTransactionModalOpen, setIsTransactionModalOpen } =
     useTransactions();
   const handleOpenTransactionModal = () => setIsTransactionModalOpen(true);
@@ -184,17 +191,28 @@ const MobileAppBar = () => {
           </Toolbar>
         </AppBar>
         <SignedIn>
-          <Fab
-            color="primary"
-            aria-label="add"
-            sx={fabStyles}
-            onClick={handleOpenTransactionModal}
-          >
-            <AddIcon />
-          </Fab>
+          <Box sx={fabContainerStyles}>
+            <Fab
+              color="secondary"
+              aria-label="smart import"
+              onClick={() => setIsImportModalOpen(true)}
+            >
+              <AutoAwesomeIcon />
+            </Fab>
+            <Fab
+              color="primary"
+              aria-label="add"
+              onClick={handleOpenTransactionModal}
+            >
+              <AddIcon />
+            </Fab>
+          </Box>
         </SignedIn>
         <WelcomeModal />
         {isTransactionModalOpen && <AddTransactionModal />}
+        {isImportModalOpen && (
+          <ImportStatementModal onClose={() => setIsImportModalOpen(false)} />
+        )}
       </LocalizationProvider>
     </>
   );
