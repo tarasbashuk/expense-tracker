@@ -143,6 +143,10 @@ export default function ImportStatementModal({
       setRows(
         (result.rows || []).map((row, index) => ({
           ...row,
+          amountDefaultCurrency: calculateAmountDefaultCurrency(
+            row.amount,
+            row.currency,
+          ),
           id: `${row.sourceImageIndex}-${row.date || 'no-date'}-${row.amount || 'no-amount'}-${index}`,
           isCreditTransaction: false,
         })),

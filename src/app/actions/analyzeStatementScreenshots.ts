@@ -5,9 +5,6 @@ import { currentUser } from '@clerk/nextjs/server';
 import { Currency, Language, TransactionType } from '@prisma/client';
 
 import { db } from '@/lib/db';
-import { getCurrenciesFromMap } from '@/lib/currenciesRate.utils';
-import { convertAmountToDefaultCurrency } from '@/lib/currency/convertAmountToDefaultCurrency';
-import { getMonobankRates } from '@/lib/monobankRatesCache';
 import {
   EXPENSE_CATEGORIES_LIST,
   INCOME_CATEGORIES_LIST,
@@ -366,27 +363,6 @@ export default async function analyzeStatementScreenshots(
         'others',
     }));
 
-    let conversionWarnings: string[] = [];
-    let currenciesMap: Record<string, number> | null = null;
-    const shouldConvertRows = rows.some(
-      (row) =>
-        row.amount &&
-        row.currency &&
-        settings?.defaultCurrency &&
-        row.currency !== settings.defaultCurrency,
-    );
-
-    if (shouldConvertRows) {
-      try {
-        currenciesMap = getCurrenciesFromMap(await getMonobankRates());
-      } catch (error) {
-        console.error('Currency conversion failed for import preview:', error);
-        conversionWarnings = [
-          'Unable to fetch currency rates for preview conversion. You can still review rows, but converted amounts will be empty.',
-        ];
-      }
-    }
-
     const rowsWithDefaultAmounts = rows.map((row) => {
       if (!row.amount || !row.currency || !settings?.defaultCurrency) {
         return { ...row, amountDefaultCurrency: null };
@@ -396,24 +372,9 @@ export default async function analyzeStatementScreenshots(
         return { ...row, amountDefaultCurrency: row.amount };
       }
 
-      const convertedAmount = currenciesMap
-        ? convertAmountToDefaultCurrency({
-            amount: row.amount,
-            fromCurrency: row.currency,
-            defaultCurrency: settings.defaultCurrency,
-            currenciesMap,
-          })
-        : null;
-
       return {
         ...row,
-        amountDefaultCurrency: convertedAmount,
-        warnings: convertedAmount
-          ? row.warnings
-          : [
-              ...row.warnings,
-              `Unable to calculate amount in ${settings.defaultCurrency}.`,
-            ],
+        amountDefaultCurrency: null,
       };
     });
     const rowsWithDuplicateMatches = await applyDuplicateMatches(
@@ -427,7 +388,7 @@ export default async function analyzeStatementScreenshots(
 
     return {
       rows: rowsWithDuplicateMatches,
-      warnings: [...(parsed.warnings || []), ...conversionWarnings],
+      warnings: parsed.warnings || [],
     };
   } catch (error: any) {
     console.error('OpenAI screenshot import error:', error);
