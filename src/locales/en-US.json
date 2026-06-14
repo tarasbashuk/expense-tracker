@@ -107,6 +107,13 @@
   "importStatement.showIgnored": "Show ignored rows ({count})",
   "importStatement.saved": "Imported transaction saved",
   "importStatement.savedStatus": "Saved",
+  "importStatement.saveDuplicateAnyway": "Save anyway",
+  "importStatement.status.new": "New",
+  "importStatement.status.alreadyExists": "Already exists",
+  "importStatement.status.possibleDuplicate": "Possible duplicate",
+  "importStatement.status.needsReview": "Needs review",
+  "importStatement.status.ignored": "Ignored",
+  "importStatement.status.saved": "Saved",
   "balance.title": "Your balance",
   "balance.initial": "Initial balance:",
 

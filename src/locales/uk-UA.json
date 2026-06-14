@@ -107,6 +107,13 @@
   "importStatement.showIgnored": "Показати проігноровані рядки ({count})",
   "importStatement.saved": "Імпортовану транзакцію збережено",
   "importStatement.savedStatus": "Збережено",
+  "importStatement.saveDuplicateAnyway": "Все одно зберегти",
+  "importStatement.status.new": "Нова",
+  "importStatement.status.alreadyExists": "Вже існує",
+  "importStatement.status.possibleDuplicate": "Можливий дублікат",
+  "importStatement.status.needsReview": "Перевірити",
+  "importStatement.status.ignored": "Проігноровано",
+  "importStatement.status.saved": "Збережено",
   "balance.title": "Ваш баланс",
   "balance.initial": "Початковий баланс:",
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -73,6 +74,8 @@ export default function ImportStatementCandidateRow({
   onSave,
 }: ImportStatementCandidateRowProps) {
   const { formatMessage } = useIntl();
+  const [isConfirmingDuplicateSave, setIsConfirmingDuplicateSave] =
+    useState(false);
   const { getLabel } = useCategoryI18n();
   const {
     settings: { defaultCurrency },
@@ -81,6 +84,50 @@ export default function ImportStatementCandidateRow({
   const isBaseAmountShown = Boolean(
     row.currency && row.currency !== defaultCurrency,
   );
+  const statusLabel = formatMessage({
+    id: `importStatement.status.${row.status}`,
+    defaultMessage: row.status,
+  });
+  const typeLabel = row.type
+    ? formatMessage({
+        id: `transactionType.${row.type.toLowerCase()}`,
+        defaultMessage: row.type,
+      })
+    : '';
+  const saveButtonLabel =
+    row.status === 'saved'
+      ? formatMessage({
+          id: 'importStatement.savedStatus',
+          defaultMessage: 'Saved',
+        })
+      : isConfirmingDuplicateSave
+        ? formatMessage({
+            id: 'common.save',
+            defaultMessage: 'Save',
+          })
+        : row.status === 'possibleDuplicate'
+          ? formatMessage({
+              id: 'importStatement.saveDuplicateAnyway',
+              defaultMessage: 'Save anyway',
+            })
+          : formatMessage({
+              id: 'common.save',
+              defaultMessage: 'Save',
+            });
+
+  useEffect(() => {
+    setIsConfirmingDuplicateSave(false);
+  }, [row.text, row.amount, row.currency, row.category, row.date]);
+
+  const handleSaveClick = () => {
+    if (row.status === 'possibleDuplicate' && !isConfirmingDuplicateSave) {
+      setIsConfirmingDuplicateSave(true);
+
+      return;
+    }
+
+    onSave();
+  };
 
   return (
     <Box
@@ -92,18 +139,32 @@ export default function ImportStatementCandidateRow({
       }}
     >
       <Stack spacing={1.25}>
-        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+        <Stack
+          direction="row"
+          spacing={1}
+          rowGap={1}
+          alignItems="center"
+          flexWrap="wrap"
+          sx={{ mb: 0.5 }}
+        >
           <Chip
             size="small"
-            label={row.status}
+            label={statusLabel}
             color={statusColorMap[row.status]}
+            sx={{
+              flexBasis: { xs: '100%', sm: 'auto' },
+              justifyContent: { xs: 'center', sm: 'flex-start' },
+              width: { xs: '100%', sm: 'auto' },
+            }}
           />
           <Chip
             size="small"
             variant="outlined"
             label={`${Math.round(row.confidence * 100)}%`}
           />
-          {row.type && <Chip size="small" variant="outlined" label={row.type} />}
+          {row.type && (
+            <Chip size="small" variant="outlined" label={typeLabel} />
+          )}
           <Box sx={{ flexGrow: 1 }} />
           <Button
             size="small"
@@ -114,17 +175,9 @@ export default function ImportStatementCandidateRow({
               row.status === 'alreadyExists' ||
               isSaving
             }
-            onClick={onSave}
+            onClick={handleSaveClick}
           >
-            {row.status === 'saved'
-              ? formatMessage({
-                  id: 'importStatement.savedStatus',
-                  defaultMessage: 'Saved',
-                })
-              : formatMessage({
-                  id: 'common.save',
-                  defaultMessage: 'Save',
-                })}
+            {saveButtonLabel}
           </Button>
         </Stack>
 
@@ -251,7 +304,9 @@ export default function ImportStatementCandidateRow({
             }
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CreditCardIcon sx={{ fontSize: '1.2rem', color: 'primary.main' }} />
+                <CreditCardIcon
+                  sx={{ fontSize: '1.2rem', color: 'primary.main' }}
+                />
                 {formatMessage({
                   id: 'addTransaction.paidByCC',
                   defaultMessage: 'Paid by credit card',

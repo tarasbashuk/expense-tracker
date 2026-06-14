@@ -199,6 +199,8 @@ Useful merchant/category hints:
 - AMAZON, ALLEGRO, ZALANDO, IKEA, DECATHLON -> shopping unless the visible merchant context is more specific.
 - VETERINARIA, VET, PETSHOP, ZOO -> pets.
 - RESTAURANT, CAFE, BAR, MCDONALD, KFC, BURGER, COSTA, STARBUCKS -> dining.
+- COLEGIO, COLEGIOS, SCHOOL, LAUDE -> education.
+- VETASSUR, VETERINARIA, VETERINARY, VET, PETSHOP, ZOO -> pets.
 
 User-specific merchant rules:
 ${userMerchantRules}
@@ -212,6 +214,10 @@ Rules:
 - For bank/card history, return one row per visible transaction. Do not summarize the whole screenshot as ignored when it contains at least one normal merchant card payment.
 - A row labeled "Card payment", "Card transaction", "Payment by card", or similar with a visible merchant/person name and a debit amount is a real purchase candidate. It should usually be status="new", type=Expense, even if the same screenshot also contains currency exchange, own transfer, or other ignored rows.
 - Include visible person-name merchants when they are card payments, for example "OLHA MEDVEDIEVA -456.88 PLN Card payment" should be extracted as a new expense candidate, not ignored.
+- Direct debit / receipt debit rows are real expenses, not ignored transfers. Spanish bank rows containing "Recibo", "Adeudo", "Domiciliacion", "Domiciliación", "Mandato", or "Ref. Mandato" with a merchant/beneficiary and a negative amount should usually be status="new", type=Expense.
+- Examples: "Recibo Gc Re Colegios Laude Slu ... -1.359,00 EUR" is an education expense; "Recibo Vetassur ... -27,96 EUR" is a pets expense.
+- Bank transfer rows are not automatically internal transfers. If a row says "Transferencia ... A Favor De <external merchant/person>" and has a negative amount, treat it as a payment/expense candidate unless it is clearly between the user's own accounts.
+- Example: "Transferencia Inmediata A Favor De Tdc Marbella -99,99 EUR" should be extracted as a new expense candidate, not ignored, unless the screenshot explicitly shows it is an own-account transfer.
 - For receipts/invoices/payment confirmations, return one row per receipt/document using the merchant/store name and the final paid total. Do not return individual receipt line items yet.
 - If multiple uploaded screenshots are clearly different parts of the same single receipt/document, merge them into one transaction when confidence is high. If unsure, use status="needsReview" and add a warning.
 - Source dates can appear in any locale or format. Always output date as YYYY-MM-DD.
@@ -221,7 +227,7 @@ Rules:
 - If both an original/local merchant amount and a converted/account-settlement amount are visible, use the original/local merchant amount and currency as amount/currency. Add a warning that a converted account amount was also visible.
 - If only the account/displayed converted amount is visible, use that amount/currency and add a warning when the original merchant currency may be hidden or cut off.
 - For receipts, use the actual receipt/payment currency. Do not replace it with a card/account conversion currency.
-- Mark currency exchange, own transfers, internal transfers, card settlements, and balance movements as status="ignored". Do not classify currency exchange as income or expense. This ignore rule does not apply to normal merchant/person card payments.
+- Mark currency exchange, own-account transfers, internal transfers between the user's own accounts, card settlements, and balance movements as status="ignored". Do not classify currency exchange as income or expense. This ignore rule does not apply to normal merchant/person card payments, direct debits, receipt debits, or external bank-transfer payments.
 - Do NOT mark visible card purchases as ignored only because they are under Upcoming Transactions, Card blockade, Card authorization, or pending/hold sections.
 - Upcoming/card authorization purchases with a visible merchant and amount should usually be status="new", type=Expense, with the best category inferred from the merchant.
 - Use status="needsReview" for upcoming/card authorization rows only when the row is partially cut off, the amount/currency/date is ambiguous, or it may be a refund.
