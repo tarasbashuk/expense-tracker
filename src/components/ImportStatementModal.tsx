@@ -31,6 +31,7 @@ import { useCurrencies } from '@/context/CurrenciesContext';
 import { useSettings } from '@/context/SettingsContexts';
 import { useTransactions } from '@/context/TranasctionsContext';
 import { convertAmountToDefaultCurrency } from '@/lib/currency/convertAmountToDefaultCurrency';
+import { compressImageFile } from '@/lib/image/compressImageFile';
 
 const modalStyle = {
   position: 'absolute',
@@ -96,9 +97,12 @@ export default function ImportStatementModal({
     [screenshots],
   );
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const files = Array.from(event.target.files || []);
-    const nextScreenshots = files.map((file) => ({
+    const compressedFiles = await Promise.all(files.map(compressImageFile));
+    const nextScreenshots = compressedFiles.map((file) => ({
       id: `${file.name}-${file.size}-${crypto.randomUUID()}`,
       file,
       previewUrl: URL.createObjectURL(file),
