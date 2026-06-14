@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { isSameMonth, isSameYear } from 'date-fns';
 import {
   Alert,
   Box,
@@ -28,6 +29,7 @@ import ImportStatementCandidateRow, {
 } from '@/components/ImportStatementCandidateRow';
 import { useCurrencies } from '@/context/CurrenciesContext';
 import { useSettings } from '@/context/SettingsContexts';
+import { useTransactions } from '@/context/TranasctionsContext';
 import { convertAmountToDefaultCurrency } from '@/lib/currency/convertAmountToDefaultCurrency';
 
 const modalStyle = {
@@ -65,6 +67,7 @@ export default function ImportStatementModal({
     settings: { defaultCurrency },
   } = useSettings();
   const { currencies } = useCurrencies();
+  const { transactions, setTransactions } = useTransactions();
   const [screenshots, setScreenshots] = useState<SelectedScreenshot[]>([]);
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
@@ -225,7 +228,7 @@ export default function ImportStatementModal({
 
     if (result.error) {
       toast.error(result.error);
-    } else {
+    } else if (result.data) {
       toast.success(
         formatMessage({
           id: 'importStatement.saved',
@@ -237,6 +240,33 @@ export default function ImportStatementModal({
           rowIndex === index ? { ...currentRow, status: 'saved' } : currentRow,
         ),
       );
+
+      const firstTransactionDate = transactions[0]?.date;
+      const isCurrentListTransaction =
+        !firstTransactionDate ||
+        (isSameMonth(result.data.date, firstTransactionDate) &&
+          isSameYear(result.data.date, firstTransactionDate));
+
+      if (isCurrentListTransaction) {
+        setTransactions((currentTransactions) => {
+          const existingIndex = currentTransactions.findIndex(
+            (transaction) => transaction.id === result.data?.id,
+          );
+          const updatedTransactions =
+            existingIndex === -1
+              ? [result.data!, ...currentTransactions]
+              : [
+                  ...currentTransactions.slice(0, existingIndex),
+                  result.data!,
+                  ...currentTransactions.slice(existingIndex + 1),
+                ];
+
+          return updatedTransactions.sort(
+            (left, right) =>
+              new Date(right.date).getTime() - new Date(left.date).getTime(),
+          );
+        });
+      }
     }
 
     setSavingRowIndex(null);

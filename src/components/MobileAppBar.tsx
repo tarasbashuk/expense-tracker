@@ -1,6 +1,6 @@
 'use client';
 import { useState, MouseEvent } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Fab from '@mui/material/Fab';
@@ -53,13 +53,11 @@ const appBarStyles = {
 
 const MobileAppBar = () => {
   const router = useRouter();
-  const pathname = usePathname();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const { isTransactionModalOpen, setIsTransactionModalOpen } =
     useTransactions();
   const handleOpenTransactionModal = () => setIsTransactionModalOpen(true);
-  const isTransactionsPage = pathname === NavigationPath.Transactions;
 
   const isOpen = Boolean(anchorEl);
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
@@ -194,15 +192,13 @@ const MobileAppBar = () => {
         </AppBar>
         <SignedIn>
           <Box sx={fabContainerStyles}>
-            {isTransactionsPage && (
-              <Fab
-                color="secondary"
-                aria-label="smart import"
-                onClick={() => setIsImportModalOpen(true)}
-              >
-                <AutoAwesomeIcon />
-              </Fab>
-            )}
+            <Fab
+              color="secondary"
+              aria-label="smart import"
+              onClick={() => setIsImportModalOpen(true)}
+            >
+              <AutoAwesomeIcon />
+            </Fab>
             <Fab
               color="primary"
               aria-label="add"
