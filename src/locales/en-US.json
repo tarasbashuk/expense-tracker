@@ -102,6 +102,7 @@
   "importStatement.previewOnly": "Analyze bank screenshots or receipts, review suggested rows, then save the transactions you want to keep.",
   "importStatement.chooseScreenshots": "Choose images",
   "importStatement.analyze": "Analyze",
+  "importStatement.analyzeFailed": "Unable to analyze these images. Try fewer or smaller screenshots.",
   "importStatement.results": "Review results ({count})",
   "importStatement.showIgnored": "Show ignored rows ({count})",
   "importStatement.saved": "Imported transaction saved",

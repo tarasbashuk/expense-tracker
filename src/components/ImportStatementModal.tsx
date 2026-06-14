@@ -129,32 +129,43 @@ export default function ImportStatementModal({
     setWarnings([]);
     setRows([]);
 
-    const formData = new FormData();
-    formData.set('referenceDate', referenceDate);
-    screenshots.forEach(({ file }) => {
-      formData.append('screenshots', file);
-    });
+    try {
+      const formData = new FormData();
+      formData.set('referenceDate', referenceDate);
+      screenshots.forEach(({ file }) => {
+        formData.append('screenshots', file);
+      });
 
-    const result = await analyzeStatementScreenshots(formData);
+      const result = await analyzeStatementScreenshots(formData);
 
-    if (result.error) {
-      setError(result.error);
-    } else {
-      setRows(
-        (result.rows || []).map((row, index) => ({
-          ...row,
-          amountDefaultCurrency: calculateAmountDefaultCurrency(
-            row.amount,
-            row.currency,
-          ),
-          id: `${row.sourceImageIndex}-${row.date || 'no-date'}-${row.amount || 'no-amount'}-${index}`,
-          isCreditTransaction: false,
-        })),
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setRows(
+          (result.rows || []).map((row, index) => ({
+            ...row,
+            amountDefaultCurrency: calculateAmountDefaultCurrency(
+              row.amount,
+              row.currency,
+            ),
+            id: `${row.sourceImageIndex}-${row.date || 'no-date'}-${row.amount || 'no-amount'}-${index}`,
+            isCreditTransaction: false,
+          })),
+        );
+        setWarnings(result.warnings || []);
+      }
+    } catch (error) {
+      console.error('Smart import analyze failed:', error);
+      setError(
+        formatMessage({
+          id: 'importStatement.analyzeFailed',
+          defaultMessage:
+            'Unable to analyze these images. Try fewer or smaller screenshots.',
+        }),
       );
-      setWarnings(result.warnings || []);
+    } finally {
+      setIsAnalyzing(false);
     }
-
-    setIsAnalyzing(false);
   };
 
   const updateRow = (

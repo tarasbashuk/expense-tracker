@@ -34,6 +34,11 @@ if (typeof process !== 'undefined') {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '64mb',
+    },
+  },
 };
 
 // Only upload source maps in CI/production and when Sentry auth token is available

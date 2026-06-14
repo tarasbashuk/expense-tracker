@@ -102,6 +102,7 @@
   "importStatement.previewOnly": "Проаналізуйте банківські скріншоти або чеки, перевірте запропоновані рядки й збережіть потрібні транзакції.",
   "importStatement.chooseScreenshots": "Обрати зображення",
   "importStatement.analyze": "Проаналізувати",
+  "importStatement.analyzeFailed": "Не вдалося проаналізувати ці зображення. Спробуйте менше або менші скріншоти.",
   "importStatement.results": "Перевірка результатів ({count})",
   "importStatement.showIgnored": "Показати проігноровані рядки ({count})",
   "importStatement.saved": "Імпортовану транзакцію збережено",
