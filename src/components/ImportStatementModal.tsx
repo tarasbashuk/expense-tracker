@@ -201,6 +201,10 @@ export default function ImportStatementModal({
     updateRow(id, (row) => ({ ...row, text }));
   };
 
+  const handleRowDateChange = (id: string, date: string) => {
+    updateRow(id, (row) => ({ ...row, date: date || null }));
+  };
+
   const handleRowCurrencyChange = (id: string, currency: Currency) => {
     updateRow(id, (row) => ({
       ...row,
@@ -234,61 +238,74 @@ export default function ImportStatementModal({
     const row = rows[index];
 
     setSavingRowIndex(index);
-    const result = await saveImportedTransaction({
-      date: row.date,
-      text: row.text,
-      amount: row.amount,
-      amountDefaultCurrency: row.amountDefaultCurrency,
-      currency: row.currency,
-      type: row.type,
-      category: row.category,
-      isCreditTransaction: row.isCreditTransaction,
-    });
+    try {
+      const result = await saveImportedTransaction({
+        date: row.date,
+        text: row.text,
+        amount: row.amount,
+        amountDefaultCurrency: row.amountDefaultCurrency,
+        currency: row.currency,
+        type: row.type,
+        category: row.category,
+        isCreditTransaction: row.isCreditTransaction,
+      });
 
-    if (result.error) {
-      toast.error(result.error);
-    } else if (result.data) {
-      toast.success(
+      if (result.error) {
+        toast.error(result.error);
+      } else if (result.data) {
+        toast.success(
+          formatMessage({
+            id: 'importStatement.saved',
+            defaultMessage: 'Imported transaction saved',
+          }),
+        );
+        setRows((current) =>
+          current.map((currentRow, rowIndex) =>
+            rowIndex === index
+              ? { ...currentRow, status: 'saved' }
+              : currentRow,
+          ),
+        );
+
+        const savedTransaction = result.data;
+        const firstTransactionDate = transactions[0]?.date;
+        const isCurrentListTransaction =
+          !firstTransactionDate ||
+          (isSameMonth(savedTransaction.date, firstTransactionDate) &&
+            isSameYear(savedTransaction.date, firstTransactionDate));
+
+        if (isCurrentListTransaction) {
+          setTransactions((currentTransactions) => {
+            const existingIndex = currentTransactions.findIndex(
+              (transaction) => transaction.id === savedTransaction.id,
+            );
+            const updatedTransactions =
+              existingIndex === -1
+                ? [savedTransaction, ...currentTransactions]
+                : [
+                    ...currentTransactions.slice(0, existingIndex),
+                    savedTransaction,
+                    ...currentTransactions.slice(existingIndex + 1),
+                  ];
+
+            return updatedTransactions.sort(
+              (left, right) =>
+                new Date(right.date).getTime() - new Date(left.date).getTime(),
+            );
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Smart import save failed:', error);
+      toast.error(
         formatMessage({
-          id: 'importStatement.saved',
-          defaultMessage: 'Imported transaction saved',
+          id: 'importStatement.saveFailed',
+          defaultMessage: 'Unable to save this transaction. Please try again.',
         }),
       );
-      setRows((current) =>
-        current.map((currentRow, rowIndex) =>
-          rowIndex === index ? { ...currentRow, status: 'saved' } : currentRow,
-        ),
-      );
-
-      const firstTransactionDate = transactions[0]?.date;
-      const isCurrentListTransaction =
-        !firstTransactionDate ||
-        (isSameMonth(result.data.date, firstTransactionDate) &&
-          isSameYear(result.data.date, firstTransactionDate));
-
-      if (isCurrentListTransaction) {
-        setTransactions((currentTransactions) => {
-          const existingIndex = currentTransactions.findIndex(
-            (transaction) => transaction.id === result.data?.id,
-          );
-          const updatedTransactions =
-            existingIndex === -1
-              ? [result.data!, ...currentTransactions]
-              : [
-                  ...currentTransactions.slice(0, existingIndex),
-                  result.data!,
-                  ...currentTransactions.slice(existingIndex + 1),
-                ];
-
-          return updatedTransactions.sort(
-            (left, right) =>
-              new Date(right.date).getTime() - new Date(left.date).getTime(),
-          );
-        });
-      }
+    } finally {
+      setSavingRowIndex(null);
     }
-
-    setSavingRowIndex(null);
   };
 
   return (
@@ -408,8 +425,8 @@ export default function ImportStatementModal({
 
           {error && <Alert severity="error">{error}</Alert>}
 
-          {warnings.map((warning) => (
-            <Alert key={warning} severity="warning">
+          {warnings.map((warning, index) => (
+            <Alert key={`${index}-${warning}`} severity="warning">
               {warning}
             </Alert>
           ))}
@@ -451,6 +468,7 @@ export default function ImportStatementModal({
                   row={row}
                   isSaving={savingRowIndex === index}
                   onTextChange={(text) => handleRowTextChange(row.id, text)}
+                  onDateChange={(date) => handleRowDateChange(row.id, date)}
                   onCurrencyChange={(currency) =>
                     handleRowCurrencyChange(row.id, currency)
                   }

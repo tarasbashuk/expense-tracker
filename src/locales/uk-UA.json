@@ -106,6 +106,7 @@
   "importStatement.results": "Перевірка результатів ({count})",
   "importStatement.showIgnored": "Показати проігноровані рядки ({count})",
   "importStatement.saved": "Імпортовану транзакцію збережено",
+  "importStatement.saveFailed": "Не вдалося зберегти транзакцію. Спробуйте ще раз.",
   "importStatement.savedStatus": "Збережено",
   "importStatement.saveDuplicateAnyway": "Все одно зберегти",
   "importStatement.status.new": "Нова",

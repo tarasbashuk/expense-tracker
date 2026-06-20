@@ -106,6 +106,7 @@
   "importStatement.results": "Review results ({count})",
   "importStatement.showIgnored": "Show ignored rows ({count})",
   "importStatement.saved": "Imported transaction saved",
+  "importStatement.saveFailed": "Unable to save this transaction. Please try again.",
   "importStatement.savedStatus": "Saved",
   "importStatement.saveDuplicateAnyway": "Save anyway",
   "importStatement.status.new": "New",

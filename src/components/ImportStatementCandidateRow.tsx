@@ -17,12 +17,15 @@ import {
   Typography,
 } from '@mui/material';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
+import { DatePicker } from '@mui/x-date-pickers';
 import { Currency, TransactionType } from '@prisma/client';
+import { format, parseISO } from 'date-fns';
 import { useIntl } from 'react-intl';
 
 import type { ScreenshotImportCandidate } from '@/app/actions/analyzeStatementScreenshots';
 import {
   CURRENCY_SYMBOL_MAP,
+  DATE_FORMATS,
   EXPENSE_CATEGORIES_LIST,
   INCOME_CATEGORIES_LIST,
 } from '@/constants/constants';
@@ -40,6 +43,7 @@ type ImportStatementCandidateRowProps = {
   row: ImportRow;
   isSaving: boolean;
   onTextChange: (_text: string) => void;
+  onDateChange: (_date: string) => void;
   onCurrencyChange: (_currency: Currency) => void;
   onCategoryChange: (_category: string) => void;
   onIsCreditTransactionChange: (_isCreditTransaction: boolean) => void;
@@ -67,6 +71,7 @@ export default function ImportStatementCandidateRow({
   row,
   isSaving,
   onTextChange,
+  onDateChange,
   onCurrencyChange,
   onCategoryChange,
   onIsCreditTransactionChange,
@@ -173,6 +178,7 @@ export default function ImportStatementCandidateRow({
               row.status === 'ignored' ||
               row.status === 'saved' ||
               row.status === 'alreadyExists' ||
+              !row.date ||
               isSaving
             }
             onClick={handleSaveClick}
@@ -192,15 +198,24 @@ export default function ImportStatementCandidateRow({
             value={row.text}
             onChange={(event) => onTextChange(event.target.value)}
           />
-          <TextField
-            size="small"
+          <DatePicker
             label={formatMessage({
               id: 'grid.date',
               defaultMessage: 'Date',
             })}
-            value={row.date || '-'}
-            InputProps={{ readOnly: true }}
-            sx={{ minWidth: { sm: 140 } }}
+            value={row.date ? parseISO(row.date) : null}
+            onChange={(date) =>
+              onDateChange(
+                date ? format(date, DATE_FORMATS.YYYY_MM_DD) : '',
+              )
+            }
+            format={DATE_FORMATS.YYYY_MM_DD}
+            slotProps={{
+              textField: {
+                size: 'small',
+                sx: { minWidth: { sm: 140 } },
+              },
+            }}
           />
         </Stack>
 
@@ -272,8 +287,8 @@ export default function ImportStatementCandidateRow({
               value={row.category}
               onChange={(event) => onCategoryChange(event.target.value)}
             >
-              {categoryOptions.map(({ value }) => (
-                <MenuItem key={value} value={value}>
+              {categoryOptions.map(({ value }, index) => (
+                <MenuItem key={`${value}-${index}`} value={value}>
                   {getLabel(value as TransactionCategory)}
                 </MenuItem>
               ))}
@@ -316,8 +331,8 @@ export default function ImportStatementCandidateRow({
           />
         )}
 
-        {row.warnings.map((warning) => (
-          <Alert key={warning} severity="warning">
+        {row.warnings.map((warning, index) => (
+          <Alert key={`${index}-${warning}`} severity="warning">
             {warning}
           </Alert>
         ))}
