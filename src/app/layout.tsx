@@ -3,7 +3,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 import { Roboto } from 'next/font/google';
 import { ToastContainer } from 'react-toastify';
 import CssBaseline from '@mui/material/CssBaseline';
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 import { AppProviders } from '@/context/AppProviders';
 import Header from '@/components/Header';
@@ -14,6 +14,7 @@ import './globals.css';
 const roboto = Roboto({ weight: '400', subsets: ['latin'] });
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 export const metadata: Metadata = {
   title: 'Expense Tracker',

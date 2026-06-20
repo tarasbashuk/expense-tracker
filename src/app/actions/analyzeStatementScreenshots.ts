@@ -1,6 +1,7 @@
 'use server';
 
 import OpenAI from 'openai';
+import * as Sentry from '@sentry/nextjs';
 import { currentUser } from '@clerk/nextjs/server';
 import { Currency, Language, TransactionType } from '@prisma/client';
 
@@ -49,6 +50,7 @@ export type ScreenshotImportCandidate = {
   currency: Currency | null;
   type: TransactionType | null;
   category: string;
+  allowWeakMerchantDateMatch?: boolean;
   confidence: number;
   matchReason?: string;
   warnings: string[];
@@ -177,6 +179,11 @@ const clampConfidence = (value: number) => {
   return Math.min(1, Math.max(0, value));
 };
 
+const buildLanguageInstructions = (language: Language) =>
+  language === Language.UKR
+    ? 'Write every matchReason and every warnings item only in Ukrainian. Never answer in Polish or in the source document language. Keep merchant names and rawDescription in their original visible language. Keep status, currency, type, and category enum values unchanged.'
+    : 'Write every matchReason and every warnings item only in English. Never answer in the source document language unless it is English. Keep merchant names and rawDescription in their original visible language. Keep status, currency, type, and category enum values unchanged.';
+
 const buildPrompt = (
   referenceDate: string,
   userMerchantRules: string,
@@ -207,6 +214,8 @@ PDF bank statement reconciliation rules:
 - Do not return rows with no identifiable transaction amount. Add a document warning instead.
 - Extract debit and credit rows even when the statement does not explicitly label them as card purchases. Infer type=Expense for debits/outflows and type=Income for credits/inflows, except ignored movements described below.
 - Prefer the posted/booked transaction date when both posting and value dates exist; mention the other date only in rawDescription when useful.
+- Respect the order of multi-line date headers and cells. In Polish statements, "Data księgowania" is the booking/posting date and "Data transakcji" is the transaction date. When both are present, use "Data księgowania" as date.
+- Example: under a header ordered as "Data księgowania" then "Data transakcji", a cell containing "12-06-2026" then "10-06-2026" must produce date="2026-06-12".
 `
     : '';
 
@@ -371,6 +380,22 @@ export default async function analyzeStatementScreenshots(
     const hasPdfFiles = files.some(
       (file) => normalizeMimeType(file.type, file.name) === PDF_MIME_TYPE,
     );
+    const importStartedAt = Date.now();
+    const sentryContext = {
+      model,
+      fileCount: files.length,
+      totalSize,
+      hasPdfFiles,
+    };
+
+    Sentry.captureMessage('AI file import started', {
+      level: 'info',
+      tags: {
+        feature: 'smart-import',
+        source: hasPdfFiles ? 'pdf' : 'image',
+      },
+      extra: sentryContext,
+    });
     console.log('[AI import] analyze files request', {
       model,
       referenceDate,
@@ -384,6 +409,9 @@ export default async function analyzeStatementScreenshots(
     });
     const response = await openai.responses.create({
       model,
+      instructions: buildLanguageInstructions(
+        settings?.language || Language.ENG,
+      ),
       input: [
         {
           role: 'user',
@@ -411,6 +439,19 @@ export default async function analyzeStatementScreenshots(
       },
     });
 
+    Sentry.captureMessage('AI file import model response received', {
+      level: 'info',
+      tags: {
+        feature: 'smart-import',
+        source: hasPdfFiles ? 'pdf' : 'image',
+      },
+      extra: {
+        ...sentryContext,
+        responseId: response.id,
+        modelDurationMs: Date.now() - importStartedAt,
+      },
+    });
+
     console.log('[AI import] raw response output_text', response.output_text);
 
     const parsed = JSON.parse(response.output_text) as ModelImportResult;
@@ -418,6 +459,11 @@ export default async function analyzeStatementScreenshots(
 
     const rows = parsed.transactions.map((row) => ({
       ...row,
+      allowWeakMerchantDateMatch:
+        normalizeMimeType(
+          files[row.sourceFileIndex]?.type || '',
+          files[row.sourceFileIndex]?.name || '',
+        ) === PDF_MIME_TYPE,
       status:
         row.status === 'ignored' || row.status === 'needsReview'
           ? row.status
@@ -447,11 +493,22 @@ export default async function analyzeStatementScreenshots(
     const rowsWithDuplicateMatches = await applyDuplicateMatches(
       userId,
       rowsWithDefaultAmounts,
+      settings?.language || Language.ENG,
     );
     console.log(
       '[AI import] normalized rows',
       JSON.stringify(rowsWithDuplicateMatches, null, 2),
     );
+
+    Sentry.addBreadcrumb({
+      category: 'smart-import',
+      message: 'AI file import completed',
+      level: 'info',
+      data: {
+        rowCount: rowsWithDuplicateMatches.length,
+        totalDurationMs: Date.now() - importStartedAt,
+      },
+    });
 
     return {
       rows: rowsWithDuplicateMatches,
@@ -459,6 +516,18 @@ export default async function analyzeStatementScreenshots(
     };
   } catch (error: any) {
     console.error('OpenAI file import error:', error);
+    Sentry.captureException(error, {
+      tags: {
+        feature: 'smart-import',
+      },
+      extra: {
+        fileCount: files.length,
+        totalSize,
+        hasPdfFiles: files.some(
+          (file) => normalizeMimeType(file.type, file.name) === PDF_MIME_TYPE,
+        ),
+      },
+    });
 
     return {
       error:

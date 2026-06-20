@@ -1,4 +1,9 @@
-import { Currency, Transaction, TransactionType } from '@prisma/client';
+import {
+  Currency,
+  Language,
+  Transaction,
+  TransactionType,
+} from '@prisma/client';
 
 import { ExpenseCategory } from '@/constants/types';
 import { db } from '@/lib/db';
@@ -12,6 +17,7 @@ type ImportCandidate = {
   currency: Currency | null;
   type: TransactionType | null;
   category: string;
+  allowWeakMerchantDateMatch?: boolean;
   matchReason?: string;
   warnings: string[];
 };
@@ -61,8 +67,7 @@ const toDateOnlyTime = (date: Date) =>
 const getDayDistance = (left: Date, right: Date) =>
   Math.abs(toDateOnlyTime(left) - toDateOnlyTime(right)) / MS_PER_DAY;
 
-const formatTransactionDate = (date: Date) =>
-  date.toISOString().slice(0, 10);
+const formatTransactionDate = (date: Date) => date.toISOString().slice(0, 10);
 
 const normalizeTokens = (value: string) =>
   normalizeMerchantPattern(value)
@@ -93,7 +98,8 @@ const getMerchantScore = (candidateText: string, transactionText: string) => {
   );
 
   const tokenScore =
-    matchingTokens.length / Math.max(candidateTokens.length, existingTokens.length);
+    matchingTokens.length /
+    Math.max(candidateTokens.length, existingTokens.length);
   const hasStrongSharedMerchantToken = matchingTokens.some(
     (token) =>
       token.length >= MIN_STRONG_MERCHANT_TOKEN_LENGTH &&
@@ -107,8 +113,10 @@ const getMerchantScore = (candidateText: string, transactionText: string) => {
   return tokenScore;
 };
 
-const isExactAmountMatch = (candidateAmount: number, transactionAmount: number) =>
-  Math.abs(candidateAmount - transactionAmount) < 0.01;
+const isExactAmountMatch = (
+  candidateAmount: number,
+  transactionAmount: number,
+) => Math.abs(candidateAmount - transactionAmount) < 0.01;
 
 const isRoundedAmountMatch = (
   candidateAmount: number,
@@ -138,11 +146,16 @@ const describeMatch = (
   transaction: DuplicateMatch['transaction'],
   level: DuplicateMatchLevel,
   details: string,
+  language: Language,
 ) => {
   const prefix =
     level === 'alreadyExists'
-      ? 'Matched existing transaction'
-      : 'Possible duplicate of existing transaction';
+      ? language === Language.UKR
+        ? 'Знайдено наявну транзакцію'
+        : 'Matched existing transaction'
+      : language === Language.UKR
+        ? 'Можливий дублікат наявної транзакції'
+        : 'Possible duplicate of existing transaction';
 
   return `${prefix}: ${transaction.text}, ${formatTransactionDate(
     transaction.date,
@@ -152,6 +165,7 @@ const describeMatch = (
 export const findDuplicateMatch = (
   candidate: ImportCandidate,
   existingTransactions: DuplicateMatch['transaction'][],
+  language: Language = Language.ENG,
 ): DuplicateMatch | null => {
   const candidateDate = parseImportDate(candidate.date);
 
@@ -183,7 +197,10 @@ export const findDuplicateMatch = (
     }
 
     const merchantScore = getMerchantScore(candidate.text, transaction.text);
-    const exactAmount = isExactAmountMatch(candidate.amount, transaction.amount);
+    const exactAmount = isExactAmountMatch(
+      candidate.amount,
+      transaction.amount,
+    );
     const roundedAmount = isRoundedAmountMatch(
       candidate.amount,
       transaction.amount,
@@ -197,7 +214,10 @@ export const findDuplicateMatch = (
           reason: describeMatch(
             transaction,
             'possibleDuplicate',
-            `Date is within ${DUPLICATE_DATE_WINDOW_DAYS} days, with same currency, type, amount, and similar merchant.`,
+            language === Language.UKR
+              ? `Дата відрізняється не більше ніж на ${DUPLICATE_DATE_WINDOW_DAYS} дні; валюта, тип і сума збігаються, а продавець схожий.`
+              : `Date is within ${DUPLICATE_DATE_WINDOW_DAYS} days, with same currency, type, amount, and similar merchant.`,
+            language,
           ),
         };
 
@@ -210,7 +230,10 @@ export const findDuplicateMatch = (
         reason: describeMatch(
           transaction,
           'alreadyExists',
-          'Same date, currency, type, amount, and similar merchant.',
+          language === Language.UKR
+            ? 'Дата, валюта, тип і сума збігаються, а продавець схожий.'
+            : 'Same date, currency, type, amount, and similar merchant.',
+          language,
         ),
       };
     }
@@ -222,7 +245,29 @@ export const findDuplicateMatch = (
         reason: describeMatch(
           transaction,
           'possibleDuplicate',
-          'Same date, currency, type, and amount; merchant is not a strong match.',
+          language === Language.UKR
+            ? 'Дата, валюта, тип і сума збігаються, але продавець не має надійного збігу.'
+            : 'Same date, currency, type, and amount; merchant is not a strong match.',
+          language,
+        ),
+      };
+    }
+
+    if (
+      exactAmount &&
+      dayDistance > 0 &&
+      candidate.allowWeakMerchantDateMatch
+    ) {
+      bestPossibleMatch = {
+        level: 'possibleDuplicate',
+        transaction,
+        reason: describeMatch(
+          transaction,
+          'possibleDuplicate',
+          language === Language.UKR
+            ? `Транзакція з виписки має ту саму валюту, тип і точну суму в межах ${DUPLICATE_DATE_WINDOW_DAYS} днів; продавець відсутній або не має надійного збігу.`
+            : `Statement transaction has the same currency, type, and exact amount within ${DUPLICATE_DATE_WINDOW_DAYS} days; merchant is unavailable or not a strong match.`,
+          language,
         ),
       };
     }
@@ -230,13 +275,22 @@ export const findDuplicateMatch = (
     if (!exactAmount && roundedAmount && dayDistance === 0) {
       const details =
         merchantScore >= MERCHANT_POSSIBLE_AMOUNT_SCORE
-          ? 'Same date, currency, type, and amount matches when rounded to whole units.'
-          : 'Same date, currency, and type; amount matches when rounded to whole units, but merchant is not a strong match.';
+          ? language === Language.UKR
+            ? 'Дата, валюта й тип збігаються, а сума збігається після округлення до цілого.'
+            : 'Same date, currency, type, and amount matches when rounded to whole units.'
+          : language === Language.UKR
+            ? 'Дата, валюта й тип збігаються, а сума збігається після округлення до цілого, але продавець не має надійного збігу.'
+            : 'Same date, currency, and type; amount matches when rounded to whole units, but merchant is not a strong match.';
 
       bestPossibleMatch = {
         level: 'possibleDuplicate',
         transaction,
-        reason: describeMatch(transaction, 'possibleDuplicate', details),
+        reason: describeMatch(
+          transaction,
+          'possibleDuplicate',
+          details,
+          language,
+        ),
       };
     }
 
@@ -256,9 +310,14 @@ export const findDuplicateMatch = (
         reason: describeMatch(
           transaction,
           'possibleDuplicate',
-          `Same date and similar dining merchant; amount is within ${Math.round(
-            DINING_AMOUNT_TOLERANCE * 100,
-          )}% of an existing transaction, which may include tips or manual rounding.`,
+          language === Language.UKR
+            ? `Та сама дата й схожий заклад харчування; сума відрізняється не більше ніж на ${Math.round(
+                DINING_AMOUNT_TOLERANCE * 100,
+              )}% і може включати чайові або ручне округлення.`
+            : `Same date and similar dining merchant; amount is within ${Math.round(
+                DINING_AMOUNT_TOLERANCE * 100,
+              )}% of an existing transaction, which may include tips or manual rounding.`,
+          language,
         ),
       };
     }
@@ -281,8 +340,9 @@ export const getExistingTransactionsForImport = async (
 
   const minTime = Math.min(...parsedDates.map((date) => date.getTime()));
   const maxTime = Math.max(...parsedDates.map((date) => date.getTime()));
-  const startDate = new Date(minTime - MS_PER_DAY);
-  const endDate = new Date(maxTime + MS_PER_DAY);
+  const dateWindowMs = DUPLICATE_DATE_WINDOW_DAYS * MS_PER_DAY;
+  const startDate = new Date(minTime - dateWindowMs);
+  const endDate = new Date(maxTime + dateWindowMs);
 
   return db.transaction.findMany({
     where: {
@@ -307,6 +367,7 @@ export const getExistingTransactionsForImport = async (
 export const applyDuplicateMatches = async <T extends ImportCandidate>(
   userId: string,
   candidates: T[],
+  language: Language = Language.ENG,
 ) => {
   const existingTransactions = await getExistingTransactionsForImport(
     userId,
@@ -314,7 +375,7 @@ export const applyDuplicateMatches = async <T extends ImportCandidate>(
   );
 
   return candidates.map((candidate) => {
-    const match = findDuplicateMatch(candidate, existingTransactions);
+    const match = findDuplicateMatch(candidate, existingTransactions, language);
 
     if (!match) {
       return candidate;
