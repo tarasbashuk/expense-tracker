@@ -89,6 +89,11 @@ export default function ImportStatementCandidateRow({
   const isBaseAmountShown = Boolean(
     row.currency && row.currency !== defaultCurrency,
   );
+  const isRowLocked =
+    row.status === 'ignored' ||
+    row.status === 'saved' ||
+    row.status === 'alreadyExists' ||
+    isSaving;
   const statusLabel = formatMessage({
     id: `importStatement.status.${row.status}`,
     defaultMessage: row.status,
@@ -174,13 +179,7 @@ export default function ImportStatementCandidateRow({
           <Button
             size="small"
             variant="contained"
-            disabled={
-              row.status === 'ignored' ||
-              row.status === 'saved' ||
-              row.status === 'alreadyExists' ||
-              !row.date ||
-              isSaving
-            }
+            disabled={isRowLocked || !row.date}
             onClick={handleSaveClick}
           >
             {saveButtonLabel}
@@ -196,6 +195,7 @@ export default function ImportStatementCandidateRow({
               defaultMessage: 'Description',
             })}
             value={row.text}
+            disabled={isRowLocked}
             onChange={(event) => onTextChange(event.target.value)}
           />
           <DatePicker
@@ -204,6 +204,7 @@ export default function ImportStatementCandidateRow({
               defaultMessage: 'Date',
             })}
             value={row.date ? parseISO(row.date) : null}
+            disabled={isRowLocked}
             onChange={(date) =>
               onDateChange(
                 date ? format(date, DATE_FORMATS.YYYY_MM_DD) : '',
@@ -227,10 +228,15 @@ export default function ImportStatementCandidateRow({
               defaultMessage: 'Amount',
             })}
             value={row.amount == null ? '-' : row.amount.toFixed(2)}
+            disabled={isRowLocked}
             InputProps={{ readOnly: true }}
             sx={{ minWidth: { sm: 140 } }}
           />
-          <FormControl size="small" sx={{ minWidth: { sm: 120 } }}>
+          <FormControl
+            size="small"
+            disabled={isRowLocked}
+            sx={{ minWidth: { sm: 120 } }}
+          >
             <InputLabel>
               {formatMessage({
                 id: 'settings.defaultCurrency',
@@ -264,6 +270,7 @@ export default function ImportStatementCandidateRow({
                 { currency: CURRENCY_SYMBOL_MAP[defaultCurrency] },
               )}
               value={row.amountDefaultCurrency ?? ''}
+              disabled={isRowLocked}
               onChange={(event) =>
                 onAmountDefaultCurrencyChange(
                   event.target.value === '' ? null : Number(event.target.value),
@@ -272,7 +279,7 @@ export default function ImportStatementCandidateRow({
               sx={{ minWidth: { sm: 180 } }}
             />
           )}
-          <FormControl fullWidth size="small">
+          <FormControl fullWidth size="small" disabled={isRowLocked}>
             <InputLabel>
               {formatMessage({
                 id: 'grid.category',
@@ -307,11 +314,7 @@ export default function ImportStatementCandidateRow({
             control={
               <Checkbox
                 checked={row.isCreditTransaction}
-                disabled={
-                  row.status === 'ignored' ||
-                  row.status === 'saved' ||
-                  row.status === 'alreadyExists'
-                }
+                disabled={isRowLocked}
                 onChange={(event) =>
                   onIsCreditTransactionChange(event.target.checked)
                 }
