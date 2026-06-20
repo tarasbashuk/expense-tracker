@@ -16,9 +16,14 @@ import {
 } from '@/lib/merchantRules/merchantRules';
 import { applyDuplicateMatches } from '@/lib/importDuplicateMatching/importDuplicateMatching';
 
-const MAX_SCREENSHOTS = 8;
-const MAX_FILE_SIZE_MB = 8;
-const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+const MAX_FILES = 8;
+const MAX_IMAGE_SIZE_MB = 8;
+const MAX_PDF_SIZE_MB = 20;
+const MAX_TOTAL_SIZE_MB = 40;
+const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
+const MAX_PDF_SIZE_BYTES = MAX_PDF_SIZE_MB * 1024 * 1024;
+const MAX_TOTAL_SIZE_BYTES = MAX_TOTAL_SIZE_MB * 1024 * 1024;
+const PDF_MIME_TYPE = 'application/pdf';
 const SUPPORTED_IMAGE_TYPES = new Set([
   'image/png',
   'image/jpeg',
@@ -34,7 +39,7 @@ export type ImportReviewStatus =
   | 'ignored';
 
 export type ScreenshotImportCandidate = {
-  sourceImageIndex: number;
+  sourceFileIndex: number;
   status: ImportReviewStatus;
   date: string | null;
   text: string;
@@ -70,9 +75,9 @@ const schema = {
         type: 'object',
         additionalProperties: false,
         properties: {
-          sourceImageIndex: {
+          sourceFileIndex: {
             type: 'integer',
-            description: 'Zero-based index of the uploaded image.',
+            description: 'Zero-based index of the uploaded source file.',
           },
           status: {
             type: 'string',
@@ -130,7 +135,7 @@ const schema = {
           },
         },
         required: [
-          'sourceImageIndex',
+          'sourceFileIndex',
           'status',
           'date',
           'text',
@@ -153,10 +158,17 @@ const schema = {
   required: ['transactions', 'warnings'],
 } as const;
 
-const normalizeMimeType = (type: string) => {
-  if (type === 'image/jpg') return 'image/jpeg';
+const normalizeMimeType = (type: string, fileName = '') => {
+  const normalizedType = type.toLowerCase();
+  const normalizedFileName = fileName.toLowerCase();
 
-  return type;
+  if (normalizedType === 'image/jpg') return 'image/jpeg';
+  if (normalizedType === 'application/x-pdf') return PDF_MIME_TYPE;
+  if (!normalizedType && normalizedFileName.endsWith('.pdf')) {
+    return PDF_MIME_TYPE;
+  }
+
+  return normalizedType;
 };
 
 const clampConfidence = (value: number) => {
@@ -169,6 +181,7 @@ const buildPrompt = (
   referenceDate: string,
   userMerchantRules: string,
   responseLanguage: Language,
+  hasPdfFiles: boolean,
 ) => {
   const expenseCategories = EXPENSE_CATEGORIES_LIST.map(
     ({ value, label }) => `${value}: ${label}`,
@@ -178,8 +191,26 @@ const buildPrompt = (
   ).join('\n');
   const responseLanguageName =
     responseLanguage === Language.UKR ? 'Ukrainian' : 'English';
+  const genericBankTransactionText =
+    responseLanguage === Language.UKR
+      ? 'Банківська транзакція'
+      : 'Bank transaction';
+  const pdfInstructions = hasPdfFiles
+    ? `
+PDF bank statement reconciliation rules:
+- The primary goal is to extract every real transaction candidate from the statement so the application can compare it with existing database records afterward. You do not have the database records, so do not decide that a row already exists based only on the PDF.
+- Do not omit a statement row merely because its merchant, beneficiary, or purpose text is incomplete, abbreviated, generic, or unavailable.
+- When a row has a reliable date and amount but weak description, use the shortest useful visible bank label as text and rawDescription.
+- If no meaningful description is visible, use "${genericBankTransactionText}" as text, preserve any available raw label in rawDescription, set status="needsReview", lower confidence, and add a warning.
+- A currency stated once for the account, statement, table, or column applies to rows in that scope. Infer it only when that scope is clear.
+- If a transaction date is absent and cannot be derived from its row or statement context, return date=null, status="needsReview", and a warning. Do not invent a day.
+- Do not return rows with no identifiable transaction amount. Add a document warning instead.
+- Extract debit and credit rows even when the statement does not explicitly label them as card purchases. Infer type=Expense for debits/outflows and type=Income for credits/inflows, except ignored movements described below.
+- Prefer the posted/booked transaction date when both posting and value dates exist; mention the other date only in rawDescription when useful.
+`
+    : '';
 
-  return `Extract financial transactions from the uploaded screenshots. The screenshots can be mobile banking history, card transaction lists, payment confirmations, receipts, invoices, or a mix of these.
+  return `Extract financial transactions from the uploaded files. Files can be PDF bank statements, mobile banking screenshots, card transaction lists, payment confirmations, receipts, invoices, or a mix of these.
 
 Reference date for relative labels such as "Today" or "Yesterday": ${referenceDate}.
 
@@ -204,13 +235,14 @@ Useful merchant/category hints:
 
 User-specific merchant rules:
 ${userMerchantRules}
+${pdfInstructions}
 
 Rules:
 - Write matchReason and warnings in ${responseLanguageName}.
 - Keep structured enum fields exactly as specified: status, currency, type, and category must not be translated.
 - Keep merchant/store names in text and rawDescription in their original visible language; do not translate merchant names.
-- First decide what each screenshot shows: bank/card transaction history, receipt/invoice/payment document, or irrelevant content.
-- Extract only transactions or receipts that are visible in the screenshots.
+- First decide what each uploaded file shows: bank/card transaction history, receipt/invoice/payment document, or irrelevant content.
+- Extract only transactions or receipts that are present in the uploaded files.
 - For bank/card history, return one row per visible transaction. Do not summarize the whole screenshot as ignored when it contains at least one normal merchant card payment.
 - A row labeled "Card payment", "Card transaction", "Payment by card", or similar with a visible merchant/person name and a debit amount is a real purchase candidate. It should usually be status="new", type=Expense, even if the same screenshot also contains currency exchange, own transfer, or other ignored rows.
 - Include visible person-name merchants when they are card payments, for example "OLHA MEDVEDIEVA -456.88 PLN Card payment" should be extracted as a new expense candidate, not ignored.
@@ -219,7 +251,7 @@ Rules:
 - Bank transfer rows are not automatically internal transfers. If a row says "Transferencia ... A Favor De <external merchant/person>" and has a negative amount, treat it as a payment/expense candidate unless it is clearly between the user's own accounts.
 - Example: "Transferencia Inmediata A Favor De Tdc Marbella -99,99 EUR" should be extracted as a new expense candidate, not ignored, unless the screenshot explicitly shows it is an own-account transfer.
 - For receipts/invoices/payment confirmations, return one row per receipt/document using the merchant/store name and the final paid total. Do not return individual receipt line items yet.
-- If multiple uploaded screenshots are clearly different parts of the same single receipt/document, merge them into one transaction when confidence is high. If unsure, use status="needsReview" and add a warning.
+- If multiple uploaded files or pages are clearly different parts of the same single receipt/document, merge them into one transaction when confidence is high. If unsure, use status="needsReview" and add a warning.
 - Source dates can appear in any locale or format. Always output date as YYYY-MM-DD.
 - If a date group says "Yesterday", resolve it from the reference date.
 - For ambiguous numeric dates such as 06/07/2026, infer locale from screenshot language/bank region when possible; otherwise use status="needsReview" and add a warning.
@@ -240,7 +272,7 @@ Rules:
 - Keep the merchant/store name readable after the emoji. Do not replace merchant names with emoji-only text.
 - If merchant/category is uncertain, use category="others" and lower confidence.
 - Do not invent merchant details that are not visible.
-- If duplicate rows appear because screenshots overlap, include them once when you are confident they are the same visible transaction.
+- If duplicate rows appear because screenshots, pages, or uploaded files overlap, include them once when you are confident they are the same visible transaction.
 - Use matchReason to briefly explain status/category choices.`;
 };
 
@@ -270,39 +302,61 @@ export default async function analyzeStatementScreenshots(
   }
 
   const files = formData
-    .getAll('screenshots')
+    .getAll('files')
     .filter((value): value is File => value instanceof File);
   const referenceDate =
     formData.get('referenceDate')?.toString() ||
     new Date().toISOString().slice(0, 10);
 
   if (!files.length) {
-    return { error: 'Please upload at least one screenshot' };
+    return { error: 'Please upload at least one image or PDF file' };
   }
 
-  if (files.length > MAX_SCREENSHOTS) {
-    return { error: `Please upload up to ${MAX_SCREENSHOTS} screenshots` };
+  if (files.length > MAX_FILES) {
+    return { error: `Please upload up to ${MAX_FILES} files` };
+  }
+
+  const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+
+  if (totalSize > MAX_TOTAL_SIZE_BYTES) {
+    return {
+      error: `Uploaded files are larger than ${MAX_TOTAL_SIZE_MB} MB in total`,
+    };
   }
 
   try {
     const merchantRules = await getMerchantCategoryRules(userId);
-    const imageParts = await Promise.all(
+    const inputParts = await Promise.all(
       files.map(async (file, index) => {
-        const mimeType = normalizeMimeType(file.type);
+        const mimeType = normalizeMimeType(file.type, file.name);
+        const isPdf = mimeType === PDF_MIME_TYPE;
 
-        if (!SUPPORTED_IMAGE_TYPES.has(mimeType)) {
+        if (!isPdf && !SUPPORTED_IMAGE_TYPES.has(mimeType)) {
           throw new Error(
-            `Unsupported image type: ${file.type || file.name}. Please use PNG, JPG, or WEBP screenshots.`,
+            `Unsupported file type: ${file.type || file.name}. Please use PDF, PNG, JPG, or WEBP files.`,
           );
         }
 
-        if (file.size > MAX_FILE_SIZE_BYTES) {
-          throw new Error(
-            `${file.name} is larger than ${MAX_FILE_SIZE_MB} MB`,
-          );
+        const maxFileSizeBytes = isPdf
+          ? MAX_PDF_SIZE_BYTES
+          : MAX_IMAGE_SIZE_BYTES;
+        const maxFileSizeMb = isPdf ? MAX_PDF_SIZE_MB : MAX_IMAGE_SIZE_MB;
+
+        if (file.size > maxFileSizeBytes) {
+          throw new Error(`${file.name} is larger than ${maxFileSizeMb} MB`);
         }
 
         const buffer = Buffer.from(await file.arrayBuffer());
+
+        if (isPdf) {
+          return {
+            type: 'input_file' as const,
+            filename: file.name,
+            file_data: `data:${PDF_MIME_TYPE};base64,${buffer.toString('base64')}`,
+            detail: 'high' as const,
+            index,
+          };
+        }
 
         return {
           type: 'input_image' as const,
@@ -313,9 +367,11 @@ export default async function analyzeStatementScreenshots(
       }),
     );
     const openai = new OpenAI();
-    const model =
-      process.env.OPENAI_TRANSACTION_IMPORT_MODEL || 'gpt-5.4-mini';
-    console.log('[AI import] analyze screenshots request', {
+    const model = process.env.OPENAI_TRANSACTION_IMPORT_MODEL || 'gpt-5.4-mini';
+    const hasPdfFiles = files.some(
+      (file) => normalizeMimeType(file.type, file.name) === PDF_MIME_TYPE,
+    );
+    console.log('[AI import] analyze files request', {
       model,
       referenceDate,
       merchantRules: merchantRules.length,
@@ -338,16 +394,17 @@ export default async function analyzeStatementScreenshots(
                 referenceDate,
                 formatMerchantRulesForPrompt(merchantRules),
                 settings?.language || Language.ENG,
+                hasPdfFiles,
               ),
             },
-            ...imageParts.map(({ index: _index, ...part }) => part),
+            ...inputParts.map(({ index: _index, ...part }) => part),
           ],
         },
       ],
       text: {
         format: {
           type: 'json_schema',
-          name: 'statement_screenshot_import',
+          name: 'financial_file_import',
           strict: true,
           schema,
         },
@@ -361,6 +418,10 @@ export default async function analyzeStatementScreenshots(
 
     const rows = parsed.transactions.map((row) => ({
       ...row,
+      status:
+        row.status === 'ignored' || row.status === 'needsReview'
+          ? row.status
+          : ('new' as const),
       confidence: clampConfidence(row.confidence),
       warnings: row.warnings || [],
       category:
@@ -397,12 +458,11 @@ export default async function analyzeStatementScreenshots(
       warnings: parsed.warnings || [],
     };
   } catch (error: any) {
-    console.error('OpenAI screenshot import error:', error);
+    console.error('OpenAI file import error:', error);
 
     return {
       error:
-        error?.message ||
-        'Unable to analyze screenshots. Please try again later.',
+        error?.message || 'Unable to analyze files. Please try again later.',
     };
   }
 }

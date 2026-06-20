@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { isSameMonth, isSameYear } from 'date-fns';
 import {
   Alert,
@@ -17,7 +17,8 @@ import {
 import { Currency } from '@prisma/client';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
-import ImageSearchIcon from '@mui/icons-material/ImageSearch';
+import DocumentScannerIcon from '@mui/icons-material/DocumentScanner';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { useIntl } from 'react-intl';
 import { toast } from 'react-toastify';
@@ -54,10 +55,10 @@ type ImportStatementModalProps = {
   onClose: () => void;
 };
 
-type SelectedScreenshot = {
+type SelectedImportFile = {
   id: string;
   file: File;
-  previewUrl: string;
+  previewUrl: string | null;
 };
 
 export default function ImportStatementModal({
@@ -69,7 +70,8 @@ export default function ImportStatementModal({
   } = useSettings();
   const { currencies } = useCurrencies();
   const { transactions, setTransactions } = useTransactions();
-  const [screenshots, setScreenshots] = useState<SelectedScreenshot[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<SelectedImportFile[]>([]);
+  const selectedFilesRef = useRef<SelectedImportFile[]>([]);
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [error, setError] = useState('');
@@ -77,7 +79,10 @@ export default function ImportStatementModal({
   const [savingRowIndex, setSavingRowIndex] = useState<number | null>(null);
   const [showIgnoredRows, setShowIgnoredRows] = useState(false);
 
-  const referenceDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const referenceDate = useMemo(
+    () => new Date().toISOString().slice(0, 10),
+    [],
+  );
   const visibleRows = useMemo(
     () =>
       rows
@@ -90,37 +95,45 @@ export default function ImportStatementModal({
     [rows],
   );
 
+  useEffect(() => {
+    selectedFilesRef.current = selectedFiles;
+  }, [selectedFiles]);
+
   useEffect(
     () => () => {
-      screenshots.forEach(({ previewUrl }) => URL.revokeObjectURL(previewUrl));
+      selectedFilesRef.current.forEach(({ previewUrl }) => {
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+      });
     },
-    [screenshots],
+    [],
   );
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = Array.from(event.target.files || []);
-    const compressedFiles = await Promise.all(files.map(compressImageFile));
-    const nextScreenshots = compressedFiles.map((file) => ({
+    const preparedFiles = await Promise.all(files.map(compressImageFile));
+    const nextFiles = preparedFiles.map((file) => ({
       id: `${file.name}-${file.size}-${crypto.randomUUID()}`,
       file,
-      previewUrl: URL.createObjectURL(file),
+      previewUrl: file.type.startsWith('image/')
+        ? URL.createObjectURL(file)
+        : null,
     }));
 
-    setScreenshots((current) => [...current, ...nextScreenshots]);
+    setSelectedFiles((current) => [...current, ...nextFiles]);
     setRows([]);
     setWarnings([]);
     setError('');
     event.target.value = '';
   };
 
-  const handleRemoveScreenshot = (id: string) => {
-    setScreenshots((current) => {
-      const screenshot = current.find((item) => item.id === id);
+  const handleRemoveFile = (id: string) => {
+    setSelectedFiles((current) => {
+      const selectedFile = current.find((item) => item.id === id);
 
-      if (screenshot) {
-        URL.revokeObjectURL(screenshot.previewUrl);
+      if (selectedFile?.previewUrl) {
+        URL.revokeObjectURL(selectedFile.previewUrl);
       }
 
       return current.filter((item) => item.id !== id);
@@ -136,8 +149,8 @@ export default function ImportStatementModal({
     try {
       const formData = new FormData();
       formData.set('referenceDate', referenceDate);
-      screenshots.forEach(({ file }) => {
-        formData.append('screenshots', file);
+      selectedFiles.forEach(({ file }) => {
+        formData.append('files', file);
       });
 
       const result = await analyzeStatementScreenshots(formData);
@@ -152,7 +165,7 @@ export default function ImportStatementModal({
               row.amount,
               row.currency,
             ),
-            id: `${row.sourceImageIndex}-${row.date || 'no-date'}-${row.amount || 'no-amount'}-${index}`,
+            id: `${row.sourceFileIndex}-${row.date || 'no-date'}-${row.amount || 'no-amount'}-${index}`,
             isCreditTransaction: false,
           })),
         );
@@ -164,7 +177,7 @@ export default function ImportStatementModal({
         formatMessage({
           id: 'importStatement.analyzeFailed',
           defaultMessage:
-            'Unable to analyze these images. Try fewer or smaller screenshots.',
+            'Unable to analyze these files. Try fewer or smaller files.',
         }),
       );
     } finally {
@@ -172,10 +185,7 @@ export default function ImportStatementModal({
     }
   };
 
-  const updateRow = (
-    id: string,
-    updater: (_row: ImportRow) => ImportRow,
-  ) => {
+  const updateRow = (id: string, updater: (_row: ImportRow) => ImportRow) => {
     setRows((current) =>
       current.map((row) => (row.id === id ? updater(row) : row)),
     );
@@ -337,7 +347,7 @@ export default function ImportStatementModal({
             {formatMessage({
               id: 'importStatement.previewOnly',
               defaultMessage:
-                'Analyze screenshots, review suggested rows, then save the transactions you want to keep.',
+                'Analyze bank statements, screenshots, or receipts, review suggested rows, then save the transactions you want to keep.',
             })}
           </Alert>
 
@@ -349,21 +359,21 @@ export default function ImportStatementModal({
               disabled={isAnalyzing}
             >
               {formatMessage({
-                id: 'importStatement.chooseScreenshots',
-                defaultMessage: 'Choose screenshots',
+                id: 'importStatement.chooseFiles',
+                defaultMessage: 'Choose files',
               })}
               <input
                 hidden
                 multiple
                 type="file"
-                accept="image/png,image/jpeg,image/jpg,image/webp"
+                accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf"
                 onChange={handleFileChange}
               />
             </Button>
             <Button
               variant="outlined"
-              startIcon={<ImageSearchIcon />}
-              disabled={!screenshots.length || isAnalyzing}
+              startIcon={<DocumentScannerIcon />}
+              disabled={!selectedFiles.length || isAnalyzing}
               onClick={handleAnalyze}
             >
               {formatMessage({
@@ -373,9 +383,13 @@ export default function ImportStatementModal({
             </Button>
           </Stack>
 
-          {!!screenshots.length && (
-            <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1 }}>
-              {screenshots.map(({ id, previewUrl, file }, index) => (
+          {!!selectedFiles.length && (
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ overflowX: 'auto', pb: 1 }}
+            >
+              {selectedFiles.map(({ id, previewUrl, file }, index) => (
                 <Box
                   key={id}
                   sx={{
@@ -390,21 +404,44 @@ export default function ImportStatementModal({
                     bgcolor: 'background.default',
                   }}
                 >
-                  <Box
-                    component="img"
-                    src={previewUrl}
-                    alt={`${file.name} ${index + 1}`}
-                    sx={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      display: 'block',
-                    }}
-                  />
+                  {previewUrl ? (
+                    <Box
+                      component="img"
+                      src={previewUrl}
+                      alt={`${file.name} ${index + 1}`}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                      }}
+                    />
+                  ) : (
+                    <Stack
+                      alignItems="center"
+                      justifyContent="center"
+                      spacing={0.5}
+                      sx={{ width: '100%', height: '100%', px: 1 }}
+                    >
+                      <PictureAsPdfIcon color="error" sx={{ fontSize: 40 }} />
+                      <Typography
+                        variant="caption"
+                        textAlign="center"
+                        sx={{
+                          width: '100%',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {file.name}
+                      </Typography>
+                    </Stack>
+                  )}
                   <IconButton
                     size="small"
-                    aria-label="remove screenshot"
-                    onClick={() => handleRemoveScreenshot(id)}
+                    aria-label="remove file"
+                    onClick={() => handleRemoveFile(id)}
                     disabled={isAnalyzing}
                     sx={{
                       position: 'absolute',
