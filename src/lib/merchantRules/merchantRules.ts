@@ -1,12 +1,15 @@
 import { db } from '@/lib/db';
 
-const COUNTRY_PREFIX_PATTERN = /^(AD|AE|AL|AM|AR|AT|AU|BE|BG|BR|CA|CH|CN|CY|CZ|DE|DK|EE|ES|FI|FR|GB|GE|GR|HK|HR|HU|IE|IL|IN|IS|IT|JP|KR|LT|LU|LV|MA|MC|MD|ME|MT|MX|NL|NO|PL|PT|RO|RS|SE|SG|SI|SK|TR|UA|UK|US)\s+/;
+const COUNTRY_PREFIX_PATTERN =
+  /^(AD|AE|AL|AM|AR|AT|AU|BE|BG|BR|CA|CH|CN|CY|CZ|DE|DK|EE|ES|FI|FR|GB|GE|GR|HK|HR|HU|IE|IL|IN|IS|IT|JP|KR|LT|LU|LV|MA|MC|MD|ME|MT|MX|NL|NO|PL|PT|RO|RS|SE|SG|SI|SK|TR|UA|UK|US)\s+/;
 
 export const normalizeMerchantPattern = (value: string): string => {
   return value
+    .normalize('NFKD')
+    .replace(/\p{M}/gu, '')
     .toUpperCase()
     .replace(/[*#]/g, ' ')
-    .replace(/[^A-Z0-9\s.-]/g, ' ')
+    .replace(/[^\p{L}\p{N}\s.-]/gu, ' ')
     .replace(COUNTRY_PREFIX_PATTERN, '')
     .replace(/\s+/g, ' ')
     .trim()
@@ -39,8 +42,16 @@ export const findMerchantRuleMatch = (
 ) => {
   const normalizedMerchant = normalizeMerchantPattern(merchant);
 
+  if (!normalizedMerchant) {
+    return undefined;
+  }
+
   return rules.find((rule) => {
     const normalizedRule = normalizeMerchantPattern(rule.merchantPattern);
+
+    if (!normalizedRule) {
+      return false;
+    }
 
     return (
       normalizedMerchant === normalizedRule ||
