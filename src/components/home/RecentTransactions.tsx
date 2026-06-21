@@ -56,8 +56,14 @@ export default function RecentTransactions({
   };
 
   return (
-    <Card>
-      <CardContent>
+    <Card sx={{ minWidth: 0, width: '100%' }}>
+      <CardContent
+        sx={{
+          p: { xs: 2, sm: 3 },
+          minWidth: 0,
+          '&:last-child': { pb: { xs: 2, sm: 3 } },
+        }}
+      >
         <Typography variant="h6">
           {formatMessage({
             id: 'home.recentTransactions',
@@ -84,27 +90,18 @@ export default function RecentTransactions({
                 <ListItem
                   key={transaction.id}
                   disableGutters
-                  secondaryAction={
-                    <Tooltip
-                      title={formatMessage({
-                        id: 'home.repeatTransaction',
-                        defaultMessage: 'Repeat transaction',
-                      })}
-                    >
-                      <IconButton
-                        edge="end"
-                        aria-label={formatMessage({
-                          id: 'home.repeatTransaction',
-                          defaultMessage: 'Repeat transaction',
-                        })}
-                        onClick={() => repeatTransaction(transaction)}
-                      >
-                        <ContentCopyIcon />
-                      </IconButton>
-                    </Tooltip>
-                  }
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '48px minmax(0, 1fr) auto 40px',
+                      sm: '56px minmax(0, 1fr) auto 48px',
+                    },
+                    columnGap: { xs: 0.5, sm: 1 },
+                    minWidth: 0,
+                    py: 1,
+                  }}
                 >
-                  <ListItemAvatar>
+                  <ListItemAvatar sx={{ minWidth: 0 }}>
                     <Avatar sx={{ bgcolor: isExpense ? red[500] : green[500] }}>
                       <Icon />
                     </Avatar>
@@ -113,9 +110,9 @@ export default function RecentTransactions({
                     primary={transaction.text}
                     secondary={formatDate(transaction.date, locale as Locale)}
                     primaryTypographyProps={{ noWrap: true }}
-                    sx={{ minWidth: 0, pr: 1 }}
+                    sx={{ minWidth: 0, m: 0 }}
                   />
-                  <Box pr={5} textAlign="right">
+                  <Box textAlign="right" minWidth={0}>
                     <Typography
                       color={isExpense ? 'error.main' : 'success.main'}
                       whiteSpace="nowrap"
@@ -139,6 +136,23 @@ export default function RecentTransactions({
                       </Typography>
                     )}
                   </Box>
+                  <Tooltip
+                    title={formatMessage({
+                      id: 'home.repeatTransaction',
+                      defaultMessage: 'Repeat transaction',
+                    })}
+                  >
+                    <IconButton
+                      aria-label={formatMessage({
+                        id: 'home.repeatTransaction',
+                        defaultMessage: 'Repeat transaction',
+                      })}
+                      onClick={() => repeatTransaction(transaction)}
+                      sx={{ justifySelf: 'end' }}
+                    >
+                      <ContentCopyIcon />
+                    </IconButton>
+                  </Tooltip>
                 </ListItem>
               );
             })}

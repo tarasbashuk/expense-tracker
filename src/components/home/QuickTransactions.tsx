@@ -341,14 +341,21 @@ export default function QuickTransactions({
   };
 
   return (
-    <Card>
-      <CardContent>
+    <Card sx={{ minWidth: 0, width: '100%' }}>
+      <CardContent
+        sx={{
+          p: { xs: 2, sm: 3 },
+          minWidth: 0,
+          '&:last-child': { pb: { xs: 2, sm: 3 } },
+        }}
+      >
         <Stack
           direction="row"
           justifyContent="space-between"
           alignItems="center"
+          minWidth={0}
         >
-          <Typography variant="h6">
+          <Typography variant="h6" minWidth={0}>
             {formatMessage({
               id: 'home.quickTransactions',
               defaultMessage: 'Quick transactions',
@@ -372,7 +379,7 @@ export default function QuickTransactions({
           </Tooltip>
         </Stack>
 
-        <Stack direction="row" gap={1} flexWrap="wrap">
+        <Stack direction="row" gap={1} flexWrap="wrap" minWidth={0}>
           {templates.map((template) => {
             const Icon = getIconByName(
               template.category as TransactionCategory,
@@ -384,6 +391,7 @@ export default function QuickTransactions({
                 variant="outlined"
                 startIcon={<Icon />}
                 onClick={() => openTransaction(template)}
+                sx={{ maxWidth: '100%', whiteSpace: 'normal' }}
               >
                 {template.label}
                 {template.amount != null &&
@@ -391,14 +399,22 @@ export default function QuickTransactions({
               </Button>
             );
           })}
-          <Button startIcon={<AddIcon />} onClick={() => openTransaction()}>
+          <Button
+            startIcon={<AddIcon />}
+            onClick={() => openTransaction()}
+            sx={{ maxWidth: '100%', whiteSpace: 'normal' }}
+          >
             {formatMessage({
               id: 'home.newTransaction',
               defaultMessage: 'New transaction',
             })}
           </Button>
           {!templates.length && (
-            <Button variant="text" onClick={() => openEditor(null)}>
+            <Button
+              variant="text"
+              onClick={() => openEditor(null)}
+              sx={{ maxWidth: '100%', whiteSpace: 'normal' }}
+            >
               {formatMessage({
                 id: 'home.createFirstTemplate',
                 defaultMessage: 'Create your first shortcut',

@@ -38,14 +38,14 @@ const HomePage = async () => {
       sx={{
         width: '100%',
         maxWidth: 900,
+        minWidth: 0,
         mx: 'auto',
-        px: { xs: 1, sm: 2 },
         pb: { xs: 10, sm: 3 },
       }}
     >
       <WelcomeMessage firstName={user.firstName} />
       <Balance />
-      <Stack spacing={2} mt={2}>
+      <Stack spacing={2} mt={2} minWidth={0} width="100%">
         <QuickTransactions initialTemplates={templates || []} />
         <HomeMonthlySummary summary={monthlySummary} />
         <RecentTransactions transactions={data?.recentTransactions || []} />

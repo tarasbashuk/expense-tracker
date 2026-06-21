@@ -18,8 +18,13 @@ export default function HomeMonthlySummary({ summary }: { summary: Summary }) {
   const isSpendingDown = change != null && change <= 0;
 
   return (
-    <Card>
-      <CardContent>
+    <Card sx={{ minWidth: 0, width: '100%' }}>
+      <CardContent
+        sx={{
+          p: { xs: 2, sm: 3 },
+          '&:last-child': { pb: { xs: 2, sm: 3 } },
+        }}
+      >
         <Typography variant="h6" gutterBottom>
           {formatMessage({
             id: 'home.thisMonth',
