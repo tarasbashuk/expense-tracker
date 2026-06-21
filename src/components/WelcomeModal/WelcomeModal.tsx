@@ -82,6 +82,7 @@ const WelcomeModal = () => {
       defaultCurrency: currency,
       language,
       encryptData,
+      creditCardTrackingEnabled: false,
       initialAmount,
     });
 

@@ -3,7 +3,7 @@
 /**
  * Database Restore Script from Prisma JSON backup
  * Usage: node scripts/restore-db-prisma.js <backup-file.json>
- * 
+ *
  * WARNING: This will DELETE all existing data and restore from backup!
  */
 
@@ -59,9 +59,13 @@ async function restoreBackup() {
     console.log(`   Users: ${backup.data.users?.length || 0}`);
     console.log(`   Transactions: ${backup.data.transactions?.length || 0}`);
     console.log(`   Settings: ${backup.data.settings?.length || 0}`);
+    console.log(
+      `   Merchant category rules: ${backup.data.merchantCategoryRules?.length || 0}`,
+    );
 
     // Delete all existing data (in correct order due to foreign keys)
     console.log('\n🗑️  Deleting existing data...');
+    await prisma.merchantCategoryRule.deleteMany();
     await prisma.transaction.deleteMany();
     await prisma.settings.deleteMany();
     await prisma.user.deleteMany();
@@ -90,8 +94,12 @@ async function restoreBackup() {
           data: {
             ...setting,
             id: setting.id, // Keep original ID
-            createdAt: setting.createdAt ? new Date(setting.createdAt) : new Date(),
-            updatedAt: setting.updatedAt ? new Date(setting.updatedAt) : new Date(),
+            createdAt: setting.createdAt
+              ? new Date(setting.createdAt)
+              : new Date(),
+            updatedAt: setting.updatedAt
+              ? new Date(setting.updatedAt)
+              : new Date(),
           },
         });
       }
@@ -128,6 +136,25 @@ async function restoreBackup() {
         );
       }
       console.log('\n✅ Transactions restored');
+    }
+
+    // Restore learned merchant-to-category mappings
+    if (
+      backup.data.merchantCategoryRules &&
+      backup.data.merchantCategoryRules.length > 0
+    ) {
+      console.log(
+        `\n🏷️  Restoring ${backup.data.merchantCategoryRules.length} merchant category rules...`,
+      );
+      await prisma.merchantCategoryRule.createMany({
+        data: backup.data.merchantCategoryRules.map((rule) => ({
+          ...rule,
+          id: rule.id,
+          createdAt: rule.createdAt ? new Date(rule.createdAt) : new Date(),
+          updatedAt: rule.updatedAt ? new Date(rule.updatedAt) : new Date(),
+        })),
+      });
+      console.log('✅ Merchant category rules restored');
     }
 
     console.log('\n✅ Restore completed successfully!');

@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   defaultCurrency: 'EUR',
   initialAmount: null,
   encryptData: false,
+  creditCardTrackingEnabled: false,
 };
 
 export const INCOME_CATEGORIES: { [key in IncomeCategory]: string } = {
@@ -58,6 +59,24 @@ export const EXPENSE_CATEGORIES_LIST = Object.entries(EXPENSE_CATEGORIES).map(
     label: value,
   }),
 );
+
+export const getIncomeCategoriesList = (creditCardTrackingEnabled: boolean) =>
+  creditCardTrackingEnabled
+    ? INCOME_CATEGORIES_LIST
+    : INCOME_CATEGORIES_LIST.filter(
+        ({ value }) => value !== IncomeCategory.CreditReceived,
+      );
+
+export const getExpenseCategoriesList = (creditCardTrackingEnabled: boolean) =>
+  creditCardTrackingEnabled
+    ? EXPENSE_CATEGORIES_LIST
+    : EXPENSE_CATEGORIES_LIST.filter(
+        ({ value }) => value !== ExpenseCategory.CCRepayment,
+      );
+
+export const isCreditCardCategory = (category: string) =>
+  category === IncomeCategory.CreditReceived ||
+  category === ExpenseCategory.CCRepayment;
 
 export const CURRENCY_SYMBOL_MAP: Record<Currency, string> = {
   UAH: '₴',

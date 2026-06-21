@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { Transaction, TransactionType } from '@prisma/client';
 import { IncomeCategory, TransactionFormData } from '@/constants/types';
 import { decrypt, decryptFloat, encrypt, encryptFloat } from '@/lib/crypto';
+import { isCreditCardCategory } from '@/constants/constants';
 
 interface TransactionResult {
   data?: Transaction;
@@ -52,13 +53,40 @@ export async function addUpdateTransaction(
     return { error: 'User not found' };
   }
 
-  // Get encryptData setting from user settings
+  // Credit-card tracking can be disabled without rewriting legacy records.
   const settings = await db.settings.findUnique({
     where: { clerkUserId: userId },
-    select: { encryptData: true },
+    select: { encryptData: true, creditCardTrackingEnabled: true },
   });
 
-  const shouldEncrypt = Boolean(settings?.encryptData && encryptKey);
+  if (!settings) {
+    return { error: 'User settings not found' };
+  }
+
+  const existingTransaction = transactionId
+    ? await db.transaction.findFirst({
+        where: { id: transactionId, userId },
+        select: { isCreditTransaction: true, category: true },
+      })
+    : null;
+
+  if (transactionId && !existingTransaction) {
+    return { error: 'Transaction not found' };
+  }
+
+  formData.isCreditTransaction = settings.creditCardTrackingEnabled
+    ? formData.isCreditTransaction
+    : Boolean(existingTransaction?.isCreditTransaction);
+
+  if (
+    !settings.creditCardTrackingEnabled &&
+    isCreditCardCategory(formData.category) &&
+    existingTransaction?.category !== formData.category
+  ) {
+    return { error: 'Credit card accounting is disabled' };
+  }
+
+  const shouldEncrypt = Boolean(settings.encryptData && encryptKey);
 
   let amountDefaultCurrencyValue = amountDefaultCurrency || amount;
   let creditIncomeText = `Credit income for: ${text}`;

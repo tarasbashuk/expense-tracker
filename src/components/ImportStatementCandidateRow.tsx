@@ -26,8 +26,8 @@ import type { ScreenshotImportCandidate } from '@/app/actions/analyzeStatementSc
 import {
   CURRENCY_SYMBOL_MAP,
   DATE_FORMATS,
-  EXPENSE_CATEGORIES_LIST,
-  INCOME_CATEGORIES_LIST,
+  getExpenseCategoriesList,
+  getIncomeCategoriesList,
 } from '@/constants/constants';
 import { TransactionCategory } from '@/constants/types';
 import { useSettings } from '@/context/SettingsContexts';
@@ -60,11 +60,16 @@ const statusColorMap = {
   saved: 'success',
 } as const;
 
-const getCategoryOptions = (type: TransactionType | null) => {
-  if (type === TransactionType.Income) return INCOME_CATEGORIES_LIST;
-  if (type === TransactionType.Expense) return EXPENSE_CATEGORIES_LIST;
+const getCategoryOptions = (
+  type: TransactionType | null,
+  creditCardTrackingEnabled: boolean,
+) => {
+  const incomeCategories = getIncomeCategoriesList(creditCardTrackingEnabled);
+  const expenseCategories = getExpenseCategoriesList(creditCardTrackingEnabled);
+  if (type === TransactionType.Income) return incomeCategories;
+  if (type === TransactionType.Expense) return expenseCategories;
 
-  return [...EXPENSE_CATEGORIES_LIST, ...INCOME_CATEGORIES_LIST];
+  return [...expenseCategories, ...incomeCategories];
 };
 
 export default function ImportStatementCandidateRow({
@@ -83,9 +88,12 @@ export default function ImportStatementCandidateRow({
     useState(false);
   const { getLabel } = useCategoryI18n();
   const {
-    settings: { defaultCurrency },
+    settings: { defaultCurrency, creditCardTrackingEnabled },
   } = useSettings();
-  const categoryOptions = getCategoryOptions(row.type);
+  const categoryOptions = getCategoryOptions(
+    row.type,
+    creditCardTrackingEnabled,
+  );
   const isBaseAmountShown = Boolean(
     row.currency && row.currency !== defaultCurrency,
   );
@@ -206,9 +214,7 @@ export default function ImportStatementCandidateRow({
             value={row.date ? parseISO(row.date) : null}
             disabled={isRowLocked}
             onChange={(date) =>
-              onDateChange(
-                date ? format(date, DATE_FORMATS.YYYY_MM_DD) : '',
-              )
+              onDateChange(date ? format(date, DATE_FORMATS.YYYY_MM_DD) : '')
             }
             format={DATE_FORMATS.YYYY_MM_DD}
             slotProps={{
@@ -249,7 +255,9 @@ export default function ImportStatementCandidateRow({
                 defaultMessage: 'Currency',
               })}
               value={row.currency || ''}
-              onChange={(event) => onCurrencyChange(event.target.value as Currency)}
+              onChange={(event) =>
+                onCurrencyChange(event.target.value as Currency)
+              }
             >
               {Object.values(Currency).map((currency) => (
                 <MenuItem key={currency} value={currency}>
@@ -309,7 +317,7 @@ export default function ImportStatementCandidateRow({
           </Typography>
         )}
 
-        {row.type === TransactionType.Expense && (
+        {creditCardTrackingEnabled && row.type === TransactionType.Expense && (
           <FormControlLabel
             control={
               <Checkbox

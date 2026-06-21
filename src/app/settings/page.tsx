@@ -35,6 +35,8 @@ const SettingsPage = () => {
     settings?.initialAmount || 0,
   );
   const [encryptData, setEncryptData] = useState<boolean>(false);
+  const [creditCardTrackingEnabled, setCreditCardTrackingEnabled] =
+    useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -42,6 +44,7 @@ const SettingsPage = () => {
       setCurrency(settings.defaultCurrency);
       setInitialAmount(settings.initialAmount || 0);
       setEncryptData(Boolean(settings.encryptData));
+      setCreditCardTrackingEnabled(settings.creditCardTrackingEnabled);
     }
   }, [settings]);
 
@@ -68,6 +71,7 @@ const SettingsPage = () => {
       initialAmount: initialAmount as number,
       language,
       encryptData,
+      creditCardTrackingEnabled,
     });
 
     if (error) {
@@ -164,6 +168,33 @@ const SettingsPage = () => {
                     <FormattedMessage
                       id="settings.encryptDataDescription"
                       defaultMessage="This setting cannot be changed after initial setup"
+                    />
+                  </Typography>
+                </Box>
+              }
+            />
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={creditCardTrackingEnabled}
+                  onChange={(event) =>
+                    setCreditCardTrackingEnabled(event.target.checked)
+                  }
+                />
+              }
+              label={
+                <Box>
+                  <Typography variant="body2">
+                    <FormattedMessage
+                      id="settings.creditCardTracking"
+                      defaultMessage="Credit card accounting"
+                    />
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    <FormattedMessage
+                      id="settings.creditCardTrackingDescription"
+                      defaultMessage="Track credit card purchases and repayments separately"
                     />
                   </Typography>
                 </Box>

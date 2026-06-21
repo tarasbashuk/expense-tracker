@@ -26,6 +26,8 @@ import {
   CURRENCY_SYMBOL_MAP,
   DATE_FORMATS,
   EXPENSE_CATEGORIES_LIST,
+  getExpenseCategoriesList,
+  getIncomeCategoriesList,
   INCOME_CATEGORIES_LIST,
 } from '@/constants/constants';
 import { Currency, TransactionType } from '@prisma/client';
@@ -62,6 +64,7 @@ interface Props {
   isSubmitDisabled: boolean;
   isBaseAmountShown: boolean;
   isCreditTransaction: boolean;
+  creditCardTrackingEnabled: boolean;
   isRecurring?: boolean;
   recurringEndDate?: Date;
   amountDefaultCurrency?: number;
@@ -95,6 +98,7 @@ const AddTransactionModalView: React.FC<Props> = ({
   isSubmitDisabled,
   isBaseAmountShown,
   isCreditTransaction,
+  creditCardTrackingEnabled,
   isRecurring,
   recurringEndDate,
   amountDefaultCurrency,
@@ -111,10 +115,22 @@ const AddTransactionModalView: React.FC<Props> = ({
   handleRecurringEndDateChange,
   handleAmountDefaultCurrencyChange,
 }) => {
-  const categories =
+  const activeCategories =
+    transactionType === TransactionType.Income
+      ? getIncomeCategoriesList(creditCardTrackingEnabled)
+      : getExpenseCategoriesList(creditCardTrackingEnabled);
+  const allCategories =
     transactionType === TransactionType.Income
       ? INCOME_CATEGORIES_LIST
       : EXPENSE_CATEGORIES_LIST;
+  const selectedLegacyCategory = allCategories.find(
+    ({ value }) => value === category,
+  );
+  const categories =
+    selectedLegacyCategory &&
+    !activeCategories.some(({ value }) => value === category)
+      ? [...activeCategories, selectedLegacyCategory]
+      : activeCategories;
 
   const { formatMessage } = useIntl();
   const { getLabel } = useCategoryI18n();
@@ -306,27 +322,28 @@ const AddTransactionModalView: React.FC<Props> = ({
               />
             </Grid>
 
-            {/* TODO: add tooltip with explanation */}
             <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={isCreditTransaction}
-                    onChange={handleIsCreditChange}
-                  />
-                }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CreditCardIcon
-                      sx={{ fontSize: '1.2rem', color: 'primary.main' }}
+              {creditCardTrackingEnabled && (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={isCreditTransaction}
+                      onChange={handleIsCreditChange}
                     />
-                    <FormattedMessage
-                      id="addTransaction.paidByCC"
-                      defaultMessage="Paid by credit card"
-                    />
-                  </Box>
-                }
-              />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CreditCardIcon
+                        sx={{ fontSize: '1.2rem', color: 'primary.main' }}
+                      />
+                      <FormattedMessage
+                        id="addTransaction.paidByCC"
+                        defaultMessage="Paid by credit card"
+                      />
+                    </Box>
+                  }
+                />
+              )}
               <FormControlLabel
                 control={
                   <Checkbox

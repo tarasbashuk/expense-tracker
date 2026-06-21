@@ -7,8 +7,9 @@ import { Currency, Language, TransactionType } from '@prisma/client';
 
 import { db } from '@/lib/db';
 import {
-  EXPENSE_CATEGORIES_LIST,
-  INCOME_CATEGORIES_LIST,
+  getExpenseCategoriesList,
+  getIncomeCategoriesList,
+  isCreditCardCategory,
 } from '@/constants/constants';
 import {
   findMerchantRuleMatch,
@@ -189,13 +190,14 @@ const buildPrompt = (
   userMerchantRules: string,
   responseLanguage: Language,
   hasPdfFiles: boolean,
+  creditCardTrackingEnabled: boolean,
 ) => {
-  const expenseCategories = EXPENSE_CATEGORIES_LIST.map(
-    ({ value, label }) => `${value}: ${label}`,
-  ).join('\n');
-  const incomeCategories = INCOME_CATEGORIES_LIST.map(
-    ({ value, label }) => `${value}: ${label}`,
-  ).join('\n');
+  const expenseCategories = getExpenseCategoriesList(creditCardTrackingEnabled)
+    .map(({ value, label }) => `${value}: ${label}`)
+    .join('\n');
+  const incomeCategories = getIncomeCategoriesList(creditCardTrackingEnabled)
+    .map(({ value, label }) => `${value}: ${label}`)
+    .join('\n');
   const responseLanguageName =
     responseLanguage === Language.UKR ? 'Ukrainian' : 'English';
   const genericBankTransactionText =
@@ -301,7 +303,12 @@ export default async function analyzeStatementScreenshots(
 
   const settings = await db.settings.findUnique({
     where: { clerkUserId: userId },
-    select: { defaultCurrency: true, encryptData: true, language: true },
+    select: {
+      defaultCurrency: true,
+      encryptData: true,
+      language: true,
+      creditCardTrackingEnabled: true,
+    },
   });
 
   if (settings?.encryptData) {
@@ -423,6 +430,7 @@ export default async function analyzeStatementScreenshots(
                 formatMerchantRulesForPrompt(merchantRules),
                 settings?.language || Language.ENG,
                 hasPdfFiles,
+                settings?.creditCardTrackingEnabled || false,
               ),
             },
             ...inputParts.map(({ index: _index, ...part }) => part),
@@ -470,10 +478,17 @@ export default async function analyzeStatementScreenshots(
           : ('new' as const),
       confidence: clampConfidence(row.confidence),
       warnings: row.warnings || [],
-      category:
-        findMerchantRuleMatch(row.text, merchantRules)?.category ||
-        row.category ||
-        'others',
+      category: (() => {
+        const matchedCategory =
+          findMerchantRuleMatch(row.text, merchantRules)?.category ||
+          row.category ||
+          'others';
+
+        return !settings?.creditCardTrackingEnabled &&
+          isCreditCardCategory(matchedCategory)
+          ? 'others'
+          : matchedCategory;
+      })(),
     }));
 
     const rowsWithDefaultAmounts = rows.map((row) => {
