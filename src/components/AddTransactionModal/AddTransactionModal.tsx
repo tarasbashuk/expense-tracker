@@ -8,7 +8,12 @@ import { useIntl } from 'react-intl';
 
 import { addUpdateTransaction } from '@/app/actions/addUpdateTransaction';
 import { Currency, TransactionType } from '@prisma/client';
-import { TransactionCategory, TransactionFormData } from '@/constants/types';
+import {
+  ExpenseCategory,
+  IncomeCategory,
+  TransactionCategory,
+  TransactionFormData,
+} from '@/constants/types';
 import { useSettings } from '@/context/SettingsContexts';
 import { useTransactions } from '@/context/TranasctionsContext';
 import AddTransactionModalView from './AddTransactionModalView';
@@ -17,7 +22,7 @@ import { CURRENCY_ISO_MAP } from '@/constants/constants';
 
 const AddTransactionModal: React.FC = () => {
   const {
-    settings: { defaultCurrency },
+    settings: { defaultCurrency, creditCardTrackingEnabled },
   } = useSettings();
   const { currencies } = useCurrencies();
   const { formatMessage } = useIntl();
@@ -94,9 +99,20 @@ const AddTransactionModal: React.FC = () => {
     initialType = type;
     initialAmount = amount;
     initialCurrency = currency;
-    initialCategory = category;
+    const isLegacyCreditCategory =
+      category === IncomeCategory.CreditReceived ||
+      category === ExpenseCategory.CCRepayment;
+    initialCategory =
+      isCopyTransactionFlow &&
+      !creditCardTrackingEnabled &&
+      isLegacyCreditCategory
+        ? ''
+        : category;
     initialDate = isCopyTransactionFlow ? new Date() : new Date(date);
-    initialIsCreditTransaction = !!isCreditTransaction;
+    initialIsCreditTransaction =
+      !isCopyTransactionFlow || creditCardTrackingEnabled
+        ? !!isCreditTransaction
+        : false;
     initialIsRecurring = !!isRecurring;
     initialRecurringEndDate = isCopyTransactionFlow
       ? undefined
@@ -315,6 +331,7 @@ const AddTransactionModal: React.FC = () => {
       isEditMode={!!selectedTransaction}
       isBaseAmountShown={isBaseAmountShown}
       isCreditTransaction={isCreditTransaction}
+      creditCardTrackingEnabled={creditCardTrackingEnabled}
       isRecurring={isRecurring}
       recurringEndDate={recurringEndDate}
       amountDefaultCurrency={amountDefaultCurrency}

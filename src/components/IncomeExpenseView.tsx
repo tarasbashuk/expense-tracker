@@ -1,13 +1,6 @@
 'use client';
 import Link from 'next/link';
-import {
-  Box,
-  Card,
-  Chip,
-  CardContent,
-  Divider,
-  Typography,
-} from '@mui/material';
+import { Box, Card, CardContent, Divider, Typography } from '@mui/material';
 import { FormattedMessage } from 'react-intl';
 import { NavigationPath } from '@/constants/types';
 import { formatCurrency } from '@/lib/formatCurrency';
@@ -15,16 +8,9 @@ import { formatCurrency } from '@/lib/formatCurrency';
 interface Props {
   income?: number | null;
   expense?: number | null;
-  creditReceived?: number | null;
-  creditReturned?: number | null;
 }
 
-const IncomeExpenseView = ({
-  income,
-  expense,
-  creditReceived,
-  creditReturned,
-}: Props) => (
+const IncomeExpenseView = ({ income, expense }: Props) => (
   <Link href={NavigationPath.Transactions}>
     <Card>
       <CardContent>
@@ -82,86 +68,6 @@ const IncomeExpenseView = ({
               }}
             >
               {formatCurrency(expense ?? 0)}
-            </Typography>
-          </Box>
-        </Box>
-
-        <Box width={'100%'} display="flex" justifyContent="flex-start" flex={1}>
-          <Chip
-            label={<FormattedMessage id="common.plus" defaultMessage="plus:" />}
-            color="error"
-            variant="outlined"
-            size="small"
-            sx={{ flex: '1 1 50%', mr: 1 }}
-          />
-          <Chip
-            label={<FormattedMessage id="common.plus" defaultMessage="plus:" />}
-            color="success"
-            variant="outlined"
-            size="small"
-            sx={{ flex: '1 1 50%' }}
-          />
-        </Box>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box
-            display="flex"
-            flexDirection="column"
-            flex={1}
-            p={1}
-            sx={{ minWidth: 0, width: '50%' }}
-          >
-            <Typography
-              variant="h6"
-              component="div"
-              sx={{ whiteSpace: 'nowrap' }}
-            >
-              <FormattedMessage
-                id="incomeExpense.creditReceived"
-                defaultMessage="credit taken"
-              />
-            </Typography>
-            <Typography
-              variant="h5"
-              component="div"
-              sx={{
-                color: 'error.main',
-                whiteSpace: 'nowrap',
-                textAlign: 'right',
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              {formatCurrency(creditReceived ?? 0)}
-            </Typography>
-          </Box>
-          <Divider orientation="vertical" flexItem sx={{ marginX: '1px' }} />
-          <Box
-            display="flex"
-            flexDirection="column"
-            flex={1}
-            p={1}
-            sx={{ minWidth: 0, width: '50%' }}
-          >
-            <Typography
-              variant="h6"
-              component="div"
-              sx={{ whiteSpace: 'nowrap' }}
-            >
-              <FormattedMessage
-                id="incomeExpense.creditReturned"
-                defaultMessage="credit back"
-              />
-            </Typography>
-            <Typography
-              variant="h5"
-              component="div"
-              sx={{
-                color: 'success.main',
-                whiteSpace: 'nowrap',
-                textAlign: 'right',
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              {formatCurrency(creditReturned ?? 0)}
             </Typography>
           </Box>
         </Box>

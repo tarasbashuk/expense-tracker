@@ -15,6 +15,7 @@ import {
 } from '@/lib/importDuplicateMatching/importDuplicateMatching';
 import { upsertMerchantCategoryRule } from '@/lib/merchantRules/merchantRules';
 import { encrypt, encryptFloat } from '@/lib/crypto';
+import { isCreditCardCategory } from '@/constants/constants';
 
 type SaveImportedTransactionInput = {
   date: string | null;
@@ -109,7 +110,11 @@ export default async function saveImportedTransaction(
 
   const settings = await db.settings.findUnique({
     where: { clerkUserId: userId },
-    select: { defaultCurrency: true, encryptData: true },
+    select: {
+      defaultCurrency: true,
+      encryptData: true,
+      creditCardTrackingEnabled: true,
+    },
   });
 
   if (!settings) {
@@ -120,6 +125,10 @@ export default async function saveImportedTransaction(
     return {
       error: 'AI import is unavailable while data encryption is enabled',
     };
+  }
+
+  if (!settings.creditCardTrackingEnabled && isCreditCardCategory(category)) {
+    return { error: 'Credit card accounting is disabled' };
   }
 
   const hasProvidedDefaultAmount =
@@ -145,23 +154,35 @@ export default async function saveImportedTransaction(
 
       amountDefaultCurrencyValue = convertedAmount;
     } catch (error) {
-      console.error('Currency conversion failed for imported transaction:', error);
+      console.error(
+        'Currency conversion failed for imported transaction:',
+        error,
+      );
 
       return { error: 'Unable to fetch currency rates' };
     }
   }
 
   const shouldEncrypt = Boolean(settings.encryptData && encryptKey);
-  const storedText = shouldEncrypt && encryptKey ? encrypt(text, encryptKey) : text;
+  const storedText =
+    shouldEncrypt && encryptKey ? encrypt(text, encryptKey) : text;
   const creditIncomeText = `Credit income for: ${text}`;
   const storedCreditIncomeText =
-    shouldEncrypt && encryptKey ? encrypt(creditIncomeText, encryptKey) : creditIncomeText;
+    shouldEncrypt && encryptKey
+      ? encrypt(creditIncomeText, encryptKey)
+      : creditIncomeText;
   const storedAmount =
     shouldEncrypt && encryptKey ? encryptFloat(amount, encryptKey) : amount;
   const storedAmountDefaultCurrency =
     shouldEncrypt && encryptKey
       ? encryptFloat(amountDefaultCurrencyValue, encryptKey)
       : amountDefaultCurrencyValue;
+
+  const shouldTrackAsCredit = Boolean(
+    settings.creditCardTrackingEnabled &&
+      isCreditTransaction &&
+      type === TransactionType.Expense,
+  );
 
   try {
     const transaction = await db.transaction.create({
@@ -174,15 +195,13 @@ export default async function saveImportedTransaction(
         category,
         currency,
         type,
-        isCreditTransaction: Boolean(
-          isCreditTransaction && type === TransactionType.Expense,
-        ),
+        isCreditTransaction: shouldTrackAsCredit,
         isRecurring: false,
         recurringEndDate: null,
       },
     });
 
-    if (isCreditTransaction && type === TransactionType.Expense) {
+    if (shouldTrackAsCredit) {
       await db.transaction.create({
         data: {
           userId,

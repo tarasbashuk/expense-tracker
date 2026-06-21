@@ -90,10 +90,14 @@ export async function GET(request: NextRequest) {
     );
     const settingsList = await db.settings.findMany({
       where: { clerkUserId: { in: userIds } },
-      select: { clerkUserId: true, defaultCurrency: true },
+      select: {
+        clerkUserId: true,
+        defaultCurrency: true,
+        creditCardTrackingEnabled: true,
+      },
     });
-    const userCurrencyMap = new Map(
-      settingsList.map((s) => [s.clerkUserId, s.defaultCurrency]),
+    const userSettingsMap = new Map(
+      settingsList.map((settings) => [settings.clerkUserId, settings]),
     );
 
     // Get user emails from our database
@@ -135,7 +139,11 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      const defaultCurrency = userCurrencyMap.get(transaction.userId);
+      const userSettings = userSettingsMap.get(transaction.userId);
+      const defaultCurrency = userSettings?.defaultCurrency;
+      const creditCardTrackingEnabled = Boolean(
+        userSettings?.creditCardTrackingEnabled,
+      );
       let amountDefaultCurrency = transaction.amountDefaultCurrency;
 
       // --- If currency differs, recalc by actual rate ---
@@ -177,7 +185,8 @@ export async function GET(request: NextRequest) {
           category: transaction.category,
           currency: transaction.currency,
           type: transaction.type,
-          isCreditTransaction: transaction.isCreditTransaction,
+          isCreditTransaction:
+            creditCardTrackingEnabled && transaction.isCreditTransaction,
           isRecurring: true,
           recurringEndDate: transaction.recurringEndDate,
           userId: transaction.userId,
@@ -188,6 +197,7 @@ export async function GET(request: NextRequest) {
 
       // If this is a credit expense transaction, create corresponding income transaction
       const isCreditExpenseTransaction =
+        creditCardTrackingEnabled &&
         transaction.isCreditTransaction &&
         transaction.type === TransactionType.Expense;
 

@@ -26,6 +26,7 @@ async function getSettings(): Promise<{
         defaultCurrency: true,
         initialAmount: true,
         encryptData: true,
+        creditCardTrackingEnabled: true,
       },
     });
 

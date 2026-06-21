@@ -12,11 +12,13 @@ async function updateSettings({
   defaultCurrency,
   language,
   encryptData,
+  creditCardTrackingEnabled,
 }: {
   initialAmount: number;
   defaultCurrency: Currency;
   language: Language;
   encryptData?: boolean;
+  creditCardTrackingEnabled: boolean;
 }): Promise<{
   settings?: UserSettings | null;
   error?: string;
@@ -34,6 +36,7 @@ async function updateSettings({
       defaultCurrency,
       language,
       encryptData: encryptData ?? false,
+      creditCardTrackingEnabled,
     };
 
     // Handle initialAmount encryption/decryption
@@ -52,6 +55,7 @@ async function updateSettings({
         defaultCurrency: true,
         initialAmount: true,
         encryptData: true,
+        creditCardTrackingEnabled: true,
       },
     });
 

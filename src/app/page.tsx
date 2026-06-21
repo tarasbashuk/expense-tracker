@@ -17,8 +17,7 @@ const HomePage = async () => {
 
   return (
     <Box component="section" sx={{
-      width: { xs: '100%', sm: 'auto' },
-      maxWidth: { xs: '100%', sm: 410 },
+      width: { xs: '100%', sm: 410 },
     }}>
       <WelcomeMessage firstName={user.firstName} />
       <Balance />

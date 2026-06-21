@@ -8,17 +8,17 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(uuid())
-  clerkUserId  String        @unique
-  email        String        @unique
-  firstName    String?
-  lastName     String?
-  fullName     String?
-  imageUrl     String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  settings     Settings?
-  transactions Transaction[]
+  id            String                 @id @default(uuid())
+  clerkUserId   String                 @unique
+  email         String                 @unique
+  firstName     String?
+  lastName      String?
+  fullName      String?
+  imageUrl      String?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  settings      Settings?
+  transactions  Transaction[]
   merchantRules MerchantCategoryRule[]
 }
 
@@ -45,16 +45,17 @@ model Transaction {
 }
 
 model Settings {
-  id              String   @id @default(uuid())
-  language        Language @default(ENG)
-  theme           Theme    @default(Light)
-  defaultCurrency Currency @default(EUR)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  initialAmount   Float?
-  clerkUserId     String   @unique
-  encryptData     Boolean? @default(false)
-  user            User     @relation(fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
+  id                        String   @id @default(uuid())
+  language                  Language @default(ENG)
+  theme                     Theme    @default(Light)
+  defaultCurrency           Currency @default(EUR)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  initialAmount             Float?
+  clerkUserId               String   @unique
+  encryptData               Boolean? @default(false)
+  creditCardTrackingEnabled Boolean  @default(false)
+  user                      User     @relation(fields: [clerkUserId], references: [clerkUserId], onDelete: Cascade)
 
   @@index([clerkUserId])
 }
