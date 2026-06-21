@@ -29,6 +29,7 @@ import {
   Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -128,14 +129,34 @@ function TemplateEditorDialog({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>
+    <Dialog
+      open={open}
+      onClose={(_, reason) => {
+        if (reason === 'backdropClick') return;
+
+        onClose();
+      }}
+      fullWidth
+      maxWidth="sm"
+    >
+      <DialogTitle sx={{ position: 'relative', pr: 6 }}>
         {formatMessage({
           id: template ? 'home.editQuickTemplate' : 'home.addQuickTemplate',
           defaultMessage: template
             ? 'Edit quick transaction'
             : 'Add quick transaction',
         })}
+        <IconButton
+          aria-label={formatMessage({
+            id: 'common.close',
+            defaultMessage: 'Close',
+          })}
+          onClick={onClose}
+          disabled={isSaving}
+          sx={{ position: 'absolute', right: 8, top: 8 }}
+        >
+          <CloseIcon />
+        </IconButton>
       </DialogTitle>
       <DialogContent>
         <Stack spacing={2.5} mt={1}>
@@ -210,7 +231,7 @@ function TemplateEditorDialog({
           />
         </Stack>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={onClose} disabled={isSaving}>
           {formatMessage({ id: 'common.cancel', defaultMessage: 'Cancel' })}
         </Button>
@@ -388,15 +409,29 @@ export default function QuickTransactions({
 
         <Dialog
           open={managerOpen}
-          onClose={() => setManagerOpen(false)}
+          onClose={(_, reason) => {
+            if (reason === 'backdropClick') return;
+
+            setManagerOpen(false);
+          }}
           fullWidth
           maxWidth="sm"
         >
-          <DialogTitle>
+          <DialogTitle sx={{ position: 'relative', pr: 6 }}>
             {formatMessage({
               id: 'home.manageQuickTransactions',
               defaultMessage: 'Manage quick transactions',
             })}
+            <IconButton
+              aria-label={formatMessage({
+                id: 'common.close',
+                defaultMessage: 'Close',
+              })}
+              onClick={() => setManagerOpen(false)}
+              sx={{ position: 'absolute', right: 8, top: 8 }}
+            >
+              <CloseIcon />
+            </IconButton>
           </DialogTitle>
           <DialogContent>
             {!templates.length ? (
@@ -455,7 +490,7 @@ export default function QuickTransactions({
               </List>
             )}
           </DialogContent>
-          <DialogActions>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={() => openEditor(null)} startIcon={<AddIcon />}>
               {formatMessage({
                 id: 'home.addQuickTemplate',
