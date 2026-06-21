@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { Transaction } from '@prisma/client';
 import { Box, List, Typography, CircularProgress } from '@mui/material';
@@ -11,13 +11,11 @@ import getTransactions from '@/app/actions/getTransactions';
 import deleteTransaction from '@/app/actions/deleteTransaction';
 import { useTransactions } from '@/context/TranasctionsContext';
 import { useSettings } from '@/context/SettingsContexts';
-import YearMonthSelect from './shared/YearMonthSelect';
+import DatePeriodFilter from './shared/DatePeriodFilter';
 import TransactionsDataGrid from './TransactionsDataGrid';
 import { TransactionCategory, ViewType } from '@/constants/types';
 import AdditionalBalanceInfo from './AdditionalBalanceInfo';
 import getIncomeExpense from '@/app/actions/getIncomeExpense';
-import { getCheckSum } from '@/lib/utils';
-import usePrevious from '@/lib/hooks/usePrevious';
 import { useIntl } from 'react-intl';
 import {
   INCOME_CATEGORIES_LIST,
@@ -34,10 +32,23 @@ import {
   ToggleButtonGroup,
   ToggleButton,
 } from '@mui/material';
+import {
+  dateKeyFromLocalDate,
+  DateRangeValue,
+  getPeriodRange,
+  PeriodMode,
+  shiftPeriod,
+} from '@/lib/dateRange';
 
 const today = new Date();
-const currentMonth = today.getMonth().toString();
-const currentYear = today.getFullYear().toString();
+const currentDate = dateKeyFromLocalDate(today);
+const initialCustomRange = {
+  ...getPeriodRange('month', currentDate, {
+    start: currentDate,
+    end: currentDate,
+  }),
+  end: currentDate,
+};
 
 const TransactionList = () => {
   const {
@@ -46,14 +57,14 @@ const TransactionList = () => {
     setTransactionId,
     setIsCopyTransactionFlow,
     setIsTransactionModalOpen,
+    transactionsRefreshKey,
   } = useTransactions();
-  // Workaround for re-fetching expense/income data
-  const checkSum = getCheckSum(transactions);
-  const prevCheckSum = usePrevious(checkSum);
 
   const [error, setError] = useState<string>('');
-  const [month, setMonth] = useState(currentMonth);
-  const [year, setYear] = useState(currentYear);
+  const [periodMode, setPeriodMode] = useState<PeriodMode>('month');
+  const [anchorDate, setAnchorDate] = useState(currentDate);
+  const [customRange, setCustomRange] =
+    useState<DateRangeValue>(initialCustomRange);
   const [income, setIncome] = useState(0);
   const [expense, setExpense] = useState(0);
   const [viewType, setViewType] = useState(ViewType.List);
@@ -68,6 +79,36 @@ const TransactionList = () => {
 
   const { formatMessage } = useIntl();
   const { settings } = useSettings();
+  const selectedRange = useMemo(
+    () => getPeriodRange(periodMode, anchorDate, customRange),
+    [anchorDate, customRange, periodMode],
+  );
+
+  const shiftSelectedPeriod = useCallback(
+    (direction: -1 | 1) => {
+      const shifted = shiftPeriod(
+        periodMode,
+        anchorDate,
+        customRange,
+        direction,
+      );
+
+      setAnchorDate(shifted.anchorDate);
+      setCustomRange(shifted.customRange);
+    },
+    [anchorDate, customRange, periodMode],
+  );
+
+  const handlePeriodModeChange = useCallback(
+    (nextMode: PeriodMode) => {
+      if (periodMode === 'custom' && nextMode !== 'custom') {
+        setAnchorDate(customRange.start);
+      }
+
+      setPeriodMode(nextMode);
+    },
+    [customRange.start, periodMode],
+  );
 
   // Get categories based on selected transaction type
   const getAvailableCategories = () => {
@@ -153,14 +194,18 @@ const TransactionList = () => {
   );
 
   useEffect(() => {
+    let isCurrentRequest = true;
+
     const fetchTrans = async () => {
-      const startDate = new Date(Date.UTC(Number(year), Number(month), 1));
-      const endDate = new Date(Date.UTC(Number(year), Number(month) + 1, 0));
-      const { transactions, error } = await getTransactions(
-        startDate,
-        endDate,
-        true,
-      );
+      const [transactionsResponse, incomeExpenseResponse] = await Promise.all([
+        getTransactions(selectedRange.start, selectedRange.end, true),
+        getIncomeExpense(selectedRange.start, selectedRange.end),
+      ]);
+
+      if (!isCurrentRequest) return;
+
+      const { transactions, error } = transactionsResponse;
+      const { income, expense } = incomeExpenseResponse;
 
       // Filter by category if selected
       let filteredTransactions = transactions || [];
@@ -179,6 +224,8 @@ const TransactionList = () => {
       }
 
       setTransactions(filteredTransactions);
+      setIncome(income || 0);
+      setExpense(expense || 0);
 
       // Calculate filtered sum when category is selected
       if (selectedCategory !== 'all') {
@@ -203,24 +250,18 @@ const TransactionList = () => {
 
     setIsloading(true);
     fetchTrans();
-  }, [month, year, selectedCategory, selectedTransactionType, setTransactions]);
 
-  useEffect(() => {
-    const fetchIncomeExpense = async () => {
-      const { income, expense } = await getIncomeExpense(
-        Number(year),
-        Number(month),
-      );
-
-      setIncome(income || 0);
-      setExpense(expense || 0);
+    return () => {
+      isCurrentRequest = false;
     };
-    const shouldFetch = !!checkSum && checkSum !== prevCheckSum;
-
-    if (shouldFetch) {
-      fetchIncomeExpense();
-    }
-  }, [year, month, checkSum, prevCheckSum]);
+  }, [
+    selectedCategory,
+    selectedRange.end,
+    selectedRange.start,
+    selectedTransactionType,
+    setTransactions,
+    transactionsRefreshKey,
+  ]);
 
   if (error) {
     return (
@@ -235,12 +276,18 @@ const TransactionList = () => {
       <Typography variant="h4" component="h3" gutterBottom>
         {formatMessage({ id: 'transactions.title', defaultMessage: 'History' })}
       </Typography>
-      <Stack direction="column" spacing={2}>
-        <YearMonthSelect
-          year={year}
-          month={month}
-          setMonth={setMonth}
-          setYear={setYear}
+      <Stack
+        direction="column"
+        spacing={2}
+        sx={{ width: { xs: '100%', sm: 400 } }}
+      >
+        <DatePeriodFilter
+          mode={periodMode}
+          range={selectedRange}
+          onModeChange={handlePeriodModeChange}
+          onPrevious={() => shiftSelectedPeriod(-1)}
+          onNext={() => shiftSelectedPeriod(1)}
+          onCustomRangeChange={setCustomRange}
         />
 
         <ToggleButtonGroup

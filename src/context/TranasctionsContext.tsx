@@ -18,6 +18,8 @@ interface TransactionsContextType {
   setIsCopyTransactionFlow: Dispatch<SetStateAction<boolean>>;
   transactionId: string | null;
   setTransactionId: Dispatch<SetStateAction<string | null>>;
+  transactionsRefreshKey: number;
+  requestTransactionsRefresh: () => void;
 }
 
 const TransactionsContext = createContext<TransactionsContextType | undefined>(
@@ -36,6 +38,7 @@ export const TransactionsProvider = ({
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [isCopyTransactionFlow, setIsCopyTransactionFlow] = useState(false);
   const [transactionId, setTransactionId] = useState<string | null>(null);
+  const [transactionsRefreshKey, setTransactionsRefreshKey] = useState(0);
 
   return (
     <TransactionsContext.Provider
@@ -48,6 +51,9 @@ export const TransactionsProvider = ({
         setTransactionId,
         isCopyTransactionFlow,
         setIsCopyTransactionFlow,
+        transactionsRefreshKey,
+        requestTransactionsRefresh: () =>
+          setTransactionsRefreshKey((current) => current + 1),
       }}
     >
       {children}

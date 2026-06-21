@@ -69,7 +69,8 @@ export default function ImportStatementModal({
     settings: { defaultCurrency },
   } = useSettings();
   const { currencies } = useCurrencies();
-  const { transactions, setTransactions } = useTransactions();
+  const { transactions, setTransactions, requestTransactionsRefresh } =
+    useTransactions();
   const [selectedFiles, setSelectedFiles] = useState<SelectedImportFile[]>([]);
   const selectedFilesRef = useRef<SelectedImportFile[]>([]);
   const [rows, setRows] = useState<ImportRow[]>([]);
@@ -304,6 +305,7 @@ export default function ImportStatementModal({
             );
           });
         }
+        requestTransactionsRefresh();
       }
     } catch (error) {
       console.error('Smart import save failed:', error);

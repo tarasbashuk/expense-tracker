@@ -6,6 +6,7 @@ import {
 } from '@/lib/pieChartUtils';
 import getTransactions from './getTransactions';
 import { PieValueType } from '@mui/x-charts';
+import { dateKeyFromLocalDate } from '@/lib/dateRange';
 
 async function getStats(
   year: number,
@@ -15,8 +16,8 @@ async function getStats(
   incomeChartData?: PieValueType[];
   error?: string;
 }> {
-  const startDate = new Date(Date.UTC(year, month, 1));
-  const endDate = new Date(Date.UTC(year, month + 1, 0));
+  const startDate = dateKeyFromLocalDate(new Date(year, month, 1));
+  const endDate = dateKeyFromLocalDate(new Date(year, month + 1, 0));
 
   const { transactions = [], error } = await getTransactions(
     startDate,

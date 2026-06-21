@@ -2,15 +2,14 @@
 import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
 import { Transaction } from '@prisma/client';
-import { format } from 'date-fns';
-import { DATE_FORMATS } from '@/constants/constants';
 import { decrypt, decryptFloat } from '@/lib/crypto';
 import { IncomeCategory, ExpenseCategory } from '@/constants/types';
 import * as Sentry from '@sentry/nextjs';
+import { getExclusiveEndDate, getUtcDate } from '@/lib/dateRange';
 
 async function getTransactions(
-  startDate: Date,
-  endDate: Date,
+  startDate: string,
+  endDate: string,
   excludeCreditIncome = false,
 ): Promise<{
   transactions?: Transaction[];
@@ -32,8 +31,8 @@ async function getTransactions(
 
   const shouldDecrypt = Boolean(settings?.encryptData && decryptKey);
 
-  const formattedStart = new Date(format(startDate, DATE_FORMATS.YYYY_MM_DD));
-  const formattedEnd = new Date(format(endDate, DATE_FORMATS.YYYY_MM_DD));
+  const formattedStart = getUtcDate(startDate);
+  const exclusiveEnd = getExclusiveEndDate(endDate);
 
   try {
     const transactions = await db.transaction.findMany({
@@ -41,7 +40,7 @@ async function getTransactions(
         userId,
         date: {
           gte: formattedStart,
-          lte: formattedEnd,
+          lt: exclusiveEnd,
         },
         AND: [
           excludeCreditIncome
