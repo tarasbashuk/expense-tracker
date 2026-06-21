@@ -29,6 +29,7 @@ const AddTransactionModal: React.FC = () => {
     setTransactions,
     setTransactionId,
     setIsCopyTransactionFlow,
+    requestTransactionsRefresh,
     setIsTransactionModalOpen,
   } = useTransactions();
 
@@ -290,6 +291,7 @@ const AddTransactionModal: React.FC = () => {
           return updatedTransactions;
         });
       }
+      requestTransactionsRefresh();
       handleClose();
     }
     setIsSaving(false);

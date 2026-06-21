@@ -3,6 +3,7 @@
 import { getMonth } from 'date-fns';
 import { TransactionType } from '@prisma/client';
 import getTransactions from './getTransactions';
+import { dateKeyFromLocalDate } from '@/lib/dateRange';
 
 export type YearlyStatsData = {
   monthlyIncome: number[];
@@ -18,8 +19,8 @@ export async function getYearlyStats(
   year: number,
 ): Promise<YearlyStatsResponse> {
   try {
-    const startDate = new Date(Date.UTC(year, 0, 1));
-    const endDate = new Date(Date.UTC(year + 1, 0, 0));
+    const startDate = dateKeyFromLocalDate(new Date(year, 0, 1));
+    const endDate = dateKeyFromLocalDate(new Date(year, 12, 0));
     const { transactions = [] } = await getTransactions(
       startDate,
       endDate,

@@ -1,17 +1,20 @@
 'use server';
-import { DATE_FORMATS } from '@/constants/constants';
 import { decryptFloat } from '@/lib/crypto';
 import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
 import { TransactionType } from '@prisma/client';
 import Decimal from 'decimal.js';
-import { format } from 'date-fns';
 import { ExpenseCategory, IncomeCategory } from '@/constants/types';
 import * as Sentry from '@sentry/nextjs';
+import {
+  dateKeyFromLocalDate,
+  getExclusiveEndDate,
+  getUtcDate,
+} from '@/lib/dateRange';
 
 async function getIncomeExpense(
-  year?: number,
-  month?: number,
+  yearOrStartDate?: number | string,
+  monthOrEndDate?: number | string,
 ): Promise<{
   income?: number;
   expense?: number;
@@ -37,12 +40,24 @@ async function getIncomeExpense(
 
   const shouldDecrypt = Boolean(settings?.encryptData && decryptKey);
 
-  //To treat Jan (0) as a proper month
-  if (year && month?.toString()) {
-    const startDate = new Date(Date.UTC(year, month, 1));
-    const endDate = new Date(Date.UTC(year, month + 1, 0));
-    formattedStart = new Date(format(startDate, DATE_FORMATS.YYYY_MM_DD));
-    formattedEnd = new Date(format(endDate, DATE_FORMATS.YYYY_MM_DD));
+  if (
+    typeof yearOrStartDate === 'string' &&
+    typeof monthOrEndDate === 'string'
+  ) {
+    formattedStart = getUtcDate(yearOrStartDate);
+    formattedEnd = getExclusiveEndDate(monthOrEndDate);
+  } else if (
+    typeof yearOrStartDate === 'number' &&
+    typeof monthOrEndDate === 'number'
+  ) {
+    const startDate = dateKeyFromLocalDate(
+      new Date(yearOrStartDate, monthOrEndDate, 1),
+    );
+    const endDate = dateKeyFromLocalDate(
+      new Date(yearOrStartDate, monthOrEndDate + 1, 0),
+    );
+    formattedStart = getUtcDate(startDate);
+    formattedEnd = getExclusiveEndDate(endDate);
   }
 
   try {
@@ -51,7 +66,7 @@ async function getIncomeExpense(
         userId,
         date: {
           gte: formattedStart,
-          lte: formattedEnd,
+          lt: formattedEnd,
         },
       },
     });
