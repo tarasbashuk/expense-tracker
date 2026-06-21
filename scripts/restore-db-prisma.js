@@ -62,9 +62,13 @@ async function restoreBackup() {
     console.log(
       `   Merchant category rules: ${backup.data.merchantCategoryRules?.length || 0}`,
     );
+    console.log(
+      `   Quick transaction templates: ${backup.data.quickTransactionTemplates?.length || 0}`,
+    );
 
     // Delete all existing data (in correct order due to foreign keys)
     console.log('\n🗑️  Deleting existing data...');
+    await prisma.quickTransactionTemplate.deleteMany();
     await prisma.merchantCategoryRule.deleteMany();
     await prisma.transaction.deleteMany();
     await prisma.settings.deleteMany();
@@ -155,6 +159,28 @@ async function restoreBackup() {
         })),
       });
       console.log('✅ Merchant category rules restored');
+    }
+
+    if (
+      backup.data.quickTransactionTemplates &&
+      backup.data.quickTransactionTemplates.length > 0
+    ) {
+      console.log(
+        `\n⚡ Restoring ${backup.data.quickTransactionTemplates.length} quick transaction templates...`,
+      );
+      await prisma.quickTransactionTemplate.createMany({
+        data: backup.data.quickTransactionTemplates.map((template) => ({
+          ...template,
+          id: template.id,
+          createdAt: template.createdAt
+            ? new Date(template.createdAt)
+            : new Date(),
+          updatedAt: template.updatedAt
+            ? new Date(template.updatedAt)
+            : new Date(),
+        })),
+      });
+      console.log('✅ Quick transaction templates restored');
     }
 
     console.log('\n✅ Restore completed successfully!');

@@ -7,7 +7,15 @@ import {
   Dispatch,
   SetStateAction,
 } from 'react';
-import { Transaction } from '@prisma/client';
+import { Currency, Transaction, TransactionType } from '@prisma/client';
+
+export type TransactionDraft = {
+  text: string;
+  amount?: number;
+  category: string;
+  currency: Currency;
+  type: TransactionType;
+};
 
 interface TransactionsContextType {
   transactions: Transaction[];
@@ -18,6 +26,8 @@ interface TransactionsContextType {
   setIsCopyTransactionFlow: Dispatch<SetStateAction<boolean>>;
   transactionId: string | null;
   setTransactionId: Dispatch<SetStateAction<string | null>>;
+  transactionDraft: TransactionDraft | null;
+  setTransactionDraft: Dispatch<SetStateAction<TransactionDraft | null>>;
   transactionsRefreshKey: number;
   requestTransactionsRefresh: () => void;
 }
@@ -38,6 +48,8 @@ export const TransactionsProvider = ({
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [isCopyTransactionFlow, setIsCopyTransactionFlow] = useState(false);
   const [transactionId, setTransactionId] = useState<string | null>(null);
+  const [transactionDraft, setTransactionDraft] =
+    useState<TransactionDraft | null>(null);
   const [transactionsRefreshKey, setTransactionsRefreshKey] = useState(0);
 
   return (
@@ -49,6 +61,8 @@ export const TransactionsProvider = ({
         setIsTransactionModalOpen,
         transactionId,
         setTransactionId,
+        transactionDraft,
+        setTransactionDraft,
         isCopyTransactionFlow,
         setIsCopyTransactionFlow,
         transactionsRefreshKey,

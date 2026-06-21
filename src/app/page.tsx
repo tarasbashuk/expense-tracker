@@ -1,10 +1,15 @@
 import { currentUser } from '@clerk/nextjs/server';
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 
 import Guest from '@/components/Guest';
 import Balance from '@/components/Balance';
-import IncomeExpense from '@/components/IncomeExpense';
 import WelcomeMessage from '@/components/WelcomeMessage';
+import QuickTransactions from '@/components/home/QuickTransactions';
+import HomeMonthlySummary from '@/components/home/HomeMonthlySummary';
+import RecentTransactions from '@/components/home/RecentTransactions';
+import getHomeDashboard from '@/app/actions/getHomeDashboard';
+import { getQuickTransactionTemplates } from '@/app/actions/quickTransactionTemplates';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,13 +20,36 @@ const HomePage = async () => {
     return <Guest />;
   }
 
+  const [{ data }, { templates }] = await Promise.all([
+    getHomeDashboard(),
+    getQuickTransactionTemplates(),
+  ]);
+
+  const monthlySummary = data?.monthlySummary || {
+    income: 0,
+    expense: 0,
+    net: 0,
+    expenseChangePercent: null,
+  };
+
   return (
-    <Box component="section" sx={{
-      width: { xs: '100%', sm: 410 },
-    }}>
+    <Box
+      component="section"
+      sx={{
+        width: '100%',
+        maxWidth: 900,
+        mx: 'auto',
+        px: { xs: 1, sm: 2 },
+        pb: { xs: 10, sm: 3 },
+      }}
+    >
       <WelcomeMessage firstName={user.firstName} />
       <Balance />
-      <IncomeExpense />
+      <Stack spacing={2} mt={2}>
+        <QuickTransactions initialTemplates={templates || []} />
+        <HomeMonthlySummary summary={monthlySummary} />
+        <RecentTransactions transactions={data?.recentTransactions || []} />
+      </Stack>
     </Box>
   );
 };
