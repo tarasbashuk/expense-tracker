@@ -100,13 +100,19 @@ async function createJSONBackup() {
     console.log('📊 Creating JSON backup...');
 
     // Export all data
-    const [users, transactions, settings, merchantCategoryRules] =
-      await Promise.all([
-        prisma.user.findMany(),
-        prisma.transaction.findMany(),
-        prisma.settings.findMany(),
-        prisma.merchantCategoryRule.findMany(),
-      ]);
+    const [
+      users,
+      transactions,
+      settings,
+      merchantCategoryRules,
+      quickTransactionTemplates,
+    ] = await Promise.all([
+      prisma.user.findMany(),
+      prisma.transaction.findMany(),
+      prisma.settings.findMany(),
+      prisma.merchantCategoryRule.findMany(),
+      prisma.quickTransactionTemplate.findMany(),
+    ]);
 
     const backup = {
       timestamp: new Date().toISOString(),
@@ -116,6 +122,7 @@ async function createJSONBackup() {
         transactions,
         settings,
         merchantCategoryRules,
+        quickTransactionTemplates,
       },
     };
 
@@ -133,6 +140,9 @@ async function createJSONBackup() {
     console.log(`   Transactions: ${transactions.length}`);
     console.log(`   Settings: ${settings.length}`);
     console.log(`   Merchant category rules: ${merchantCategoryRules.length}`);
+    console.log(
+      `   Quick transaction templates: ${quickTransactionTemplates.length}`,
+    );
     return true;
   } catch (error) {
     console.error('\n❌ JSON backup failed!');

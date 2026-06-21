@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { SelectChangeEvent } from '@mui/material';
 import { isSameMonth, isSameYear } from 'date-fns';
 import { useIntl } from 'react-intl';
+import { useRouter } from 'next/navigation';
 
 import { addUpdateTransaction } from '@/app/actions/addUpdateTransaction';
 import { Currency, TransactionType } from '@prisma/client';
@@ -21,6 +22,7 @@ import { useCurrencies } from '@/context/CurrenciesContext';
 import { CURRENCY_ISO_MAP } from '@/constants/constants';
 
 const AddTransactionModal: React.FC = () => {
+  const router = useRouter();
   const {
     settings: { defaultCurrency, creditCardTrackingEnabled },
   } = useSettings();
@@ -30,9 +32,11 @@ const AddTransactionModal: React.FC = () => {
   const {
     transactions,
     transactionId,
+    transactionDraft,
     isCopyTransactionFlow,
     setTransactions,
     setTransactionId,
+    setTransactionDraft,
     setIsCopyTransactionFlow,
     requestTransactionsRefresh,
     setIsTransactionModalOpen,
@@ -76,6 +80,20 @@ const AddTransactionModal: React.FC = () => {
   let initialIsRecurring = false;
   let initialRecurringEndDate: Date | undefined;
   let initialType: TransactionType = TransactionType.Expense;
+
+  if (transactionDraft) {
+    initialText = transactionDraft.text;
+    initialAmount = transactionDraft.amount;
+    initialCategory = transactionDraft.category;
+    initialCurrency = transactionDraft.currency;
+    initialType = transactionDraft.type;
+    initialAmountDefaultCurrency = transactionDraft.amount
+      ? calculateAmountInDefaultCurrency(
+          transactionDraft.amount,
+          transactionDraft.currency,
+        )
+      : undefined;
+  }
 
   const selectedTransaction = transactions.find(
     (tr) => tr.id === transactionId,
@@ -151,6 +169,7 @@ const AddTransactionModal: React.FC = () => {
 
   const handleClose = () => {
     setTransactionId(null);
+    setTransactionDraft(null);
     setIsCopyTransactionFlow(false);
     setIsTransactionModalOpen(false);
   };
@@ -308,6 +327,7 @@ const AddTransactionModal: React.FC = () => {
         });
       }
       requestTransactionsRefresh();
+      router.refresh();
       handleClose();
     }
     setIsSaving(false);
