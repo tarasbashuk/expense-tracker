@@ -31,6 +31,7 @@ import { useCategoryI18n } from '@/lib/useCategoryI18n';
 
 interface TransactionsDataGridProps {
   rows: Transaction[];
+  isLoading?: boolean;
   /* eslint-disable no-unused-vars*/
   handleCopy: (id: string) => void;
   handleEdit: (id: string) => void;
@@ -165,6 +166,7 @@ const ActionMenu: FC<ActionMenuProps> = ({ onCopy, onEdit, onDelete }) => {
 
 const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
   rows,
+  isLoading = false,
   handleCopy,
   handleEdit,
   handleDelete,
@@ -326,6 +328,7 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
         <DataGrid
           rows={rows}
           columns={columns}
+          loading={isLoading}
           initialState={{
             pagination: {
               paginationModel: {

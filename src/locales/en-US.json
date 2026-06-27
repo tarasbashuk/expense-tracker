@@ -35,6 +35,7 @@
   "home.optionalAmount": "Amount (optional)",
   "home.deleteTemplateConfirm": "Delete “{name}”?",
   "home.thisMonth": "This month",
+  "home.openMonthlyTransactions": "Open monthly transactions",
   "home.net": "Net",
   "home.expenseComparison": "{percent}% {direction} than last month in expenses",
   "home.less": "less",

@@ -35,6 +35,7 @@
   "home.optionalAmount": "Сума (необов’язково)",
   "home.deleteTemplateConfirm": "Видалити «{name}»?",
   "home.thisMonth": "Цей місяць",
+  "home.openMonthlyTransactions": "Відкрити транзакції за місяць",
   "home.net": "Різниця",
   "home.expenseComparison": "Витрати на {percent}% {direction}, ніж минулого місяця",
   "home.less": "менші",
