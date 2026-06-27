@@ -385,7 +385,7 @@ const TransactionList = () => {
         )}
       </Stack>
 
-      {isLoading && <CircularProgress sx={{ my: 5 }} />}
+      {isLoading && !transactions.length && <CircularProgress sx={{ my: 5 }} />}
 
       {!transactions.length && !isLoading && (
         <Typography variant="h5" component="p" gutterBottom mt={4}>
@@ -396,7 +396,7 @@ const TransactionList = () => {
         </Typography>
       )}
 
-      {!isLoading && !!transactions.length && (
+      {!!transactions.length && (
         <>
           <Box
             sx={{
@@ -431,6 +431,7 @@ const TransactionList = () => {
           {viewType === ViewType.Grid ? (
             <TransactionsDataGrid
               rows={transactions}
+              isLoading={isLoading}
               handleEdit={handleEditTransaction}
               handleCopy={handleCopyTransaction}
               handleDelete={handleDeleteTransaction}

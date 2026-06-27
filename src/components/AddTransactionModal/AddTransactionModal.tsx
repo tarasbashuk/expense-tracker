@@ -5,7 +5,6 @@ import { toast } from 'react-toastify';
 import { SelectChangeEvent } from '@mui/material';
 import { isSameMonth, isSameYear } from 'date-fns';
 import { useIntl } from 'react-intl';
-import { useRouter } from 'next/navigation';
 
 import { addUpdateTransaction } from '@/app/actions/addUpdateTransaction';
 import { Currency, TransactionType } from '@prisma/client';
@@ -22,7 +21,6 @@ import { useCurrencies } from '@/context/CurrenciesContext';
 import { CURRENCY_ISO_MAP } from '@/constants/constants';
 
 const AddTransactionModal: React.FC = () => {
-  const router = useRouter();
   const {
     settings: { defaultCurrency, creditCardTrackingEnabled },
   } = useSettings();
@@ -327,7 +325,6 @@ const AddTransactionModal: React.FC = () => {
         });
       }
       requestTransactionsRefresh();
-      router.refresh();
       handleClose();
     }
     setIsSaving(false);

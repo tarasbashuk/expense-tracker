@@ -1,11 +1,13 @@
 'use client';
 
+import Link from 'next/link';
 import { Box, Card, CardContent, Stack, Typography } from '@mui/material';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { useIntl } from 'react-intl';
 
 import { HomeMonthlySummary as Summary } from '@/app/actions/getHomeDashboard';
+import { NavigationPath } from '@/constants/types';
 import { useSettings } from '@/context/SettingsContexts';
 import { formatCurrency } from '@/lib/formatCurrency';
 
@@ -18,7 +20,33 @@ export default function HomeMonthlySummary({ summary }: { summary: Summary }) {
   const isSpendingDown = change != null && change <= 0;
 
   return (
-    <Card sx={{ minWidth: 0, width: '100%' }}>
+    <Card
+      component={Link}
+      href={NavigationPath.Transactions}
+      aria-label={formatMessage({
+        id: 'home.openMonthlyTransactions',
+        defaultMessage: 'Open monthly transactions',
+      })}
+      sx={{
+        minWidth: 0,
+        width: '100%',
+        color: 'inherit',
+        textDecoration: 'none',
+        transition: (theme) =>
+          theme.transitions.create(['box-shadow', 'transform'], {
+            duration: theme.transitions.duration.shortest,
+          }),
+        '&:hover': {
+          boxShadow: 4,
+          transform: 'translateY(-1px)',
+        },
+        '&:focus-visible': {
+          outline: '2px solid',
+          outlineColor: 'primary.main',
+          outlineOffset: 2,
+        },
+      }}
+    >
       <CardContent
         sx={{
           p: { xs: 2, sm: 3 },
