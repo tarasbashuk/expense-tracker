@@ -144,6 +144,16 @@ export async function GET(request: NextRequest) {
       const creditCardTrackingEnabled = Boolean(
         userSettings?.creditCardTrackingEnabled,
       );
+
+      if (transaction.isCreditTransaction && !creditCardTrackingEnabled) {
+        Sentry.captureMessage(
+          `Skipping recurring credit transaction because credit card tracking is disabled: id=${transaction.id}, userId=${transaction.userId}`,
+          'info',
+        );
+
+        continue;
+      }
+
       let amountDefaultCurrency = transaction.amountDefaultCurrency;
 
       // --- If currency differs, recalc by actual rate ---

@@ -9,10 +9,6 @@ import { IncomeCategory } from '@/constants/types';
 import { getMonobankRates } from '@/lib/monobankRatesCache';
 import { getCurrenciesFromMap } from '@/lib/currenciesRate.utils';
 import { convertAmountToDefaultCurrency } from '@/lib/currency/convertAmountToDefaultCurrency';
-import {
-  findDuplicateMatch,
-  getExistingTransactionsForImport,
-} from '@/lib/importDuplicateMatching/importDuplicateMatching';
 import { upsertMerchantCategoryRule } from '@/lib/merchantRules/merchantRules';
 import { encrypt, encryptFloat } from '@/lib/crypto';
 import { isCreditCardCategory } from '@/constants/constants';
@@ -77,35 +73,6 @@ export default async function saveImportedTransaction(
 
   if (Number.isNaN(parsedDate.getTime())) {
     return { error: 'Imported transaction has invalid date' };
-  }
-
-  const duplicateMatch = findDuplicateMatch(
-    {
-      status: 'new',
-      date,
-      text,
-      amount,
-      currency,
-      type,
-      category,
-      warnings: [],
-    },
-    await getExistingTransactionsForImport(userId, [
-      {
-        status: 'new',
-        date,
-        text,
-        amount,
-        currency,
-        type,
-        category,
-        warnings: [],
-      },
-    ]),
-  );
-
-  if (duplicateMatch?.level === 'alreadyExists') {
-    return { error: duplicateMatch.reason };
   }
 
   const settings = await db.settings.findUnique({
