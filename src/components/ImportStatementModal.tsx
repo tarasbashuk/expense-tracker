@@ -227,6 +227,17 @@ export default function ImportStatementModal({
     }));
   };
 
+  const handleRowAmountChange = (id: string, amount: number | null) => {
+    updateRow(id, (row) => ({
+      ...row,
+      amount,
+      amountDefaultCurrency: calculateAmountDefaultCurrency(
+        amount,
+        row.currency,
+      ),
+    }));
+  };
+
   const handleRowCategoryChange = (id: string, category: string) => {
     updateRow(id, (row) => ({ ...row, category }));
   };
@@ -508,6 +519,9 @@ export default function ImportStatementModal({
                   isSaving={savingRowIndex === index}
                   onTextChange={(text) => handleRowTextChange(row.id, text)}
                   onDateChange={(date) => handleRowDateChange(row.id, date)}
+                  onAmountChange={(amount) =>
+                    handleRowAmountChange(row.id, amount)
+                  }
                   onCurrencyChange={(currency) =>
                     handleRowCurrencyChange(row.id, currency)
                   }

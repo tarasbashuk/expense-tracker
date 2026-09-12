@@ -44,6 +44,7 @@ type ImportStatementCandidateRowProps = {
   isSaving: boolean;
   onTextChange: (_text: string) => void;
   onDateChange: (_date: string) => void;
+  onAmountChange: (_amount: number | null) => void;
   onCurrencyChange: (_currency: Currency) => void;
   onCategoryChange: (_category: string) => void;
   onIsCreditTransactionChange: (_isCreditTransaction: boolean) => void;
@@ -77,6 +78,7 @@ export default function ImportStatementCandidateRow({
   isSaving,
   onTextChange,
   onDateChange,
+  onAmountChange,
   onCurrencyChange,
   onCategoryChange,
   onIsCreditTransactionChange,
@@ -229,13 +231,18 @@ export default function ImportStatementCandidateRow({
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
           <TextField
             size="small"
+            type="number"
             label={formatMessage({
               id: 'grid.amount',
               defaultMessage: 'Amount',
             })}
-            value={row.amount == null ? '-' : row.amount.toFixed(2)}
+            value={row.amount ?? ''}
             disabled={isRowLocked}
-            InputProps={{ readOnly: true }}
+            onChange={(event) =>
+              onAmountChange(
+                event.target.value === '' ? null : Number(event.target.value),
+              )
+            }
             sx={{ minWidth: { sm: 140 } }}
           />
           <FormControl
