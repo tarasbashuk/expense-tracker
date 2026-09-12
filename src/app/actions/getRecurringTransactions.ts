@@ -4,6 +4,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { Transaction, TransactionType } from '@prisma/client';
 import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { decrypt, decryptFloat } from '@/lib/crypto';
+import { IncomeCategory } from '@/constants/types';
 
 async function getRecurringTransactions(): Promise<{
   transactions?: Transaction[];
@@ -33,8 +34,9 @@ async function getRecurringTransactions(): Promise<{
     const lastMonthStart = startOfMonth(lastMonth);
     const lastMonthEnd = endOfMonth(lastMonth);
 
-    // Find all recurring transactions from last month
-    // Exclude income transactions with CCExpenseTransactionId - they are created automatically for credit transactions
+    // Find all recurring transactions from last month.
+    // Credit income rows are generated from credit expense rows and must never
+    // become recurring sources themselves, including legacy unlinked rows.
     const transactions = await db.transaction.findMany({
       where: {
         userId,
@@ -48,8 +50,9 @@ async function getRecurringTransactions(): Promise<{
           { recurringEndDate: null }, // Infinite
           { recurringEndDate: { gt: new Date() } }, // Not ended yet
         ],
-        // Don't process income transactions that are linked to credit transactions
-        CCExpenseTransactionId: null,
+        NOT: {
+          category: IncomeCategory.CreditReceived,
+        },
       },
       orderBy: [
         {
@@ -114,4 +117,3 @@ async function getRecurringTransactions(): Promise<{
 }
 
 export default getRecurringTransactions;
-

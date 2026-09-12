@@ -64,8 +64,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Find recurring transactions based on the determined date range
-    // Exclude income transactions with CCExpenseTransactionId - they are created automatically for credit transactions
+    // Find recurring transactions based on the determined date range.
+    // Credit income rows are generated from credit expense rows and must never
+    // become recurring sources themselves, including legacy unlinked rows.
     const recurringTransactions = await db.transaction.findMany({
       where: {
         isRecurring: true,
@@ -78,9 +79,9 @@ export async function GET(request: NextRequest) {
           { recurringEndDate: null }, // Infinite
           { recurringEndDate: { gt: new Date() } }, // Not ended yet
         ],
-        // Don't process income transactions that are linked to credit transactions
-        // They will be created automatically when processing the credit expense transaction
-        CCExpenseTransactionId: null,
+        NOT: {
+          category: IncomeCategory.CreditReceived,
+        },
       },
     });
 
