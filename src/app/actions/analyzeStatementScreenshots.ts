@@ -15,6 +15,7 @@ import {
   findMerchantRuleMatch,
   formatMerchantRulesForPrompt,
   getMerchantCategoryRules,
+  isAmbiguousMerchant,
 } from '@/lib/merchantRules/merchantRules';
 import { applyDuplicateMatches } from '@/lib/importDuplicateMatching/importDuplicateMatching';
 
@@ -238,7 +239,8 @@ ${incomeCategories}
 Useful merchant/category hints:
 - MERCADONA, LIDL, BIEDRONKA, CARREFOUR, AUCHAN, ALDI, KAUFLAND, ZABKA, SUPERMARKET, MARKET -> groceries.
 - UBER, BOLT, TAXI, TRAIN, BUS, METRO, PARKING, APARC -> transport or auto, depending on context.
-- AMAZON, ALLEGRO, ZALANDO, IKEA, DECATHLON -> shopping unless the visible merchant context is more specific.
+- AMAZON and AMZN are ambiguous marketplaces -> others unless the uploaded document clearly shows what was purchased. Do not use a user-specific merchant rule for them.
+- ALLEGRO, ZALANDO, IKEA, DECATHLON -> shopping unless the visible merchant context is more specific.
 - VETERINARIA, VET, PETSHOP, ZOO -> pets.
 - RESTAURANT, CAFE, BAR, MCDONALD, KFC, BURGER, COSTA, STARBUCKS -> dining.
 - COLEGIO, COLEGIOS, SCHOOL, LAUDE -> education.
@@ -479,6 +481,10 @@ export default async function analyzeStatementScreenshots(
       confidence: clampConfidence(row.confidence),
       warnings: row.warnings || [],
       category: (() => {
+        if (isAmbiguousMerchant(row.text)) {
+          return 'others';
+        }
+
         const matchedCategory =
           findMerchantRuleMatch(row.text, merchantRules)?.category ||
           row.category ||

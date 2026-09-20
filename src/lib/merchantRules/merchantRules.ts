@@ -1,4 +1,5 @@
 import { db } from '@/lib/db';
+import { ExpenseCategory } from '@/constants/types';
 
 const COUNTRY_PREFIX_PATTERN =
   /^(AD|AE|AL|AM|AR|AT|AU|BE|BG|BR|CA|CH|CN|CY|CZ|DE|DK|EE|ES|FI|FR|GB|GE|GR|HK|HR|HU|IE|IL|IN|IS|IT|JP|KR|LT|LU|LV|MA|MC|MD|ME|MT|MX|NL|NO|PL|PT|RO|RS|SE|SG|SI|SK|TR|UA|UK|US)\s+/;
@@ -16,12 +17,43 @@ export const normalizeMerchantPattern = (value: string): string => {
     .slice(0, 120);
 };
 
+const AMBIGUOUS_MERCHANT_PATTERNS = [
+  /(?:^|[\s.-])AMAZON(?:$|[\s.-])/,
+  /(?:^|[\s.-])AMZN(?:$|[\s.-])/,
+];
+
+export const isAmbiguousMerchant = (merchant: string): boolean => {
+  const normalizedMerchant = normalizeMerchantPattern(merchant);
+
+  return AMBIGUOUS_MERCHANT_PATTERNS.some((pattern) =>
+    pattern.test(normalizedMerchant),
+  );
+};
+
+export const shouldStoreMerchantCategoryRule = ({
+  merchant,
+  category,
+}: {
+  merchant: string;
+  category: string;
+}): boolean =>
+  category !== ExpenseCategory.Trips && !isAmbiguousMerchant(merchant);
+
 export const getMerchantCategoryRules = async (userId: string) => {
-  return db.merchantCategoryRule.findMany({
+  const rules = await db.merchantCategoryRule.findMany({
     where: { userId },
     orderBy: [{ useCount: 'desc' }, { updatedAt: 'desc' }],
-    take: 50,
+    take: 100,
   });
+
+  return rules
+    .filter((rule) =>
+      shouldStoreMerchantCategoryRule({
+        merchant: rule.merchantPattern,
+        category: rule.category,
+      }),
+    )
+    .slice(0, 50);
 };
 
 export const formatMerchantRulesForPrompt = (
@@ -42,7 +74,7 @@ export const findMerchantRuleMatch = (
 ) => {
   const normalizedMerchant = normalizeMerchantPattern(merchant);
 
-  if (!normalizedMerchant) {
+  if (!normalizedMerchant || isAmbiguousMerchant(normalizedMerchant)) {
     return undefined;
   }
 
@@ -72,7 +104,11 @@ export const upsertMerchantCategoryRule = async ({
 }) => {
   const merchantPattern = normalizeMerchantPattern(merchant);
 
-  if (!merchantPattern || !category) {
+  if (
+    !merchantPattern ||
+    !category ||
+    !shouldStoreMerchantCategoryRule({ merchant: merchantPattern, category })
+  ) {
     return null;
   }
 
