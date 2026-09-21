@@ -357,7 +357,7 @@ const reconcileReceiptCategorySplits = (
           receiptGroupId: null,
           receiptTotal: null,
           isReceiptCategorySplit: false,
-          receiptLineItems: [],
+          receiptLineItems: lineItems,
         },
       ];
     }
@@ -778,7 +778,7 @@ export default async function analyzeStatementScreenshots(
       confidence: clampConfidence(row.confidence),
       warnings: row.warnings || [],
       category: (() => {
-        if (row.isReceiptCategorySplit) {
+        if (row.isReceiptCategorySplit || row.receiptLineItems.length > 0) {
           return !settings?.creditCardTrackingEnabled &&
             isCreditCardCategory(row.category)
             ? 'others'

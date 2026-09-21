@@ -270,7 +270,8 @@ export default function ImportStatementModal({
         type: row.type,
         category: row.category,
         isCreditTransaction: row.isCreditTransaction,
-        skipMerchantRuleLearning: row.isReceiptCategorySplit,
+        skipMerchantRuleLearning:
+          row.isReceiptCategorySplit || row.receiptLineItems.length > 0,
       });
 
       if (result.error) {
