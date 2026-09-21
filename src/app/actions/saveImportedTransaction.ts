@@ -22,6 +22,7 @@ type SaveImportedTransactionInput = {
   type: TransactionType | null;
   category: string;
   isCreditTransaction?: boolean;
+  skipMerchantRuleLearning?: boolean;
 };
 
 type SaveImportedTransactionResult = {
@@ -55,6 +56,7 @@ export default async function saveImportedTransaction(
     type,
     category,
     isCreditTransaction,
+    skipMerchantRuleLearning,
   } = input;
 
   if (
@@ -187,11 +189,13 @@ export default async function saveImportedTransaction(
       });
     }
 
-    await upsertMerchantCategoryRule({
-      userId,
-      merchant: text,
-      category,
-    });
+    if (!skipMerchantRuleLearning) {
+      await upsertMerchantCategoryRule({
+        userId,
+        merchant: text,
+        category,
+      });
+    }
 
     revalidatePath('/');
     revalidatePath('/transactions');

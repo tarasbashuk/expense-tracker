@@ -6,6 +6,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { Currency, Language, TransactionType } from '@prisma/client';
 
 import { db } from '@/lib/db';
+import { ExpenseCategory } from '@/constants/types';
 import {
   getExpenseCategoriesList,
   getIncomeCategoriesList,
@@ -16,6 +17,7 @@ import {
   formatMerchantRulesForPrompt,
   getMerchantCategoryRules,
   isAmbiguousMerchant,
+  normalizeMerchantPattern,
 } from '@/lib/merchantRules/merchantRules';
 import { applyDuplicateMatches } from '@/lib/importDuplicateMatching/importDuplicateMatching';
 
@@ -56,6 +58,9 @@ export type ScreenshotImportCandidate = {
   confidence: number;
   matchReason?: string;
   warnings: string[];
+  receiptGroupId: string | null;
+  receiptTotal: number | null;
+  isReceiptCategorySplit: boolean;
 };
 
 export type ScreenshotImportResult = {
@@ -137,6 +142,21 @@ const schema = {
             type: 'array',
             items: { type: 'string' },
           },
+          receiptGroupId: {
+            type: ['string', 'null'],
+            description:
+              'Identifier shared only by category rows split from the same grocery-store receipt; otherwise null.',
+          },
+          receiptTotal: {
+            type: ['number', 'null'],
+            description:
+              'Visible final total of the grocery-store receipt when it was split by category; otherwise null.',
+          },
+          isReceiptCategorySplit: {
+            type: 'boolean',
+            description:
+              'True only for category aggregate rows produced from a reconciled grocery-store receipt.',
+          },
         },
         required: [
           'sourceFileIndex',
@@ -151,6 +171,9 @@ const schema = {
           'confidence',
           'matchReason',
           'warnings',
+          'receiptGroupId',
+          'receiptTotal',
+          'isReceiptCategorySplit',
         ],
       },
     },
@@ -179,6 +202,136 @@ const clampConfidence = (value: number) => {
   if (!Number.isFinite(value)) return 0;
 
   return Math.min(1, Math.max(0, value));
+};
+
+const toMinorUnits = (value: number) => Math.round(value * 100);
+
+const getReceiptReconciliationWarning = (language: Language) =>
+  language === Language.UKR
+    ? 'Чек не розбито за категоріями, оскільки сума категорій або реквізити групи не збігаються з фінальною сумою чека. Перевірте запис перед збереженням.'
+    : 'The receipt was not split by category because the category totals or group details do not match the final receipt total. Review it before saving.';
+
+const reconcileReceiptCategorySplits = (
+  transactions: ScreenshotImportCandidate[],
+  language: Language,
+): ScreenshotImportCandidate[] => {
+  const splitGroups = new Map<string, ScreenshotImportCandidate[]>();
+
+  transactions.forEach((transaction) => {
+    if (!transaction.isReceiptCategorySplit || !transaction.receiptGroupId) {
+      return;
+    }
+
+    const group = splitGroups.get(transaction.receiptGroupId) || [];
+    group.push(transaction);
+    splitGroups.set(transaction.receiptGroupId, group);
+  });
+
+  const processedGroups = new Set<string>();
+
+  const createFallback = (group: ScreenshotImportCandidate[]) => {
+    const first = group[0];
+    const receiptTotal = first.receiptTotal;
+    const categoryTotal = group.reduce(
+      (sum, row) => sum + toMinorUnits(row.amount || 0),
+      0,
+    );
+    const fallbackAmount =
+      receiptTotal !== null &&
+      Number.isFinite(receiptTotal) &&
+      receiptTotal > 0
+        ? receiptTotal
+        : categoryTotal / 100;
+
+    return {
+      ...first,
+      status: 'needsReview' as const,
+      amount: fallbackAmount,
+      type: TransactionType.Expense,
+      category: ExpenseCategory.Groceries,
+      confidence: Math.min(first.confidence, 0.5),
+      rawDescription: group
+        .map((row) => row.rawDescription)
+        .filter(Boolean)
+        .join('; '),
+      warnings: [
+        ...(first.warnings || []),
+        getReceiptReconciliationWarning(language),
+      ],
+      receiptGroupId: null,
+      receiptTotal: null,
+      isReceiptCategorySplit: false,
+    };
+  };
+
+  return transactions.flatMap((transaction) => {
+    if (!transaction.isReceiptCategorySplit) {
+      return [transaction];
+    }
+
+    if (!transaction.receiptGroupId) {
+      return [createFallback([transaction])];
+    }
+
+    const groupId = transaction.receiptGroupId;
+
+    if (processedGroups.has(groupId)) {
+      return [];
+    }
+
+    processedGroups.add(groupId);
+    const group = splitGroups.get(groupId) || [transaction];
+    const first = group[0];
+    const receiptTotal = first.receiptTotal;
+    const categories = new Set(group.map((row) => row.category));
+    const hasConsistentDetails = group.every(
+      (row) =>
+        row.receiptTotal !== null &&
+        receiptTotal !== null &&
+        toMinorUnits(row.receiptTotal) === toMinorUnits(receiptTotal) &&
+        row.date === first.date &&
+        row.currency === first.currency &&
+        row.type === TransactionType.Expense &&
+        normalizeMerchantPattern(row.text) ===
+          normalizeMerchantPattern(first.text),
+    );
+    const hasValidAmounts = group.every(
+      (row) => row.amount !== null && Number.isFinite(row.amount) && row.amount > 0,
+    );
+    const hasValidCategories = group.every((row) =>
+      Object.values(ExpenseCategory).includes(row.category as ExpenseCategory),
+    );
+    const categoryTotal = group.reduce(
+      (sum, row) => sum + toMinorUnits(row.amount || 0),
+      0,
+    );
+    const isReconciled =
+      receiptTotal !== null &&
+      Number.isFinite(receiptTotal) &&
+      receiptTotal > 0 &&
+      hasConsistentDetails &&
+      hasValidAmounts &&
+      hasValidCategories &&
+      categories.size === group.length &&
+      categoryTotal === toMinorUnits(receiptTotal);
+
+    if (isReconciled && group.length > 1) {
+      return group;
+    }
+
+    if (isReconciled) {
+      return [
+        {
+          ...first,
+          receiptGroupId: null,
+          receiptTotal: null,
+          isReceiptCategorySplit: false,
+        },
+      ];
+    }
+
+    return [createFallback(group)];
+  });
 };
 
 const buildLanguageInstructions = (language: Language) =>
@@ -263,8 +416,17 @@ Rules:
 - Examples: "Recibo Gc Re Colegios Laude Slu ... -1.359,00 EUR" is an education expense; "Recibo Vetassur ... -27,96 EUR" is a pets expense.
 - Bank transfer rows are not automatically internal transfers. If a row says "Transferencia ... A Favor De <external merchant/person>" and has a negative amount, treat it as a payment/expense candidate unless it is clearly between the user's own accounts.
 - Example: "Transferencia Inmediata A Favor De Tdc Marbella -99,99 EUR" should be extracted as a new expense candidate, not ignored, unless the screenshot explicitly shows it is an own-account transfer.
-- For receipts/invoices/payment confirmations, return one row per receipt/document using the merchant/store name and the final paid total. Do not return individual receipt line items yet.
+- For receipts/invoices/payment confirmations, normally return one row per receipt/document using the merchant/store name and the final paid total. The grocery-store receipt exception below is the only case where one receipt may produce multiple rows.
 - If multiple uploaded files or pages are clearly different parts of the same single receipt/document, merge them into one transaction when confidence is high. If unsure, use status="needsReview" and add a warning.
+- Grocery-store receipt category split:
+  - Apply this only to a grocery store or supermarket receipt whose individual purchased items, final paid total, currency, and date are readable with high confidence. Never apply it to bank/card transaction lists, payment confirmations, invoices, restaurant receipts, general retailers, or other receipt types.
+  - Multiple photos may show overlapping or different parts of the same receipt. First determine whether they are one document using merchant, receipt number, date/time, totals, and overlapping line items. Count every purchased item exactly once. If the files might show different receipts, do not merge them.
+  - Group line items by the provided expense categories and return one aggregate transaction row per category, not one row per item. Omit zero-value categories. Use the same merchant text, date, currency, type=Expense, receiptGroupId, and receiptTotal on every row in the group. Use a unique receiptGroupId such as "grocery-receipt-1". Set isReceiptCategorySplit=true.
+  - In each category row, amount is the sum of that category's items after item-level discounts. Briefly list the category's recognizable items in rawDescription. The final paid total must not itself be returned as an extra transaction row.
+  - Reconcile using exact minor currency units: the sum of all category-row amounts must equal receiptTotal exactly. Account for readable discounts, deposits, fees, and rounding once. Never invent a missing amount merely to force the arithmetic to match.
+  - Split only when the arithmetic is verified and every non-zero part of the final total is represented. If the final total is absent, obscured, ambiguous, or does not equal the category sums, return one unsplit groceries transaction for the visible final total with status="needsReview", isReceiptCategorySplit=false, receiptGroupId=null, and receiptTotal=null; explain the issue in warnings.
+  - If all readable items belong to one category, return one normal unsplit receipt row with isReceiptCategorySplit=false, receiptGroupId=null, and receiptTotal=null.
+  - For every row that is not part of a grocery receipt category split, set isReceiptCategorySplit=false, receiptGroupId=null, and receiptTotal=null.
 - Source dates can appear in any locale or format. Always output date as YYYY-MM-DD.
 - If a date group says "Yesterday", resolve it from the reference date.
 - For ambiguous numeric dates such as 06/07/2026, infer locale from screenshot language/bank region when possible; otherwise use status="needsReview" and add a warning.
@@ -277,8 +439,7 @@ Rules:
 - Upcoming/card authorization purchases with a visible merchant and amount should usually be status="new", type=Expense, with the best category inferred from the merchant.
 - Use status="needsReview" for upcoming/card authorization rows only when the row is partially cut off, the amount/currency/date is ambiguous, or it may be a refund.
 - If a positive card row looks like a refund, use status="needsReview" and type=Income.
-- For a mixed retail receipt, choose the dominant category by total value when visible. If the mix is unclear, use the merchant/store category and add a warning such as "Mixed receipt; category may need review."
-- Do not split supermarket/retail receipts into groceries/home/shopping sub-transactions in this version.
+- For a mixed non-grocery retail receipt, choose the dominant category by total value when visible. If the mix is unclear, use the merchant/store category and add a warning such as "Mixed receipt; category may need review."
 - Preserve merchant names exactly enough to be useful, but remove obvious card processor noise only if confidence is high.
 - If it feels natural and clearly matches the merchant/category, you may prefix text with one relevant emoji, such as 🛒 for groceries, ☕ for cafes, 🐾 for pets/vet, 🅿️ for parking, 🎬 for cinema, 💊 for pharmacy/healthcare, ✈️ for travel, or 🛍️ for shopping.
 - Use at most one emoji. Do not add an emoji when confidence is low, status is ignored/alreadyExists, or the merchant/category is ambiguous.
@@ -467,7 +628,11 @@ export default async function analyzeStatementScreenshots(
     const parsed = JSON.parse(response.output_text) as ModelImportResult;
     console.log('[AI import] parsed response', JSON.stringify(parsed, null, 2));
 
-    const rows = parsed.transactions.map((row) => ({
+    const reconciledTransactions = reconcileReceiptCategorySplits(
+      parsed.transactions,
+      settings?.language || Language.ENG,
+    );
+    const rows = reconciledTransactions.map((row) => ({
       ...row,
       allowWeakMerchantDateMatch:
         normalizeMimeType(
@@ -481,6 +646,13 @@ export default async function analyzeStatementScreenshots(
       confidence: clampConfidence(row.confidence),
       warnings: row.warnings || [],
       category: (() => {
+        if (row.isReceiptCategorySplit) {
+          return !settings?.creditCardTrackingEnabled &&
+            isCreditCardCategory(row.category)
+            ? 'others'
+            : row.category;
+        }
+
         if (isAmbiguousMerchant(row.text)) {
           return 'others';
         }
