@@ -61,6 +61,11 @@ export type ScreenshotImportCandidate = {
   receiptGroupId: string | null;
   receiptTotal: number | null;
   isReceiptCategorySplit: boolean;
+  receiptLineItems: Array<{
+    description: string;
+    amount: number;
+    category: string;
+  }>;
 };
 
 export type ScreenshotImportResult = {
@@ -150,12 +155,37 @@ const schema = {
           receiptTotal: {
             type: ['number', 'null'],
             description:
-              'Visible final total of the grocery-store receipt when it was split by category; otherwise null.',
+              'Visible final paid total when receiptLineItems contains a grocery-store receipt; otherwise null.',
           },
           isReceiptCategorySplit: {
             type: 'boolean',
             description:
-              'True only for category aggregate rows produced from a reconciled grocery-store receipt.',
+              'Always false in the model response. The server sets it after reconciling and grouping receiptLineItems.',
+          },
+          receiptLineItems: {
+            type: 'array',
+            description:
+              'Purchased line items for one grocery-store receipt. Empty for every other document type.',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                description: {
+                  type: 'string',
+                  description: 'Short visible product description.',
+                },
+                amount: {
+                  type: 'number',
+                  description:
+                    'Full line total after quantity and item-level discounts, not the unit price.',
+                },
+                category: {
+                  type: 'string',
+                  description: 'One of the provided expense category enum values.',
+                },
+              },
+              required: ['description', 'amount', 'category'],
+            },
           },
         },
         required: [
@@ -174,6 +204,7 @@ const schema = {
           'receiptGroupId',
           'receiptTotal',
           'isReceiptCategorySplit',
+          'receiptLineItems',
         ],
       },
     },
@@ -211,28 +242,19 @@ const getReceiptReconciliationWarning = (language: Language) =>
     ? 'Чек не розбито за категоріями, оскільки сума категорій або реквізити групи не збігаються з фінальною сумою чека. Перевірте запис перед збереженням.'
     : 'The receipt was not split by category because the category totals or group details do not match the final receipt total. Review it before saving.';
 
+const getReceiptSplitReason = (language: Language, receiptTotal: number) =>
+  language === Language.UKR
+    ? `Позиції продуктового чека згруповано за категоріями; сума категорій перевірена та дорівнює фінальній сумі ${receiptTotal.toFixed(2)}.`
+    : `Grocery receipt items were grouped by category; the category sum was verified against the ${receiptTotal.toFixed(2)} final total.`;
+
 const reconcileReceiptCategorySplits = (
   transactions: ScreenshotImportCandidate[],
   language: Language,
 ): ScreenshotImportCandidate[] => {
-  const splitGroups = new Map<string, ScreenshotImportCandidate[]>();
-
-  transactions.forEach((transaction) => {
-    if (!transaction.isReceiptCategorySplit || !transaction.receiptGroupId) {
-      return;
-    }
-
-    const group = splitGroups.get(transaction.receiptGroupId) || [];
-    group.push(transaction);
-    splitGroups.set(transaction.receiptGroupId, group);
-  });
-
-  const processedGroups = new Set<string>();
-
   const createFallback = (group: ScreenshotImportCandidate[]) => {
     const first = group[0];
     const receiptTotal = first.receiptTotal;
-    const categoryTotal = group.reduce(
+    const rowTotal = group.reduce(
       (sum, row) => sum + toMinorUnits(row.amount || 0),
       0,
     );
@@ -241,7 +263,7 @@ const reconcileReceiptCategorySplits = (
       Number.isFinite(receiptTotal) &&
       receiptTotal > 0
         ? receiptTotal
-        : categoryTotal / 100;
+        : rowTotal / 100;
 
     return {
       ...first,
@@ -261,10 +283,118 @@ const reconcileReceiptCategorySplits = (
       receiptGroupId: null,
       receiptTotal: null,
       isReceiptCategorySplit: false,
+      receiptLineItems: [],
     };
   };
 
-  return transactions.flatMap((transaction) => {
+  const itemizedTransactions = transactions.flatMap((transaction, index) => {
+    const lineItems = transaction.receiptLineItems || [];
+
+    if (!lineItems.length) {
+      return [transaction];
+    }
+
+    const receiptTotal = transaction.receiptTotal;
+    const hasValidTotal =
+      receiptTotal !== null &&
+      Number.isFinite(receiptTotal) &&
+      receiptTotal > 0;
+    const hasValidItems = lineItems.every(
+      (item) =>
+        item.description.trim() &&
+        Number.isFinite(item.amount) &&
+        item.amount > 0 &&
+        Object.values(ExpenseCategory).includes(
+          item.category as ExpenseCategory,
+        ),
+    );
+    const lineItemTotal = lineItems.reduce(
+      (sum, item) => sum + toMinorUnits(item.amount),
+      0,
+    );
+
+    if (
+      !hasValidTotal ||
+      !hasValidItems ||
+      lineItemTotal !== toMinorUnits(receiptTotal)
+    ) {
+      return [createFallback([transaction])];
+    }
+
+    const categoryGroups = new Map<
+      string,
+      { amountInMinorUnits: number; descriptions: string[] }
+    >();
+
+    lineItems.forEach((item) => {
+      const group = categoryGroups.get(item.category) || {
+        amountInMinorUnits: 0,
+        descriptions: [],
+      };
+      group.amountInMinorUnits += toMinorUnits(item.amount);
+      group.descriptions.push(item.description);
+      categoryGroups.set(item.category, group);
+    });
+
+    const categoryRows = Array.from(categoryGroups.entries());
+
+    if (
+      !categoryRows.length ||
+      categoryRows.some(([, group]) => group.amountInMinorUnits <= 0)
+    ) {
+      return [createFallback([transaction])];
+    }
+
+    if (categoryRows.length === 1) {
+      const [category, group] = categoryRows[0];
+
+      return [
+        {
+          ...transaction,
+          amount: receiptTotal,
+          category,
+          rawDescription: group.descriptions.join(', '),
+          receiptGroupId: null,
+          receiptTotal: null,
+          isReceiptCategorySplit: false,
+          receiptLineItems: [],
+        },
+      ];
+    }
+
+    const receiptGroupId = `grocery-receipt-${transaction.sourceFileIndex}-${index}`;
+    const splitReason = getReceiptSplitReason(language, receiptTotal);
+
+    return categoryRows.map(([category, group]) => ({
+      ...transaction,
+      amount: group.amountInMinorUnits / 100,
+      category,
+      rawDescription: group.descriptions.join(', '),
+      matchReason: transaction.matchReason
+        ? `${transaction.matchReason} ${splitReason}`
+        : splitReason,
+      receiptGroupId,
+      receiptTotal,
+      isReceiptCategorySplit: true,
+      receiptLineItems: [],
+    }));
+  });
+
+  const splitGroups = new Map<string, ScreenshotImportCandidate[]>();
+
+  itemizedTransactions.forEach((transaction) => {
+    if (!transaction.isReceiptCategorySplit || !transaction.receiptGroupId) {
+      return;
+    }
+
+    const group = splitGroups.get(transaction.receiptGroupId) || [];
+    group.push(transaction);
+    splitGroups.set(transaction.receiptGroupId, group);
+  });
+
+  const processedGroups = new Set<string>();
+
+  return itemizedTransactions.flatMap((transaction) => {
     if (!transaction.isReceiptCategorySplit) {
       return [transaction];
     }
@@ -418,15 +548,17 @@ Rules:
 - Example: "Transferencia Inmediata A Favor De Tdc Marbella -99,99 EUR" should be extracted as a new expense candidate, not ignored, unless the screenshot explicitly shows it is an own-account transfer.
 - For receipts/invoices/payment confirmations, normally return one row per receipt/document using the merchant/store name and the final paid total. The grocery-store receipt exception below is the only case where one receipt may produce multiple rows.
 - If multiple uploaded files or pages are clearly different parts of the same single receipt/document, merge them into one transaction when confidence is high. If unsure, use status="needsReview" and add a warning.
-- Grocery-store receipt category split:
-  - Apply this only to a grocery store or supermarket receipt whose individual purchased items, final paid total, currency, and date are readable with high confidence. Never apply it to bank/card transaction lists, payment confirmations, invoices, restaurant receipts, general retailers, or other receipt types.
-  - Multiple photos may show overlapping or different parts of the same receipt. First determine whether they are one document using merchant, receipt number, date/time, totals, and overlapping line items. Count every purchased item exactly once. If the files might show different receipts, do not merge them.
-  - Group line items by the provided expense categories and return one aggregate transaction row per category, not one row per item. Omit zero-value categories. Use the same merchant text, date, currency, type=Expense, receiptGroupId, and receiptTotal on every row in the group. Use a unique receiptGroupId such as "grocery-receipt-1". Set isReceiptCategorySplit=true.
-  - In each category row, amount is the sum of that category's items after item-level discounts. Briefly list the category's recognizable items in rawDescription. The final paid total must not itself be returned as an extra transaction row.
-  - Reconcile using exact minor currency units: the sum of all category-row amounts must equal receiptTotal exactly. Account for readable discounts, deposits, fees, and rounding once. Never invent a missing amount merely to force the arithmetic to match.
-  - Split only when the arithmetic is verified and every non-zero part of the final total is represented. If the final total is absent, obscured, ambiguous, or does not equal the category sums, return one unsplit groceries transaction for the visible final total with status="needsReview", isReceiptCategorySplit=false, receiptGroupId=null, and receiptTotal=null; explain the issue in warnings.
-  - If all readable items belong to one category, return one normal unsplit receipt row with isReceiptCategorySplit=false, receiptGroupId=null, and receiptTotal=null.
-  - For every row that is not part of a grocery receipt category split, set isReceiptCategorySplit=false, receiptGroupId=null, and receiptTotal=null.
+- Grocery-store receipt itemization (the server performs the category split):
+  - For every grocery store or supermarket receipt with readable line totals and a readable final paid total, you MUST extract receiptLineItems. Do this even when most products are groceries or a previous merchant rule suggests groceries. Category ambiguity alone is not a reason to skip itemization; use category="others" for an uncertain product.
+  - Return exactly one parent transaction row for each unique grocery receipt. Set its amount and receiptTotal to the visible final paid total, type=Expense, category="groceries", isReceiptCategorySplit=false, and receiptGroupId=null. Populate receiptLineItems with every purchased line exactly once. The server will validate the arithmetic and create category aggregate rows.
+  - Each receiptLineItems amount must be the full line total after quantity and item-level discounts, not the unit price. Do not include VAT/tax summary rows, payment-method rows, or the final total as line items. Incorporate a readable discount into the affected line total; never invent an adjustment to force a match.
+  - Classify food, drinks, and drinking water as groceries; tissues, toilet paper, wet toilet paper, kitchen rolls, cleaning products, and household consumables as home; personal-care products as beauty; medicines as healthcare; and pet products as pets. Use other provided expense categories when clearly applicable.
+  - Product names may be abbreviated or in another language. If the line amount is readable, an abbreviated name does not prevent itemization. Put genuinely unclassifiable products in others.
+  - Verify in exact minor currency units that the sum of receiptLineItems.amount equals receiptTotal. If it does not match, return the one unsplit parent transaction with receiptLineItems=[], receiptTotal=null, status="needsReview", and a warning. Never return partially extracted line items.
+  - Arithmetic example: food/drink lines 2.72 + 9.10 + 3.12 + 1.15 + 1.15 become groceries=17.24; household-paper lines 5.20 + 3.70 + 4.65 + 3.70 become home=17.25; their verified receiptTotal is 34.49.
+  - Multiple photos may show overlapping or different parts of the same receipt. First determine whether they are one document using merchant, receipt number, date/time, totals, and overlapping line items. Count every purchased line exactly once. If the files might show different receipts, do not merge them.
+  - Never populate receiptLineItems for bank/card transaction lists, payment confirmations, invoices, restaurant receipts, general retailers, or other receipt types.
+  - For every row without a fully reconciled grocery receipt, set receiptLineItems=[], receiptTotal=null, isReceiptCategorySplit=false, and receiptGroupId=null.
 - Source dates can appear in any locale or format. Always output date as YYYY-MM-DD.
 - If a date group says "Yesterday", resolve it from the reference date.
 - For ambiguous numeric dates such as 06/07/2026, infer locale from screenshot language/bank region when possible; otherwise use status="needsReview" and add a warning.
