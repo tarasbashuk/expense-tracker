@@ -4,19 +4,24 @@ import getHomeDashboard from '@/app/actions/getHomeDashboard';
 import { getMonthToDateRanges } from '@/lib/dateRange';
 import { encrypt, encryptFloat } from '@/lib/crypto';
 import { transaction as makeTransaction } from './fixtures';
+
 const mocks = vi.hoisted(() => ({
   currentUser: vi.fn(),
   findSettings: vi.fn(),
   findTransactions: vi.fn(),
 }));
+
 vi.mock('@clerk/nextjs/server', () => ({ currentUser: mocks.currentUser }));
+
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
+
 vi.mock('@/lib/db', () => ({
   db: {
     settings: { findUnique: mocks.findSettings },
     transaction: { findMany: mocks.findTransactions },
   },
 }));
+
 type DashboardQuery = {
   where: {
     userId: string;
@@ -33,8 +38,10 @@ type DashboardQuery = {
   take?: number;
   orderBy?: unknown;
 };
+
 let records: Transaction[];
 let queries: DashboardQuery[];
+
 const transaction = (
   date: string,
   amount: number,
@@ -46,6 +53,7 @@ const transaction = (
     amountDefaultCurrency: amount,
     ...overrides,
   });
+
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date(2026, 8, 20, 12));
@@ -69,9 +77,11 @@ beforeEach(() => {
     return query.take ? matching.slice(0, query.take) : matching;
   });
 });
+
 afterEach(() => {
   vi.useRealTimers();
 });
+
 test('month-to-date clamps shorter months, leap years and year boundaries', () => {
   for (const [year, month, day, expected] of [
     [2026, 8, 20, '2026-08-20'],
@@ -84,6 +94,7 @@ test('month-to-date clamps shorter months, leap years and year boundaries', () =
     expect(ranges.previous.start).toBe(`${expected.slice(0, 8)}01`);
   }
 });
+
 test('dashboard compares matching inclusive days and excludes future transactions and credit flows', async () => {
   records = [
     transaction('2026-08-01', 20),
@@ -116,6 +127,7 @@ test('dashboard compares matching inclusive days and excludes future transaction
     { createdAt: 'desc' },
   ]);
 });
+
 test('zero previous expenses produce no percentage; decimal amounts stay accurate', async () => {
   records = [transaction('2026-09-01', 0.1), transaction('2026-09-02', 0.2)];
   const result = await getHomeDashboard();
@@ -126,6 +138,7 @@ test('zero previous expenses produce no percentage; decimal amounts stay accurat
     expenseChangePercent: null,
   });
 });
+
 test('empty dashboard returns zero totals and no recent transactions', async () => {
   const result = await getHomeDashboard();
   expect(result.data!.monthlySummary).toEqual({
@@ -136,6 +149,7 @@ test('empty dashboard returns zero totals and no recent transactions', async () 
   });
   expect(result.data!.recentTransactions).toEqual([]);
 });
+
 test('encrypted amounts and recent descriptions are decrypted', async () => {
   mocks.findSettings.mockResolvedValue({ encryptData: true });
   records = [
@@ -150,11 +164,13 @@ test('encrypted amounts and recent descriptions are decrypted', async () => {
   expect(result.data!.recentTransactions[0].text).toBe('Food');
   expect(result.data!.recentTransactions[0].amount).toBe(10);
 });
+
 test('anonymous request cannot query transactions', async () => {
   mocks.currentUser.mockResolvedValue(null);
   expect(await getHomeDashboard()).toEqual({ error: 'User not found' });
   expect(queries.length).toBe(0);
 });
+
 test('database failure returns a dashboard error', async () => {
   mocks.findTransactions.mockRejectedValue(new Error('Database unavailable'));
   expect(await getHomeDashboard()).toEqual({

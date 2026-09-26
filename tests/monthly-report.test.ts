@@ -15,46 +15,55 @@ import { renderMonthlyAnalysis } from '@/lib/monthlyReport/renderAnalysis';
 import { encrypt, encryptFloat } from '@/lib/crypto';
 import { GET } from '@/app/api/cron/monthly-report/route';
 import { transaction } from './fixtures';
+
 const mocks = vi.hoisted(() => ({
   createResponse: vi.fn(),
   findUsers: vi.fn(),
   findTransactions: vi.fn(),
   sendMail: vi.fn(),
 }));
+
 vi.mock('openai', () => ({
   default: class {
     responses = { create: mocks.createResponse };
   },
 }));
+
 vi.mock('@sentry/nextjs', () => ({
   captureMessage: vi.fn(),
   captureException: vi.fn(),
 }));
+
 vi.mock('@clerk/nextjs/server', () => ({
   clerkClient: async () => ({
     users: { getUser: async () => ({ primaryEmailAddressId: 'test-key' }) },
   }),
 }));
+
 vi.mock('@/lib/db', () => ({
   db: {
     user: { findMany: mocks.findUsers },
     transaction: { findMany: mocks.findTransactions },
   },
 }));
+
 vi.mock('@/app/api/cron/yearly-report/processYearlyReport', () => ({
   processYearlyReportForUsers: async () => ({ reportsSent: [] }),
 }));
+
 vi.mock('nodemailer', () => ({
   default: {
     createTransport: () => ({ sendMail: mocks.sendMail }),
   },
 }));
+
 const reportUser = (encryptData = false) => ({
   clerkUserId: 'user-1',
   email: 'test@example.invalid',
   firstName: 'Test',
   settings: { defaultCurrency: 'EUR', language: 'UKR', encryptData },
 });
+
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date('2026-09-01T09:00:00Z'));
@@ -68,9 +77,11 @@ beforeEach(() => {
   mocks.findTransactions.mockResolvedValue([]);
   mocks.sendMail.mockResolvedValue(undefined);
 });
+
 afterEach(() => {
   vi.useRealTimers();
 });
+
 const input = () =>
   buildAnalysisInput(
     [transaction(), transaction({ text: 'Food' })],
@@ -78,10 +89,12 @@ const input = () =>
     'EUR',
     '2026-08',
   );
+
 const valid = () => ({
   insights: ['Коротке спостереження.'],
   duplicates: [{ refs: [1, 2], reason: 'Однакова дата й сума, схожі описи.' }],
 });
+
 test('UTC report boundaries handle January and leap February', () => {
   const january = getReportPeriods(new Date('2026-01-01T09:00:00Z'));
   expect(january.start.toISOString()).toBe('2025-12-01T00:00:00.000Z');
@@ -89,6 +102,7 @@ test('UTC report boundaries handle January and leap February', () => {
   const march = getReportPeriods(new Date('2024-03-01T09:00:00Z'));
   expect((march.end.getTime() - march.start.getTime()) / 86400000).toBe(29);
 });
+
 test('summary excludes credit flows, counts income correctly and avoids float drift', () => {
   const summary = summarizeMonth([
     transaction({ amountDefaultCurrency: 0.1 }),
@@ -110,6 +124,7 @@ test('summary excludes credit flows, counts income correctly and avoids float dr
   expect(summary.categories[0].count).toBe(2);
   expect(summary.categories[0].sharePercent).toBe(100);
 });
+
 test('comparison includes vanished categories, zero baselines and no private IDs', () => {
   const result = buildAnalysisInput(
     [transaction()],
@@ -129,6 +144,7 @@ test('comparison includes vanished categories, zero baselines and no private IDs
   expect(input().previousMonthHasRecords).toBe(false);
   expect(JSON.stringify(result).includes('private-')).toBe(false);
 });
+
 test('encrypted descriptions and both amounts are decoded before analysis', () => {
   const encrypted = transaction({
     text: encrypt('Food', 'test-key'),
@@ -141,6 +157,7 @@ test('encrypted descriptions and both amounts are decoded before analysis', () =
   expect(decoded.amountDefaultCurrency).toBe(9);
   expect(() => decodeReportTransactions([encrypted], true)).toThrow();
 });
+
 test('validation rejects hallucinated, repeated and mixed-type references', () => {
   expect(validateAnalysis(valid(), input())).toEqual(valid());
   for (const refs of [[1, 99], [1, 1], [1], ['1', 2]]) {
@@ -158,6 +175,7 @@ test('validation rejects hallucinated, repeated and mixed-type references', () =
   mixed.transactions[1].type = 'Income';
   expect(() => validateAnalysis(valid(), mixed)).toThrow();
 });
+
 test('email escapes AI and transaction content and uses original currency', () => {
   const data = input();
   data.transactions[0].description = '<img src=x onerror=alert(1)>';
@@ -173,6 +191,7 @@ test('email escapes AI and transaction content and uses original currency', () =
   expect(html.includes('PLN')).toBeTruthy();
   expect(renderMonthlyAnalysis(null, [], 'ENG')).toBe('');
 });
+
 test('AI success uses structured response; failures, refusals and missing key fall back', async () => {
   mocks.createResponse.mockResolvedValue({
     status: 'completed',
@@ -196,6 +215,7 @@ test('AI success uses structured response; failures, refusals and missing key fa
   vi.stubEnv('OPENAI_API_KEY', undefined);
   expect(await getMonthlyAnalysis(input(), 'ENG')).toBeNull();
 });
+
 test('cron sends standard report on AI failure and decrypted AI report on success', async () => {
   const periods = getReportPeriods(new Date());
   const request = () =>
@@ -249,6 +269,7 @@ test('cron sends standard report on AI failure and decrypted AI report on succes
   );
   expect(denied.status).toBe(401);
 });
+
 test('credit setting hides legacy records when disabled and preserves them when enabled', () => {
   const normal = transaction();
   const credit = transaction({ type: 'Income', category: 'creditReceived' });
