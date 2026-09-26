@@ -65,6 +65,7 @@ beforeEach(() => {
         (!NOT ||
           !NOT.OR.some((condition) => t.category === condition.category)),
     );
+
     return query.take ? matching.slice(0, query.take) : matching;
   });
 });
