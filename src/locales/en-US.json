@@ -37,7 +37,7 @@
   "home.thisMonth": "This month",
   "home.openMonthlyTransactions": "Open monthly transactions",
   "home.net": "Net",
-  "home.expenseComparison": "{percent}% {direction} than last month in expenses",
+  "home.expenseComparison": "{percent}% {direction} in expenses than over the same period last month",
   "home.less": "less",
   "home.more": "more",
   "home.recentTransactions": "Recent transactions",

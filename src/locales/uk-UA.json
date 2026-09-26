@@ -37,7 +37,7 @@
   "home.thisMonth": "Цей місяць",
   "home.openMonthlyTransactions": "Відкрити транзакції за місяць",
   "home.net": "Різниця",
-  "home.expenseComparison": "Витрати на {percent}% {direction}, ніж минулого місяця",
+  "home.expenseComparison": "Витрати на {percent}% {direction}, ніж за аналогічний період минулого місяця",
   "home.less": "менші",
   "home.more": "більші",
   "home.recentTransactions": "Останні транзакції",

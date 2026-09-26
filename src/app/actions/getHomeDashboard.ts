@@ -7,7 +7,11 @@ import * as Sentry from '@sentry/nextjs';
 
 import { db } from '@/lib/db';
 import { decrypt, decryptFloat } from '@/lib/crypto';
-import { dateKeyFromLocalDate, getUtcDate } from '@/lib/dateRange';
+import {
+  getExclusiveEndDate,
+  getMonthToDateRanges,
+  getUtcDate,
+} from '@/lib/dateRange';
 import { ExpenseCategory, IncomeCategory } from '@/constants/types';
 
 export type HomeMonthlySummary = {
@@ -52,10 +56,7 @@ export default async function getHomeDashboard(): Promise<{
   const decryptKey = user?.primaryEmailAddressId;
   if (!userId) return { error: 'User not found' };
 
-  const now = new Date();
-  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const { current, previous } = getMonthToDateRanges(new Date());
 
   try {
     const [settings, monthlyTransactions, recentTransactions] =
@@ -68,8 +69,8 @@ export default async function getHomeDashboard(): Promise<{
           where: {
             userId,
             date: {
-              gte: getUtcDate(dateKeyFromLocalDate(previousMonthStart)),
-              lt: getUtcDate(dateKeyFromLocalDate(nextMonthStart)),
+              gte: getUtcDate(previous.start),
+              lt: getExclusiveEndDate(current.end),
             },
           },
         }),
@@ -104,14 +105,13 @@ export default async function getHomeDashboard(): Promise<{
 
     const readableMonthlyTransactions =
       monthlyTransactions.map(decryptTransaction);
-    const currentMonthStartUtc = getUtcDate(
-      dateKeyFromLocalDate(currentMonthStart),
-    );
+    const currentMonthStartUtc = getUtcDate(current.start);
+    const previousPeriodEndUtc = getExclusiveEndDate(previous.end);
     const currentTransactions = readableMonthlyTransactions.filter(
       ({ date }) => date >= currentMonthStartUtc,
     );
     const previousTransactions = readableMonthlyTransactions.filter(
-      ({ date }) => date < currentMonthStartUtc,
+      ({ date }) => date < previousPeriodEndUtc,
     );
     const currentTotals = getTotals(currentTransactions);
     const previousTotals = getTotals(previousTransactions);

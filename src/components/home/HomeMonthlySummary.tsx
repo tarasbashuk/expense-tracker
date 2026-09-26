@@ -113,7 +113,7 @@ export default function HomeMonthlySummary({ summary }: { summary: Summary }) {
                 {
                   id: 'home.expenseComparison',
                   defaultMessage:
-                    '{percent}% {direction} than last month in expenses',
+                    '{percent}% {direction} in expenses than over the same period last month',
                 },
                 {
                   percent: Math.abs(change),

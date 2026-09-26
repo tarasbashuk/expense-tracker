@@ -18,6 +18,8 @@ import AdditionalBalanceInfo from './AdditionalBalanceInfo';
 import getIncomeExpense from '@/app/actions/getIncomeExpense';
 import { useIntl } from 'react-intl';
 import {
+  INCOME_CATEGORIES,
+  EXPENSE_CATEGORIES,
   INCOME_CATEGORIES_LIST,
   EXPENSE_CATEGORIES_LIST,
   CURRENCY_SYMBOL_MAP,
@@ -39,6 +41,11 @@ import {
   PeriodMode,
   shiftPeriod,
 } from '@/lib/dateRange';
+
+const allCategories = { ...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES };
+const allCategoriesList = Object.entries(allCategories).map(
+  ([value, label]) => ({ value, label }),
+);
 
 const today = new Date();
 const currentDate = dateKeyFromLocalDate(today);
@@ -113,7 +120,7 @@ const TransactionList = () => {
   // Get categories based on selected transaction type
   const getAvailableCategories = () => {
     if (selectedTransactionType === 'all') {
-      return [...INCOME_CATEGORIES_LIST, ...EXPENSE_CATEGORIES_LIST];
+      return allCategoriesList;
     } else if (selectedTransactionType === TransactionType.Income) {
       return INCOME_CATEGORIES_LIST;
     } else {

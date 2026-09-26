@@ -103,3 +103,23 @@ export const getExclusiveEndDate = (inclusiveEndDate: string) => {
 };
 
 export const getUtcDate = (dateKey: string) => utcDateFromKey(dateKey);
+
+// Compare inclusive calendar days, clamping to the shorter previous month.
+export const getMonthToDateRanges = (now: Date) => {
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const previousMonthLastDay = new Date(year, month, 0).getDate();
+
+  return {
+    current: {
+      start: dateKeyFromLocalDate(new Date(year, month, 1)),
+      end: dateKeyFromLocalDate(now),
+    },
+    previous: {
+      start: dateKeyFromLocalDate(new Date(year, month - 1, 1)),
+      end: dateKeyFromLocalDate(
+        new Date(year, month - 1, Math.min(now.getDate(), previousMonthLastDay)),
+      ),
+    },
+  };
+};
