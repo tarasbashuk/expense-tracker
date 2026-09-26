@@ -20,6 +20,7 @@ export function renderMonthlyAnalysis(
   language: string,
 ) {
   if (!analysis) return '';
+  
   const uk = language === 'UKR';
   const byRef = new Map(transactions.map((t) => [t.ref, t]));
   const groups = analysis.duplicates

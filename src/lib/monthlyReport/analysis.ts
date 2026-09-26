@@ -38,17 +38,21 @@ const schema = {
   required: ['insights', 'duplicates'],
 };
 
+const fail = () => {
+  throw new Error('Invalid monthly analysis response');
+};
+
+const validText = (text: unknown, limit: number): text is string =>
+typeof text === 'string' && text.trim().length > 0 && text.length <= limit;
+
 export const validateAnalysis = (
   value: unknown,
   input: AnalysisInput,
 ): MonthlyAnalysis => {
-  const fail = () => {
-    throw new Error('Invalid monthly analysis response');
-  };
   if (!value || typeof value !== 'object') return fail();
+
   const result = value as MonthlyAnalysis;
-  const validText = (text: unknown, limit: number): text is string =>
-    typeof text === 'string' && text.trim().length > 0 && text.length <= limit;
+
   if (
     !Array.isArray(result.insights) ||
     result.insights.length > 5 ||
@@ -57,8 +61,10 @@ export const validateAnalysis = (
     result.duplicates.length > 10
   )
     return fail();
+
   const transactions = new Map(input.transactions.map((t) => [t.ref, t]));
   const seen = new Set<string>();
+
   for (const group of result.duplicates) {
     if (
       !group ||
@@ -70,9 +76,12 @@ export const validateAnalysis = (
       !group.refs.every((ref) => Number.isInteger(ref) && transactions.has(ref))
     )
       return fail();
+
     const types = new Set(group.refs.map((ref) => transactions.get(ref)!.type));
     const key = [...group.refs].sort((a, b) => a - b).join(',');
+
     if (types.size !== 1 || seen.has(key)) return fail();
+
     seen.add(key);
   }
 
