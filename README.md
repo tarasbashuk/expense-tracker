@@ -61,3 +61,8 @@ GitHub Actions runs tests and type checking on pushes and pull requests.
 that command, so a failed test prevents deployment through this build path.
 GitHub branch protection is a separate repository setting; this workflow alone
 does not make its status check mandatory for merging.
+
+Dependency install scripts are explicitly approved for reviewed versions in
+`package.json` (`allowScripts`). After updating a dependency with an install
+script, review it with `npm install-scripts ls` and approve the specific package
+with `npm install-scripts approve <package>`. Keep approvals version-pinned.

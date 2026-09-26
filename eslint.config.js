@@ -35,6 +35,7 @@ const eslintConfig = [
       'build/**',
       'dist/**',
       '*.config.js',
+      '!eslint.config.js',
       '*.config.mjs',
       '*.config.ts',
       'prisma/**',
