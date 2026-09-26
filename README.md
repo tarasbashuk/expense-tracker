@@ -37,9 +37,11 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/deploym
 
 ## Tests
 
-Use Node 20 (see `.nvmrc`), then run:
+Use Node 24 (see `.nvmrc`), then run:
 
 ```bash
+nvm install
+nvm use
 npm ci
 npm test
 npm run typecheck
