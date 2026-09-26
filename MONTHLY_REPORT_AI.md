@@ -37,3 +37,15 @@ npx eslint src/lib/monthlyReport src/lib/monthlyReportEmail.ts src/app/api/cron/
 ```
 
 Tests replace OpenAI, Clerk, database and email delivery with fixtures. They cover calendar boundaries, credit exclusions, decimal totals, comparison gaps, decryption, duplicate reference validation, HTML escaping, and successful/failing AI paths through the cron. They do not send email or call a live model.
+
+
+## Recipients
+
+Each monthly report is sent separately to every unique verified email currently
+attached to the user's Clerk account. The AI analysis is generated once per
+account and reused for all recipients. Unverified or removed addresses are not
+used, and there is no fallback to the potentially stale database email if Clerk
+is unavailable. A failed delivery to one address does not prevent delivery to
+the others. `reportsSent` counts successful email submissions to the mail
+transport, not accounts or confirmed inbox delivery. The yearly report's
+recipient behavior is unchanged.

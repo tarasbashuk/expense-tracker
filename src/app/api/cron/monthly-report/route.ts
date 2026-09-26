@@ -98,9 +98,26 @@ export async function GET(request: NextRequest) {
         }
 
         const encrypted = Boolean(user.settings?.encryptData);
-        const clerkUser = encrypted
-          ? await (await clerkClient()).users.getUser(user.clerkUserId)
-          : null;
+        const clerkUser = await (
+          await clerkClient()
+        ).users.getUser(user.clerkUserId);
+        const recipients = Array.from(
+          new Set(
+            clerkUser.emailAddresses
+              .filter((email) => email.verification?.status === 'verified')
+              .map((email) => email.emailAddress.trim().toLowerCase())
+              .filter(Boolean),
+          ),
+        );
+
+        if (recipients.length === 0) {
+          Sentry.captureMessage(
+            'Monthly report skipped: no verified account emails',
+            'warning',
+          );
+          continue;
+        }
+
         const readableTransactions = decodeReportTransactions(
           reportTransactions,
           encrypted,
@@ -130,12 +147,11 @@ export async function GET(request: NextRequest) {
             ? await getMonthlyAnalysis(analysisInput, language)
             : null;
 
-        // Send monthly report email
-        await sendMonthlyReportEmail({
+        // Generate the analysis once, then send a separate copy to each recipient.
+        const report = {
           analysis,
           analysisTransactions: analysisInput.transactions,
           language,
-          userEmail: user.email,
           userName: user.firstName || user.email,
           month: lastMonth.toLocaleDateString('en-US', {
             month: 'long',
@@ -151,10 +167,22 @@ export async function GET(request: NextRequest) {
           expenseCategories: EXPENSE_CATEGORIES,
           incomeCategories: INCOME_CATEGORIES,
           defaultCurrency: user.settings?.defaultCurrency,
-        });
+        };
+        const deliveries = await Promise.all(
+          recipients.map(async (userEmail) => {
+            const sent = await sendMonthlyReportEmail({ ...report, userEmail });
 
-        reportsSent.push(user.email);
-        console.log(`Monthly report sent to ${user.email}`);
+            return sent ? userEmail : null;
+          }),
+        );
+        const successfulRecipients = deliveries.filter(
+          (email) => email !== null,
+        );
+
+        reportsSent.push(...successfulRecipients);
+        console.log(
+          `Monthly report sent to ${successfulRecipients.length} account emails`,
+        );
       } catch (error) {
         console.error(
           `Failed to process monthly report for ${user.email}:`,

@@ -39,11 +39,13 @@ interface MonthlyReportData {
   defaultCurrency?: Currency;
 }
 
-export async function sendMonthlyReportEmail(data: MonthlyReportData) {
+export async function sendMonthlyReportEmail(
+  data: MonthlyReportData,
+): Promise<boolean> {
   if (!process.env.APP_EMAIL || !process.env.APP_EMAIL_PASS) {
     console.warn('Email configuration missing, skipping monthly report');
 
-    return;
+    return false;
   }
 
   const transporter = nodemailer.createTransport({
@@ -312,7 +314,11 @@ export async function sendMonthlyReportEmail(data: MonthlyReportData) {
     });
 
     console.log(`Monthly report email sent to ${data.userEmail}`);
+
+    return true;
   } catch (error) {
     console.error(`Failed to send monthly report to ${data.userEmail}:`, error);
+
+    return false;
   }
 }

@@ -18,6 +18,7 @@ import { transaction } from './fixtures';
 
 const mocks = vi.hoisted(() => ({
   createResponse: vi.fn(),
+  getClerkUser: vi.fn(),
   findUsers: vi.fn(),
   findTransactions: vi.fn(),
   sendMail: vi.fn(),
@@ -36,7 +37,7 @@ vi.mock('@sentry/nextjs', () => ({
 
 vi.mock('@clerk/nextjs/server', () => ({
   clerkClient: async () => ({
-    users: { getUser: async () => ({ primaryEmailAddressId: 'test-key' }) },
+    users: { getUser: mocks.getClerkUser },
   }),
 }));
 
@@ -64,6 +65,11 @@ const reportUser = (encryptData = false) => ({
   settings: { defaultCurrency: 'EUR', language: 'UKR', encryptData },
 });
 
+const verifiedEmail = (emailAddress: string) => ({
+  emailAddress,
+  verification: { status: 'verified' },
+});
+
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date('2026-09-01T09:00:00Z'));
@@ -72,6 +78,10 @@ beforeEach(() => {
   vi.stubEnv('CRON_SECRET', 'test-secret');
   vi.stubEnv('APP_EMAIL', 'test@example.invalid');
   vi.stubEnv('APP_EMAIL_PASS', 'fake-test-password');
+  mocks.getClerkUser.mockResolvedValue({
+    primaryEmailAddressId: 'test-key',
+    emailAddresses: [verifiedEmail('test@example.invalid')],
+  });
   mocks.createResponse.mockReset();
   mocks.findUsers.mockResolvedValue([reportUser()]);
   mocks.findTransactions.mockResolvedValue([]);
@@ -323,4 +333,87 @@ test('cron fits the Hobby duration limit and skips AI when setup consumes its bu
   expect(mocks.createResponse).not.toHaveBeenCalled();
   expect(mocks.sendMail).toHaveBeenCalledTimes(1);
   expect(mocks.sendMail.mock.calls[0][0].html).not.toContain('Місяць очима AI');
+});
+
+const monthlyRequest = () =>
+  new NextRequest('http://localhost/api/cron/monthly-report', {
+    headers: { authorization: 'Bearer test-secret' },
+  });
+
+test('monthly report reaches every unique verified Clerk email with one AI analysis', async () => {
+  mocks.findTransactions.mockResolvedValue([transaction()]);
+  mocks.getClerkUser.mockResolvedValue({
+    primaryEmailAddressId: 'test-key',
+    emailAddresses: [
+      verifiedEmail('test@example.invalid'),
+      verifiedEmail('wife@example.invalid'),
+      verifiedEmail('WIFE@example.invalid'),
+      {
+        emailAddress: 'pending@example.invalid',
+        verification: { status: 'unverified' },
+      },
+    ],
+  });
+  mocks.createResponse.mockResolvedValue({
+    status: 'completed',
+    output_text: JSON.stringify({
+      insights: ['A shared report.'],
+      duplicates: [],
+    }),
+  });
+
+  const response = await GET(monthlyRequest());
+  const result = await response.json();
+  const messages = mocks.sendMail.mock.calls.map(([mail]) => mail);
+
+  expect(mocks.getClerkUser).toHaveBeenCalledWith('user-1');
+  expect(mocks.createResponse).toHaveBeenCalledTimes(1);
+  expect(messages.map((mail) => mail.to)).toEqual([
+    'test@example.invalid',
+    'wife@example.invalid',
+  ]);
+  expect(messages[0].html).toBe(messages[1].html);
+  expect(result.reportsSent).toBe(2);
+});
+
+test('a failed recipient does not prevent delivery to the other account email', async () => {
+  mocks.findTransactions.mockResolvedValue([transaction()]);
+  mocks.getClerkUser.mockResolvedValue({
+    primaryEmailAddressId: 'test-key',
+    emailAddresses: [
+      verifiedEmail('test@example.invalid'),
+      verifiedEmail('wife@example.invalid'),
+    ],
+  });
+  mocks.sendMail.mockRejectedValueOnce(new Error('SMTP recipient rejected'));
+
+  const response = await GET(monthlyRequest());
+
+  expect(mocks.sendMail).toHaveBeenCalledTimes(2);
+  expect((await response.json()).reportsSent).toBe(1);
+});
+
+test('removed or unverified emails do not fall back to the stale database address', async () => {
+  mocks.findTransactions.mockResolvedValue([transaction()]);
+  mocks.getClerkUser.mockResolvedValue({
+    emailAddresses: [
+      { emailAddress: 'test@example.invalid', verification: null },
+    ],
+  });
+
+  const response = await GET(monthlyRequest());
+
+  expect(mocks.sendMail).not.toHaveBeenCalled();
+  expect(mocks.createResponse).not.toHaveBeenCalled();
+  expect((await response.json()).reportsSent).toBe(0);
+});
+
+test('Clerk lookup failure skips delivery rather than guessing recipients', async () => {
+  mocks.findTransactions.mockResolvedValue([transaction()]);
+  mocks.getClerkUser.mockRejectedValue(new Error('Clerk unavailable'));
+
+  const response = await GET(monthlyRequest());
+
+  expect(mocks.sendMail).not.toHaveBeenCalled();
+  expect((await response.json()).reportsSent).toBe(0);
 });
