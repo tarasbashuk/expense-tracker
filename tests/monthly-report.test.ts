@@ -377,6 +377,9 @@ test('monthly report reaches every unique verified Clerk email with one AI analy
 });
 
 test('a failed recipient does not prevent delivery to the other account email', async () => {
+  const error = new Error('SMTP recipient rejected');
+  const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
   mocks.findTransactions.mockResolvedValue([transaction()]);
   mocks.getClerkUser.mockResolvedValue({
     primaryEmailAddressId: 'test-key',
@@ -385,12 +388,16 @@ test('a failed recipient does not prevent delivery to the other account email', 
       verifiedEmail('wife@example.invalid'),
     ],
   });
-  mocks.sendMail.mockRejectedValueOnce(new Error('SMTP recipient rejected'));
+  mocks.sendMail.mockRejectedValueOnce(error);
 
   const response = await GET(monthlyRequest());
 
   expect(mocks.sendMail).toHaveBeenCalledTimes(2);
   expect((await response.json()).reportsSent).toBe(1);
+  expect(consoleError).toHaveBeenCalledExactlyOnceWith(
+    'Failed to send monthly report to test@example.invalid:',
+    error,
+  );
 });
 
 test('removed or unverified emails do not fall back to the stale database address', async () => {
@@ -409,11 +416,18 @@ test('removed or unverified emails do not fall back to the stale database addres
 });
 
 test('Clerk lookup failure skips delivery rather than guessing recipients', async () => {
+  const error = new Error('Clerk unavailable');
+  const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
   mocks.findTransactions.mockResolvedValue([transaction()]);
-  mocks.getClerkUser.mockRejectedValue(new Error('Clerk unavailable'));
+  mocks.getClerkUser.mockRejectedValue(error);
 
   const response = await GET(monthlyRequest());
 
   expect(mocks.sendMail).not.toHaveBeenCalled();
   expect((await response.json()).reportsSent).toBe(0);
+  expect(consoleError).toHaveBeenCalledExactlyOnceWith(
+    'Failed to process monthly report for test@example.invalid:',
+    error,
+  );
 });
