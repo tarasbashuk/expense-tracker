@@ -1,8 +1,18 @@
 export const dynamic = 'force-dynamic';
+export const maxDuration = 300;
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { clerkClient } from '@clerk/nextjs/server';
+import { Currency } from '@prisma/client';
+import {
+  buildAnalysisInput,
+  decodeReportTransactions,
+  getReportPeriods,
+  getReportTransactions,
+  summarizeMonth,
+} from '@/lib/monthlyReport/data';
+import { getMonthlyAnalysis } from '@/lib/monthlyReport/analysis';
 import * as Sentry from '@sentry/nextjs';
 import { sendMonthlyReportEmail } from '@/lib/monthlyReportEmail';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/constants/constants';
@@ -14,21 +24,23 @@ export async function GET(request: NextRequest) {
 
     // Verify secret key for security
     const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (
+      !process.env.CRON_SECRET ||
+      authHeader !== `Bearer ${process.env.CRON_SECRET}`
+    ) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const today = new Date();
-    const lastMonth = subMonths(today, 1);
-    const lastMonthStart = startOfMonth(lastMonth);
-    const lastMonthEnd = endOfMonth(lastMonth);
+    const periods = getReportPeriods(today);
+    const lastMonth = periods.start;
 
     // Check if we should also send yearly report (if it's January)
     // Since cron runs on the 1st of each month, we only need to check the month
     // Allow forcing yearly report via query parameter for testing
     const { searchParams } = new URL(request.url);
     const forceYearly = searchParams.get('forceYearly') === 'true';
-    const isJanuary = today.getMonth() === 0; // 0 = January
+    const isJanuary = today.getUTCMonth() === 0; // 0 = January
     const shouldSendYearlyReport = forceYearly || isJanuary;
 
     // Get all users with their settings
@@ -41,22 +53,27 @@ export async function GET(request: NextRequest) {
         settings: {
           select: {
             defaultCurrency: true,
+            encryptData: true,
+            creditCardTrackingEnabled: true,
+            language: true,
           },
         },
       },
     });
 
     const reportsSent = [];
+    // Leave time for email delivery and the January yearly report.
+    const analysisDeadline = Date.now() + 200_000;
 
     for (const user of users) {
       try {
-        // Get user's transactions for last month
-        const transactions = await db.transaction.findMany({
+        // Load the report month and the preceding month for comparison.
+        const storedTransactions = await db.transaction.findMany({
           where: {
             userId: user.clerkUserId,
             date: {
-              gte: lastMonthStart,
-              lte: lastMonthEnd,
+              gte: periods.previousStart,
+              lt: periods.end,
             },
           },
           orderBy: {
@@ -64,64 +81,61 @@ export async function GET(request: NextRequest) {
           },
         });
 
-        if (transactions.length === 0) {
+        const reportTransactions = getReportTransactions(
+          storedTransactions,
+          user.settings?.creditCardTrackingEnabled ?? false,
+        );
+        if (!reportTransactions.some((t) => t.date >= periods.start)) {
           console.log(
             `No transactions for user ${user.email}, skipping report`,
           );
           continue;
         }
 
-        // Calculate statistics (excluding CCRepayment and CreditReceived)
-        const expenses = transactions.filter(
-          (t) => t.type === 'Expense' && t.category !== 'CCRepayment',
+        const encrypted = Boolean(user.settings?.encryptData);
+        const clerkUser = encrypted
+          ? await (await clerkClient()).users.getUser(user.clerkUserId)
+          : null;
+        const readableTransactions = decodeReportTransactions(
+          reportTransactions,
+          encrypted,
+          clerkUser?.primaryEmailAddressId,
         );
-        const incomes = transactions.filter(
-          (t) => t.type === 'Income' && t.category !== 'CreditReceived',
+        const transactions = readableTransactions.filter(
+          (t) => t.date >= periods.start,
         );
-
-        const totalExpenses = expenses.reduce(
-          (sum, t) => sum + t.amountDefaultCurrency,
-          0,
+        const previousTransactions = readableTransactions.filter(
+          (t) => t.date < periods.start,
         );
-        const totalIncomes = incomes.reduce(
-          (sum, t) => sum + t.amountDefaultCurrency,
-          0,
-        );
-
-        // Calculate total donations
-        const donations = expenses.filter((t) => t.category === 'donations');
-        const totalDonations = donations.reduce(
-          (sum, t) => sum + t.amountDefaultCurrency,
-          0,
-        );
-
-        // Top 5 expenses by amount (excluding CCRepayment)
-        const topExpenses = expenses
-          .sort((a, b) => b.amountDefaultCurrency - a.amountDefaultCurrency)
+        const summary = summarizeMonth(transactions);
+        const { totalExpenses, totalIncomes, totalDonations, topExpenses } =
+          summary;
+        const topCategories = [...summary.categories]
+          .sort((a, b) => b.count - a.count)
           .slice(0, 5);
-
-        // Top 5 categories by count
-        const categoryCounts = expenses.reduce(
-          (acc, t) => {
-            acc[t.category] = (acc[t.category] || 0) + 1;
-
-            return acc;
-          },
-          {} as Record<string, number>,
+        const analysisInput = buildAnalysisInput(
+          transactions,
+          previousTransactions,
+          user.settings?.defaultCurrency || Currency.EUR,
+          lastMonth.toISOString().slice(0, 7),
         );
-
-        const topCategories = Object.entries(categoryCounts)
-          .sort(([, a], [, b]) => b - a)
-          .slice(0, 5)
-          .map(([category, count]) => ({ category, count }));
+        const language = user.settings?.language || 'ENG';
+        const analysis =
+          Date.now() + 35_000 < analysisDeadline
+            ? await getMonthlyAnalysis(analysisInput, language)
+            : null;
 
         // Send monthly report email
         await sendMonthlyReportEmail({
+          analysis,
+          analysisTransactions: analysisInput.transactions,
+          language,
           userEmail: user.email,
           userName: user.firstName || user.email,
           month: lastMonth.toLocaleDateString('en-US', {
             month: 'long',
             year: 'numeric',
+            timeZone: 'UTC',
           }),
           totalTransactions: transactions.length,
           totalExpenses,
@@ -177,6 +191,7 @@ export async function GET(request: NextRequest) {
       month: lastMonth.toLocaleDateString('en-US', {
         month: 'long',
         year: 'numeric',
+        timeZone: 'UTC',
       }),
       yearlyReportSent: shouldSendYearlyReport,
     });
