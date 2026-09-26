@@ -34,3 +34,28 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+
+## Tests
+
+Use Node 20 (see `.nvmrc`), then run:
+
+```bash
+npm ci
+npm test
+npm run typecheck
+```
+
+Tests use Vitest with TypeScript, `expect` assertions and `vi.mock` for database,
+Clerk, OpenAI and email services. No credentials or live services are required.
+Use `npm run test:watch` during development. Type checking runs separately.
+
+The suite covers dashboard calculations and monthly report processing. It does
+not render React components or exercise browser interactions. Add test files as
+`tests/**/*.test.ts`; Vitest discovers them automatically. Shared transaction
+fixtures live in `tests/fixtures.ts`.
+
+GitHub Actions runs tests and type checking on pushes and pull requests.
+`npm run build` runs tests before `next build`, and `vercel.json` explicitly uses
+that command, so a failed test prevents deployment through this build path.
+GitHub branch protection is a separate repository setting; this workflow alone
+does not make its status check mandatory for merging.

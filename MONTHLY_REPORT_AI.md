@@ -31,7 +31,7 @@ If encrypted records cannot be decrypted, processing that user's report fails in
 ## Verification
 
 ```bash
-node --test scripts/test-monthly-report.cjs
+npm test -- tests/monthly-report.test.ts
 npx tsc --noEmit
 npx eslint src/lib/monthlyReport src/lib/monthlyReportEmail.ts src/app/api/cron/monthly-report/route.ts
 ```
