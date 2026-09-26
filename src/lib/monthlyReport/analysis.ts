@@ -2,6 +2,8 @@ import OpenAI from 'openai';
 import * as Sentry from '@sentry/nextjs';
 import type { AnalysisInput } from './data';
 
+export const MONTHLY_ANALYSIS_TIMEOUT_MS = 35_000;
+
 export interface MonthlyAnalysis {
   insights: string[];
   duplicates: { refs: number[]; reason: string }[];
@@ -43,7 +45,7 @@ const fail = () => {
 };
 
 const validText = (text: unknown, limit: number): text is string =>
-typeof text === 'string' && text.trim().length > 0 && text.length <= limit;
+  typeof text === 'string' && text.trim().length > 0 && text.length <= limit;
 
 export const validateAnalysis = (
   value: unknown,
@@ -102,7 +104,10 @@ export async function getMonthlyAnalysis(
     // Skip oversized inputs rather than silently analyzing only part of a month.
     if (payload.length > 300_000)
       throw new Error('Monthly analysis input too large');
-    const client = new OpenAI({ timeout: 35_000, maxRetries: 0 });
+    const client = new OpenAI({
+      timeout: MONTHLY_ANALYSIS_TIMEOUT_MS,
+      maxRetries: 0,
+    });
     const response = await client.responses.create({
       model: process.env.OPENAI_MONTHLY_REPORT_MODEL || 'gpt-5.4-mini',
       store: false,

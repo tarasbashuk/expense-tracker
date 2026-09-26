@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -12,13 +12,20 @@ import {
   getReportTransactions,
   summarizeMonth,
 } from '@/lib/monthlyReport/data';
-import { getMonthlyAnalysis } from '@/lib/monthlyReport/analysis';
+import {
+  getMonthlyAnalysis,
+  MONTHLY_ANALYSIS_TIMEOUT_MS,
+} from '@/lib/monthlyReport/analysis';
 import * as Sentry from '@sentry/nextjs';
 import { sendMonthlyReportEmail } from '@/lib/monthlyReportEmail';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/constants/constants';
 import { processYearlyReportForUsers } from '../yearly-report/processYearlyReport';
 
 export async function GET(request: NextRequest) {
+  // Budget from invocation start, including database and Clerk requests.
+  // Reserve the final 15 seconds for email delivery and other report work.
+  const analysisDeadline = Date.now() + (maxDuration * 1000 - 15_000);
+
   try {
     Sentry.captureMessage('Monthly report cron job started', 'info');
 
@@ -62,8 +69,6 @@ export async function GET(request: NextRequest) {
     });
 
     const reportsSent = [];
-    // Leave time for email delivery and the January yearly report.
-    const analysisDeadline = Date.now() + 200_000;
 
     for (const user of users) {
       try {
@@ -121,7 +126,7 @@ export async function GET(request: NextRequest) {
         );
         const language = user.settings?.language || 'ENG';
         const analysis =
-          Date.now() + 35_000 < analysisDeadline
+          Date.now() + MONTHLY_ANALYSIS_TIMEOUT_MS < analysisDeadline
             ? await getMonthlyAnalysis(analysisInput, language)
             : null;
 

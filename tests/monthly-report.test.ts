@@ -13,7 +13,7 @@ import {
 } from '@/lib/monthlyReport/analysis';
 import { renderMonthlyAnalysis } from '@/lib/monthlyReport/renderAnalysis';
 import { encrypt, encryptFloat } from '@/lib/crypto';
-import { GET } from '@/app/api/cron/monthly-report/route';
+import { GET, maxDuration } from '@/app/api/cron/monthly-report/route';
 import { transaction } from './fixtures';
 
 const mocks = vi.hoisted(() => ({
@@ -299,4 +299,28 @@ test('credit setting hides legacy records when disabled and preserves them when 
   expect(summarizeMonth(disabled).totalIncomes).toBe(
     summarizeMonth(all).totalIncomes,
   );
+});
+
+test('cron fits the Hobby duration limit and skips AI when setup consumes its budget', async () => {
+  expect(maxDuration).toBeLessThanOrEqual(60);
+  const periods = getReportPeriods(new Date());
+  mocks.findUsers.mockImplementationOnce(async () => {
+    vi.setSystemTime(Date.now() + 20_000);
+
+    return [reportUser()];
+  });
+  mocks.findTransactions.mockResolvedValue([
+    transaction({ date: periods.start }),
+  ]);
+
+  const response = await GET(
+    new NextRequest('http://localhost/api/cron/monthly-report', {
+      headers: { authorization: 'Bearer test-secret' },
+    }),
+  );
+
+  expect(response.status).toBe(200);
+  expect(mocks.createResponse).not.toHaveBeenCalled();
+  expect(mocks.sendMail).toHaveBeenCalledTimes(1);
+  expect(mocks.sendMail.mock.calls[0][0].html).not.toContain('Місяць очима AI');
 });
