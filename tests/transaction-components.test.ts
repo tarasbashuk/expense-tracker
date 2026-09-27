@@ -4,6 +4,7 @@ import { createElement } from 'react';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { IntlProvider } from 'react-intl';
+import { messages } from '@/locales';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { Transaction } from '@prisma/client';
 import TransactionItem from '@/components/TransactionItem';
@@ -85,7 +86,17 @@ const transaction: Transaction = {
 
 const renderWithIntl = (element: ReturnType<typeof createElement>) =>
   render(
-    createElement(IntlProvider, { locale: 'en-US', messages: {} }, element),
+    createElement(
+      IntlProvider,
+      {
+        locale: 'en-US',
+        messages: messages['en-US'],
+        onError: (error) => {
+          throw error;
+        },
+      },
+      element,
+    ),
   );
 
 const renderRecent = () =>
