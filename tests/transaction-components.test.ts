@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 
-import { createElement } from 'react';
+import { createElement, type ComponentProps } from 'react';
+import type DatePeriodFilter from '@/components/shared/DatePeriodFilter';
+import { dateKeyFromLocalDate, getPeriodRange } from '@/lib/dateRange';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { IntlProvider } from 'react-intl';
@@ -52,7 +54,43 @@ vi.mock('@/app/actions/getIncomeExpense', () => ({
 }));
 
 vi.mock('@/components/shared/DatePeriodFilter', () => ({
-  default: () => null,
+  default: ({
+    mode,
+    range,
+    onModeChange,
+    onPrevious,
+    onCustomRangeChange,
+  }: ComponentProps<typeof DatePeriodFilter>) =>
+    createElement(
+      'div',
+      null,
+      createElement(
+        'output',
+        { 'data-testid': 'selected-period' },
+        `${mode}:${range.start}:${range.end}`,
+      ),
+      createElement(
+        'button',
+        { onClick: () => onModeChange('quarter') },
+        'Quarter period',
+      ),
+      createElement(
+        'button',
+        { onClick: () => onModeChange('year') },
+        'Year period',
+      ),
+      createElement('button', { onClick: onPrevious }, 'Previous period'),
+      createElement(
+        'button',
+        {
+          onClick: () => {
+            onModeChange('custom');
+            onCustomRangeChange({ start: '2025-02-03', end: '2025-02-15' });
+          },
+        },
+        'Custom period',
+      ),
+    ),
 }));
 
 vi.mock('@/components/AdditionalBalanceInfo', () => ({ default: () => null }));
@@ -365,3 +403,54 @@ test('transaction actions stay hidden until the menu opens and Escape dismisses 
   await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
   expect(mocks.deleteTransaction).not.toHaveBeenCalled();
 });
+
+test.each([
+  'Quarter period',
+  'Year period',
+  'Previous period',
+  'Custom period',
+])(
+  '%s counts as one filter and resets to the current month',
+  async (period) => {
+    const user = userEvent.setup();
+    await renderHistory();
+    const today = dateKeyFromLocalDate(new Date());
+    const expected = getPeriodRange('month', today, {
+      start: today,
+      end: today,
+    });
+
+    await user.click(screen.getByRole('button', { name: period }));
+
+    expect(screen.getByRole('button', { name: 'Filters (1)' })).toBeTruthy();
+
+    await user.type(
+      screen.getByRole('textbox', { name: 'Search descriptions' }),
+      'Coffee',
+    );
+
+    expect(screen.getByRole('button', { name: 'Filters (2)' })).toBeTruthy();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Reset search and filters' }),
+    );
+
+    expect(screen.getByRole('button', { name: 'Filters (0)' })).toBeTruthy();
+    expect(screen.getByTestId('selected-period').textContent).toBe(
+      `month:${expected.start}:${expected.end}`,
+    );
+    expect(
+      screen.getByRole('textbox', { name: 'Search descriptions' }),
+    ).toHaveProperty('value', '');
+    expect(
+      screen.queryByRole('button', { name: 'Reset search and filters' }),
+    ).toBeNull();
+    await waitFor(() =>
+      expect(mocks.getTransactions).toHaveBeenLastCalledWith(
+        expected.start,
+        expected.end,
+        true,
+      ),
+    );
+  },
+);
