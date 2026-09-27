@@ -1,13 +1,6 @@
 'use client';
-import { FC, useMemo, useState, MouseEvent } from 'react';
-import {
-  Box,
-  IconButton,
-  Menu,
-  MenuItem,
-  Typography,
-  Tooltip,
-} from '@mui/material';
+import { FC, useMemo } from 'react';
+import { Box, Typography, Tooltip } from '@mui/material';
 import {
   DataGrid,
   GridColDef,
@@ -17,7 +10,6 @@ import {
   useGridApiContext,
 } from '@mui/x-data-grid';
 import { Transaction, TransactionType } from '@prisma/client';
-import MenuIcon from '@mui/icons-material/Menu';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import { useIntl } from 'react-intl';
 
@@ -27,7 +19,7 @@ import { getTransactionSign, formatDate } from '@/lib/utils';
 import { useSettings } from '@/context/SettingsContexts';
 import { Locale } from '@/locales';
 import MobileWarning from './shared/MobileWarning';
-import SaveTransactionTemplate from './SaveTransactionTemplate';
+import TransactionActionsMenu from './TransactionActionsMenu';
 import { useCategoryI18n } from '@/lib/useCategoryI18n';
 
 interface TransactionsDataGridProps {
@@ -38,13 +30,6 @@ interface TransactionsDataGridProps {
   handleEdit: (id: string) => void;
   handleDelete: (id: string) => void;
   /* eslint-enable */
-}
-
-interface ActionMenuProps {
-  transaction: Transaction;
-  onCopy: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
 }
 
 const CurrentSum = () => {
@@ -97,78 +82,6 @@ const DefaultCurrencyHeader = () => {
   return formatMessage(
     { id: 'grid.amountDefaultCurrency', defaultMessage: 'Amount, {currency}' },
     { currency: CURRENCY_SYMBOL_MAP[settings?.defaultCurrency] },
-  );
-};
-
-const ActionMenu: FC<ActionMenuProps> = ({
-  transaction,
-  onCopy,
-  onEdit,
-  onDelete,
-}) => {
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const { formatMessage } = useIntl();
-
-  const isOpen = Boolean(anchorEl);
-  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: '5px',
-      }}
-    >
-      <SaveTransactionTemplate transaction={transaction} />
-      <Menu
-        id="basic-menu"
-        anchorEl={anchorEl}
-        open={isOpen}
-        onClose={handleClose}
-        MenuListProps={{
-          'aria-labelledby': 'basic-button',
-        }}
-      >
-        <MenuItem
-          onClick={() => {
-            onEdit();
-            handleClose();
-          }}
-        >
-          {formatMessage({ id: 'common.edit', defaultMessage: 'Edit' })}
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            onCopy();
-            handleClose();
-          }}
-        >
-          {formatMessage({ id: 'common.copy', defaultMessage: 'Copy' })}
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            onDelete();
-            handleClose();
-          }}
-        >
-          {formatMessage({ id: 'common.delete', defaultMessage: 'Delete' })}
-        </MenuItem>
-      </Menu>
-      <IconButton
-        color="inherit"
-        aria-label="open drawer"
-        onClick={handleClick}
-      >
-        <MenuIcon />
-      </IconButton>
-    </Box>
   );
 };
 
@@ -306,11 +219,11 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
         sortable: false,
         filterable: false,
         renderHeader: () => null,
-        width: 100,
+        width: 56,
         align: 'center',
         renderCell: ({ row }) => {
           return (
-            <ActionMenu
+            <TransactionActionsMenu
               transaction={row}
               onEdit={() => handleEdit(row.id)}
               onCopy={() => handleCopy(row.id)}

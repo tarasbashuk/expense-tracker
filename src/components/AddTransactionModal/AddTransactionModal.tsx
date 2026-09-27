@@ -97,6 +97,8 @@ const AddTransactionModal: React.FC = () => {
     (tr) => tr.id === transactionId,
   );
 
+  const isEditMode = Boolean(selectedTransaction) && !isCopyTransactionFlow;
+
   if (selectedTransaction) {
     const {
       date,
@@ -276,10 +278,8 @@ const AddTransactionModal: React.FC = () => {
     } else if (data) {
       toast.success(
         formatMessage({
-          id: selectedTransaction
-            ? 'addTransaction.saved'
-            : 'addTransaction.added',
-          defaultMessage: selectedTransaction
+          id: isEditMode ? 'addTransaction.saved' : 'addTransaction.added',
+          defaultMessage: isEditMode
             ? 'Changes were saved'
             : 'A transaction was added',
         }),
@@ -345,7 +345,8 @@ const AddTransactionModal: React.FC = () => {
       currency={currency}
       isSubmitDisabled={isSaving}
       transactionType={transactionType}
-      isEditMode={!!selectedTransaction}
+      isEditMode={isEditMode}
+      isCopyMode={isCopyTransactionFlow}
       isBaseAmountShown={isBaseAmountShown}
       isCreditTransaction={isCreditTransaction}
       creditCardTrackingEnabled={creditCardTrackingEnabled}

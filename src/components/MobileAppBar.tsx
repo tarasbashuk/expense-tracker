@@ -1,11 +1,7 @@
 'use client';
 import { useState, MouseEvent } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import {
-  BottomNavigation,
-  BottomNavigationAction,
-  Button,
-} from '@mui/material';
+import { BottomNavigation, BottomNavigationAction } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Fab from '@mui/material/Fab';
@@ -39,7 +35,7 @@ const fabContainerStyles = {
   zIndex: 1200,
   left: { xs: 0, sm: 'unset' },
   right: { xs: 0, sm: 20 },
-  bottom: { xs: 'calc(72px + env(safe-area-inset-bottom))', sm: 15 },
+  bottom: { xs: 'calc(54px + env(safe-area-inset-bottom))', sm: 15 },
   margin: '0 auto',
   width: { xs: 'fit-content', sm: 'auto' },
   display: 'flex',
@@ -219,18 +215,16 @@ const MobileAppBar = () => {
         </AppBar>
         <SignedIn>
           <Box sx={fabContainerStyles}>
-            <Button
-              variant="contained"
+            <Fab
               color="secondary"
-              startIcon={<AutoAwesomeIcon />}
-              onClick={() => setIsImportModalOpen(true)}
-              sx={{ borderRadius: 7, minHeight: 48 }}
-            >
-              {formatMessage({
+              aria-label={formatMessage({
                 id: 'navigation.import',
                 defaultMessage: 'Import',
               })}
-            </Button>
+              onClick={() => setIsImportModalOpen(true)}
+            >
+              <AutoAwesomeIcon />
+            </Fab>
             <Fab
               color="primary"
               aria-label={formatMessage({

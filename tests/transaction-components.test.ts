@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 
-import { createElement } from 'react';
+import { createElement, type ComponentProps } from 'react';
+import type DatePeriodFilter from '@/components/shared/DatePeriodFilter';
+import { dateKeyFromLocalDate, getPeriodRange } from '@/lib/dateRange';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { IntlProvider } from 'react-intl';
@@ -52,7 +54,43 @@ vi.mock('@/app/actions/getIncomeExpense', () => ({
 }));
 
 vi.mock('@/components/shared/DatePeriodFilter', () => ({
-  default: () => null,
+  default: ({
+    mode,
+    range,
+    onModeChange,
+    onPrevious,
+    onCustomRangeChange,
+  }: ComponentProps<typeof DatePeriodFilter>) =>
+    createElement(
+      'div',
+      null,
+      createElement(
+        'output',
+        { 'data-testid': 'selected-period' },
+        `${mode}:${range.start}:${range.end}`,
+      ),
+      createElement(
+        'button',
+        { onClick: () => onModeChange('quarter') },
+        'Quarter period',
+      ),
+      createElement(
+        'button',
+        { onClick: () => onModeChange('year') },
+        'Year period',
+      ),
+      createElement('button', { onClick: onPrevious }, 'Previous period'),
+      createElement(
+        'button',
+        {
+          onClick: () => {
+            onModeChange('custom');
+            onCustomRangeChange({ start: '2025-02-03', end: '2025-02-15' });
+          },
+        },
+        'Custom period',
+      ),
+    ),
 }));
 
 vi.mock('@/components/AdditionalBalanceInfo', () => ({ default: () => null }));
@@ -120,7 +158,7 @@ afterEach(() => {
   cleanup();
 });
 
-test('list item exposes all three actions with accessible labels and the correct transaction ID', async () => {
+test('list item menu exposes transaction actions with accessible labels and the correct transaction ID', async () => {
   const user = userEvent.setup();
   const handleEdit = vi.fn();
   const handleCopy = vi.fn();
@@ -134,9 +172,14 @@ test('list item exposes all three actions with accessible labels and the correct
     }),
   );
 
-  await user.click(screen.getByRole('button', { name: 'Edit' }));
-  await user.click(screen.getByRole('button', { name: 'Repeat transaction' }));
-  await user.click(screen.getByRole('button', { name: 'Delete' }));
+  await user.click(screen.getByRole('button', { name: 'Transaction actions' }));
+  await user.click(screen.getByRole('menuitem', { name: 'Edit' }));
+  await user.click(screen.getByRole('button', { name: 'Transaction actions' }));
+  await user.click(
+    screen.getByRole('menuitem', { name: 'Repeat transaction' }),
+  );
+  await user.click(screen.getByRole('button', { name: 'Transaction actions' }));
+  await user.click(screen.getByRole('menuitem', { name: 'Delete' }));
 
   expect(handleEdit).toHaveBeenCalledExactlyOnceWith(transaction.id);
   expect(handleCopy).toHaveBeenCalledExactlyOnceWith(transaction.id);
@@ -153,7 +196,10 @@ test.each([
     const user = userEvent.setup();
     renderRecent();
 
-    await user.click(screen.getByRole('button', { name }));
+    await user.click(
+      screen.getByRole('button', { name: 'Transaction actions' }),
+    );
+    await user.click(screen.getByRole('menuitem', { name }));
 
     expect(mocks.setTransactions).toHaveBeenCalledWith([transaction]);
     expect(mocks.setTransactionDraft).toHaveBeenCalledWith(null);
@@ -168,7 +214,8 @@ test('cancelling deletion keeps the transaction and does not contact the server'
   const user = userEvent.setup();
   renderRecent();
 
-  await user.click(screen.getByRole('button', { name: 'Delete' }));
+  await user.click(screen.getByRole('button', { name: 'Transaction actions' }));
+  await user.click(screen.getByRole('menuitem', { name: 'Delete' }));
 
   expect(window.confirm).toHaveBeenCalledOnce();
   expect(mocks.deleteTransaction).not.toHaveBeenCalled();
@@ -180,7 +227,8 @@ test('successful deletion removes only the selected transaction and refreshes da
   const user = userEvent.setup();
   renderRecent();
 
-  await user.click(screen.getByRole('button', { name: 'Delete' }));
+  await user.click(screen.getByRole('button', { name: 'Transaction actions' }));
+  await user.click(screen.getByRole('menuitem', { name: 'Delete' }));
   await waitFor(() => expect(mocks.refresh).toHaveBeenCalledOnce());
 
   expect(mocks.deleteTransaction).toHaveBeenCalledExactlyOnceWith(
@@ -199,7 +247,8 @@ test('failed deletion shows an error without removing the transaction or reporti
   const user = userEvent.setup();
   renderRecent();
 
-  await user.click(screen.getByRole('button', { name: 'Delete' }));
+  await user.click(screen.getByRole('button', { name: 'Transaction actions' }));
+  await user.click(screen.getByRole('menuitem', { name: 'Delete' }));
   await waitFor(() =>
     expect(mocks.error).toHaveBeenCalledWith('Database error'),
   );
@@ -230,7 +279,10 @@ test.each(['Edit', 'Repeat transaction'])(
     const user = userEvent.setup();
     await renderHistory();
 
-    await user.click(screen.getByRole('button', { name }));
+    await user.click(
+      screen.getByRole('button', { name: 'Transaction actions' }),
+    );
+    await user.click(screen.getByRole('menuitem', { name }));
 
     expect(mocks.setTransactionId).toHaveBeenCalledWith(transaction.id);
     expect(mocks.setIsTransactionModalOpen).toHaveBeenCalledWith(true);
@@ -246,7 +298,8 @@ test('transaction history keeps the record when deletion fails', async () => {
   const user = userEvent.setup();
   await renderHistory();
 
-  await user.click(screen.getByRole('button', { name: 'Delete' }));
+  await user.click(screen.getByRole('button', { name: 'Transaction actions' }));
+  await user.click(screen.getByRole('menuitem', { name: 'Delete' }));
   await waitFor(() =>
     expect(mocks.error).toHaveBeenCalledWith('Database error'),
   );
@@ -283,7 +336,8 @@ test('saving a shortcut copies original currency and amount rather than the conv
   const user = userEvent.setup();
   renderRecent();
 
-  await user.click(screen.getByRole('button', { name: 'Save as shortcut' }));
+  await user.click(screen.getByRole('button', { name: 'Transaction actions' }));
+  await user.click(screen.getByRole('menuitem', { name: 'Save as shortcut' }));
   await user.click(screen.getByRole('button', { name: 'Save' }));
 
   expect(mocks.saveTemplate).toHaveBeenCalledExactlyOnceWith({
@@ -302,7 +356,8 @@ test('shortcut can omit the amount and preserves the dialog on failure', async (
   const user = userEvent.setup();
   renderRecent();
 
-  await user.click(screen.getByRole('button', { name: 'Save as shortcut' }));
+  await user.click(screen.getByRole('button', { name: 'Transaction actions' }));
+  await user.click(screen.getByRole('menuitem', { name: 'Save as shortcut' }));
   await user.click(
     screen.getByRole('checkbox', { name: 'Keep amount: 20 zł' }),
   );
@@ -316,3 +371,86 @@ test('shortcut can omit the amount and preserves the dialog on failure', async (
   expect(screen.getByRole('dialog')).toBeTruthy();
   expect(mocks.refresh).not.toHaveBeenCalled();
 });
+
+test('search is the last expandable filter and counts as an active filter', async () => {
+  const user = userEvent.setup();
+  await renderHistory();
+  const filters = document.getElementById('history-filters')!;
+  const search = screen.getByRole('textbox', { name: 'Search descriptions' });
+
+  expect(filters.contains(search)).toBe(true);
+  expect(filters.lastElementChild?.contains(search)).toBe(true);
+  expect(screen.queryByText('Entire selected period')).toBeNull();
+
+  await user.type(search, 'Coffee');
+
+  expect(screen.getByRole('button', { name: 'Filters (1)' })).toBeTruthy();
+});
+
+test('transaction actions stay hidden until the menu opens and Escape dismisses it', async () => {
+  const user = userEvent.setup();
+  renderRecent();
+
+  expect(screen.queryByRole('menuitem')).toBeNull();
+  expect(screen.getAllByRole('button')).toHaveLength(1);
+
+  await user.click(screen.getByRole('button', { name: 'Transaction actions' }));
+
+  expect(screen.getAllByRole('menuitem')).toHaveLength(4);
+
+  await user.keyboard('{Escape}');
+
+  await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+  expect(mocks.deleteTransaction).not.toHaveBeenCalled();
+});
+
+test.each([
+  'Quarter period',
+  'Year period',
+  'Previous period',
+  'Custom period',
+])(
+  '%s counts as one filter and resets to the current month',
+  async (period) => {
+    const user = userEvent.setup();
+    await renderHistory();
+    const today = dateKeyFromLocalDate(new Date());
+    const expected = getPeriodRange('month', today, {
+      start: today,
+      end: today,
+    });
+
+    await user.click(screen.getByRole('button', { name: period }));
+
+    expect(screen.getByRole('button', { name: 'Filters (1)' })).toBeTruthy();
+
+    await user.type(
+      screen.getByRole('textbox', { name: 'Search descriptions' }),
+      'Coffee',
+    );
+
+    expect(screen.getByRole('button', { name: 'Filters (2)' })).toBeTruthy();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Reset search and filters' }),
+    );
+
+    expect(screen.getByRole('button', { name: 'Filters (0)' })).toBeTruthy();
+    expect(screen.getByTestId('selected-period').textContent).toBe(
+      `month:${expected.start}:${expected.end}`,
+    );
+    expect(
+      screen.getByRole('textbox', { name: 'Search descriptions' }),
+    ).toHaveProperty('value', '');
+    expect(
+      screen.queryByRole('button', { name: 'Reset search and filters' }),
+    ).toBeNull();
+    await waitFor(() =>
+      expect(mocks.getTransactions).toHaveBeenLastCalledWith(
+        expected.start,
+        expected.end,
+        true,
+      ),
+    );
+  },
+);

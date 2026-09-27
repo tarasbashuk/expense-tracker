@@ -1,13 +1,12 @@
 'use client';
 import { FC } from 'react';
-import SaveTransactionTemplate from './SaveTransactionTemplate';
+import TransactionActionsMenu from './TransactionActionsMenu';
 import { format } from 'date-fns';
 import { Transaction, TransactionType } from '@prisma/client';
 import { useIntl } from 'react-intl';
 import {
   Avatar,
   Divider,
-  IconButton,
   ListItem,
   ListItemAvatar,
   ListItemText,
@@ -15,47 +14,15 @@ import {
   Tooltip,
   Box,
 } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import DeleteIcon from '@mui/icons-material/Delete';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import { getIconByName } from '@/lib/getCategoryIcon';
-import { green, indigo, red } from '@mui/material/colors';
-import { alpha, type Theme } from '@mui/material/styles';
+import { green, red } from '@mui/material/colors';
 
 import { TransactionCategory } from '@/constants/types';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { useSettings } from '@/context/SettingsContexts';
 import { getTransactionSign, formatDate } from '@/lib/utils';
 import { Locale } from '@/locales';
-
-const actionButtonStyles = (theme: Theme) => {
-  const color = theme.palette.mode === 'dark' ? indigo[300] : indigo[400];
-
-  return {
-    width: 44,
-    height: 44,
-    color,
-    transition: theme.transitions.create(['color', 'background-color'], {
-      duration: theme.transitions.duration.short,
-    }),
-    '&:hover, &:active, &.Mui-focusVisible': {
-      backgroundColor: alpha(color, 0.1),
-    },
-  };
-};
-
-const deleteButtonStyles = (theme: Theme) => {
-  const color = theme.palette.mode === 'dark' ? red[300] : red[400];
-
-  return {
-    ...actionButtonStyles(theme),
-    '&:hover, &:active, &.Mui-focusVisible': {
-      color,
-      backgroundColor: alpha(color, 0.1),
-    },
-  };
-};
 
 interface Props {
   transaction: Transaction;
@@ -74,7 +41,7 @@ const TransactionItem: FC<Props> = ({
 }) => {
   // TODO: pass as prop
   const { settings } = useSettings();
-  const { locale, formatMessage } = useIntl();
+  const { locale } = useIntl();
   const {
     id,
     date,
@@ -109,16 +76,22 @@ const TransactionItem: FC<Props> = ({
         sx={{
           display: 'grid',
           gridTemplateColumns: {
-            xs: '40px minmax(0, 1fr) auto',
-            sm: '40px minmax(0, 1fr) auto auto',
+            xs: '36px minmax(0, 1fr) auto 44px',
+            sm: '40px minmax(0, 1fr) auto 44px',
           },
-          columnGap: { xs: 1, sm: 2 },
+          columnGap: { xs: 0.5, sm: 2 },
           py: 1,
           minWidth: 0,
         }}
       >
         <ListItemAvatar sx={{ minWidth: 0 }}>
-          <Avatar sx={{ bgcolor: labelColor }}>
+          <Avatar
+            sx={{
+              bgcolor: labelColor,
+              width: { xs: 36, sm: 40 },
+              height: { xs: 36, sm: 40 },
+            }}
+          >
             {IconComponent && <IconComponent />}
           </Avatar>
         </ListItemAvatar>
@@ -179,65 +152,12 @@ const TransactionItem: FC<Props> = ({
             </Typography>
           )}
         </Box>
-        <Box
-          sx={{
-            display: 'flex',
-            justifySelf: 'end',
-            gridColumn: { xs: '2 / -1', sm: 'auto' },
-          }}
-        >
-          <Tooltip
-            title={formatMessage({ id: 'common.edit', defaultMessage: 'Edit' })}
-          >
-            <IconButton
-              aria-label={formatMessage({
-                id: 'common.edit',
-                defaultMessage: 'Edit',
-              })}
-              onClick={() => handleEdit(id)}
-              sx={actionButtonStyles}
-            >
-              <EditIcon />
-            </IconButton>
-          </Tooltip>
-          {handleCopy && (
-            <Tooltip
-              title={formatMessage({
-                id: 'home.repeatTransaction',
-                defaultMessage: 'Repeat transaction',
-              })}
-            >
-              <IconButton
-                aria-label={formatMessage({
-                  id: 'home.repeatTransaction',
-                  defaultMessage: 'Repeat transaction',
-                })}
-                onClick={() => handleCopy(id)}
-                sx={actionButtonStyles}
-              >
-                <ContentCopyIcon />
-              </IconButton>
-            </Tooltip>
-          )}
-          <SaveTransactionTemplate transaction={transaction} />
-          <Tooltip
-            title={formatMessage({
-              id: 'common.delete',
-              defaultMessage: 'Delete',
-            })}
-          >
-            <IconButton
-              aria-label={formatMessage({
-                id: 'common.delete',
-                defaultMessage: 'Delete',
-              })}
-              onClick={() => handleDelete(id)}
-              sx={deleteButtonStyles}
-            >
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
+        <TransactionActionsMenu
+          transaction={transaction}
+          onEdit={() => handleEdit(id)}
+          onCopy={handleCopy ? () => handleCopy(id) : undefined}
+          onDelete={() => handleDelete(id)}
+        />
       </ListItem>
       <Divider />
     </>
