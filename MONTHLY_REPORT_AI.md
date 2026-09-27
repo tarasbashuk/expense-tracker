@@ -20,7 +20,7 @@ The report respects `creditCardTrackingEnabled` (defaults to false). When disabl
 
 The model receives all eligible report-month transactions (description, date, type, category, original amount/currency, converted amount and recurring flag), numbered with report-local references. It also receives computed expense category totals, counts, shares and changes, and aggregate income/expense totals. Previous-month raw transactions, email addresses, account IDs and database transaction IDs are not included.
 
-Totals are computed with Decimal, excluding `CCRepayment` and `creditReceived`. A missing previous-month history is explicitly identified; changes against zero have a null percentage. Potential duplicates are searched within the report month only.
+Totals are computed with Decimal, excluding `CCRepayment` and `creditReceived`. A missing previous-month history is explicitly identified; changes against zero have a null percentage. Potential duplicates are searched within the report month only, with at most 7 calendar days between the earliest and latest transaction in a group. Groups exceeding that span are discarded by server validation, preserving other groups and insights.
 
 The request uses [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs), `store: false`, a 35-second timeout and no automatic retries. Response shape and transaction references are validated, and text is HTML-escaped for email. Validation cannot guarantee the factual accuracy of generated commentary or duplicate suggestions.
 

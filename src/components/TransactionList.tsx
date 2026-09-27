@@ -23,8 +23,10 @@ import {
   INCOME_CATEGORIES_LIST,
   EXPENSE_CATEGORIES_LIST,
   CURRENCY_SYMBOL_MAP,
+  isCreditCardCategory,
 } from '@/constants/constants';
 import { TransactionType } from '@prisma/client';
+import { getIconByName } from '@/lib/getCategoryIcon';
 import {
   FormControl,
   InputLabel,
@@ -46,6 +48,23 @@ const allCategories = { ...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES };
 const allCategoriesList = Object.entries(allCategories).map(
   ([value, label]) => ({ value, label }),
 );
+
+const categoriesByType = {
+  all: allCategoriesList,
+  [TransactionType.Income]: INCOME_CATEGORIES_LIST,
+  [TransactionType.Expense]: EXPENSE_CATEGORIES_LIST,
+};
+const categoriesWithoutCreditByType = {
+  all: allCategoriesList.filter(
+    (category) => !isCreditCardCategory(category.value),
+  ),
+  [TransactionType.Income]: INCOME_CATEGORIES_LIST.filter(
+    (category) => !isCreditCardCategory(category.value),
+  ),
+  [TransactionType.Expense]: EXPENSE_CATEGORIES_LIST.filter(
+    (category) => !isCreditCardCategory(category.value),
+  ),
+};
 
 const today = new Date();
 const currentDate = dateKeyFromLocalDate(today);
@@ -117,18 +136,17 @@ const TransactionList = () => {
     [customRange.start, periodMode],
   );
 
-  // Get categories based on selected transaction type
-  const getAvailableCategories = () => {
-    if (selectedTransactionType === 'all') {
-      return allCategoriesList;
-    } else if (selectedTransactionType === TransactionType.Income) {
-      return INCOME_CATEGORIES_LIST;
-    } else {
-      return EXPENSE_CATEGORIES_LIST;
-    }
-  };
+  const creditCardTrackingEnabled =
+    settings?.creditCardTrackingEnabled ?? false;
+  const availableCategories = creditCardTrackingEnabled
+    ? categoriesByType[selectedTransactionType]
+    : categoriesWithoutCreditByType[selectedTransactionType];
 
-  const availableCategories = getAvailableCategories();
+  useEffect(() => {
+    if (!creditCardTrackingEnabled && isCreditCardCategory(selectedCategory)) {
+      setSelectedCategory('all');
+    }
+  }, [creditCardTrackingEnabled, selectedCategory]);
 
   const handleEditTransaction = useCallback(
     (transactionId: string) => {
@@ -350,14 +368,28 @@ const TransactionList = () => {
                 defaultMessage: 'All categories',
               })}
             </MenuItem>
-            {availableCategories.map((category) => (
-              <MenuItem key={category.value} value={category.value}>
-                {formatMessage({
-                  id: `categories.${category.value}`,
-                  defaultMessage: category.label,
-                })}
-              </MenuItem>
-            ))}
+            {availableCategories.map((category) => {
+              const Icon = getIconByName(category.value as TransactionCategory);
+
+              return (
+                <MenuItem key={category.value} value={category.value}>
+                  <Box
+                    component="span"
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 1,
+                    }}
+                  >
+                    {Icon && <Icon fontSize="small" />}
+                    {formatMessage({
+                      id: `categories.${category.value}`,
+                      defaultMessage: category.label,
+                    })}
+                  </Box>
+                </MenuItem>
+              );
+            })}
           </Select>
         </FormControl>
 

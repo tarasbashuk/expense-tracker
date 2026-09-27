@@ -168,6 +168,44 @@ test('encrypted descriptions and both amounts are decoded before analysis', () =
   expect(() => decodeReportTransactions([encrypted], true)).toThrow();
 });
 
+test.each([
+  ['2026-08-11', true],
+  ['2026-08-12', false],
+  ['2026-08-26', false],
+])('duplicate date limit for August 4 and %s', (date, expected) => {
+  const data = input();
+  data.transactions[0].date = '2026-08-04';
+  data.transactions[1].date = date;
+
+  const result = validateAnalysis(valid(), data);
+
+  expect(result.duplicates).toEqual(expected ? valid().duplicates : []);
+  expect(result.insights).toEqual(valid().insights);
+});
+
+test('duplicate date limit applies to the whole group and preserves valid groups', () => {
+  const data = input();
+  data.transactions[0].date = '2026-08-04';
+  data.transactions[1].date = '2026-08-11';
+  data.transactions.push({
+    ...data.transactions[1],
+    ref: 3,
+    date: '2026-08-18',
+  });
+  const analysis = {
+    ...valid(),
+    duplicates: [
+      { refs: [3, 2, 1], reason: 'A chain of nearby dates' },
+      { refs: [2, 1], reason: 'Within a week' },
+    ],
+  };
+
+  const result = validateAnalysis(analysis, data);
+
+  expect(result.duplicates).toEqual([analysis.duplicates[1]]);
+  expect(result.insights).toEqual(analysis.insights);
+});
+
 test('validation rejects hallucinated, repeated and mixed-type references', () => {
   expect(validateAnalysis(valid(), input())).toEqual(valid());
   for (const refs of [[1, 99], [1, 1], [1], ['1', 2]]) {
