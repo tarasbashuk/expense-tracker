@@ -221,5 +221,6 @@
   "template.includeAmount": "Keep amount: {amount}",
   "template.saved": "Shortcut added to your home screen",
   "template.saveError": "Unable to save shortcut. Please try again.",
-  "template.descriptionTooLong": "Shorten the description to 160 characters."
+  "template.descriptionTooLong": "Shorten the description to 160 characters.",
+  "transactions.actions": "Transaction actions"
 }

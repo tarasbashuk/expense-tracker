@@ -1,11 +1,7 @@
 'use client';
 import { useState, MouseEvent } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import {
-  BottomNavigation,
-  BottomNavigationAction,
-  Button,
-} from '@mui/material';
+import { BottomNavigation, BottomNavigationAction } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Fab from '@mui/material/Fab';
@@ -219,18 +215,16 @@ const MobileAppBar = () => {
         </AppBar>
         <SignedIn>
           <Box sx={fabContainerStyles}>
-            <Button
-              variant="contained"
+            <Fab
               color="secondary"
-              startIcon={<AutoAwesomeIcon />}
-              onClick={() => setIsImportModalOpen(true)}
-              sx={{ borderRadius: 7, minHeight: 48 }}
-            >
-              {formatMessage({
+              aria-label={formatMessage({
                 id: 'navigation.import',
                 defaultMessage: 'Import',
               })}
-            </Button>
+              onClick={() => setIsImportModalOpen(true)}
+            >
+              <AutoAwesomeIcon />
+            </Fab>
             <Fab
               color="primary"
               aria-label={formatMessage({

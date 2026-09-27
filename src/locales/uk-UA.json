@@ -222,5 +222,6 @@
   "template.includeAmount": "Зберегти суму: {amount}",
   "template.saved": "Шаблон додано на головну",
   "template.saveError": "Не вдалося зберегти шаблон. Спробуйте ще раз.",
-  "template.descriptionTooLong": "Скоротіть опис до 160 символів."
+  "template.descriptionTooLong": "Скоротіть опис до 160 символів.",
+  "transactions.actions": "Дії з операцією"
 }

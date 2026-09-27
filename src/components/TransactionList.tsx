@@ -114,7 +114,8 @@ const TransactionList = () => {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const activeFilterCount =
     Number(selectedCategory !== 'all') +
-    Number(selectedTransactionType !== 'all');
+    Number(selectedTransactionType !== 'all') +
+    Number(Boolean(search.trim()));
   const hasFilters = activeFilterCount > 0 || Boolean(search.trim());
   const visibleTransactions = useMemo(
     () =>
@@ -305,40 +306,6 @@ const TransactionList = () => {
         spacing={2}
         sx={{ width: { xs: '100%', sm: 400 } }}
       >
-        <TextField
-          label={formatMessage({
-            id: 'history.search',
-            defaultMessage: 'Search descriptions',
-          })}
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          size="small"
-          helperText={formatMessage({
-            id: 'history.searchScope',
-            defaultMessage: 'Search within the selected period',
-          })}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-            endAdornment: search ? (
-              <InputAdornment position="end">
-                <IconButton
-                  size="small"
-                  aria-label={formatMessage({
-                    id: 'history.clearSearch',
-                    defaultMessage: 'Clear search',
-                  })}
-                  onClick={() => setSearch('')}
-                >
-                  <CloseIcon />
-                </IconButton>
-              </InputAdornment>
-            ) : undefined,
-          }}
-        />
         <DatePeriodFilter
           mode={periodMode}
           range={selectedRange}
@@ -449,6 +416,40 @@ const TransactionList = () => {
               })}
             </Select>
           </FormControl>
+          <TextField
+            label={formatMessage({
+              id: 'history.search',
+              defaultMessage: 'Search descriptions',
+            })}
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            size="small"
+            helperText={formatMessage({
+              id: 'history.searchScope',
+              defaultMessage: 'Search within the selected period',
+            })}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+              endAdornment: search ? (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    aria-label={formatMessage({
+                      id: 'history.clearSearch',
+                      defaultMessage: 'Clear search',
+                    })}
+                    onClick={() => setSearch('')}
+                  >
+                    <CloseIcon />
+                  </IconButton>
+                </InputAdornment>
+              ) : undefined,
+            }}
+          />
         </Stack>
         {hasFilters && (
           <Button
@@ -518,19 +519,11 @@ const TransactionList = () => {
               justifyContent: 'space-between',
             }}
           >
-            <Box>
-              <Typography variant="caption" color="text.secondary">
-                {formatMessage({
-                  id: 'history.periodTotals',
-                  defaultMessage: 'Entire selected period',
-                })}
-              </Typography>
-              <AdditionalBalanceInfo
-                income={income}
-                expense={expense}
-                sx={{ marginLeft: { xs: 0, md: 9, lg: 18 } }}
-              />
-            </Box>
+            <AdditionalBalanceInfo
+              income={income}
+              expense={expense}
+              sx={{ marginLeft: { xs: 0, md: 9, lg: 18 } }}
+            />
             <ToggleButtonGroup
               exclusive
               size="small"
