@@ -19,7 +19,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import { getIconByName } from '@/lib/getCategoryIcon';
-import { blue, green, indigo, red } from '@mui/material/colors';
+import { green, indigo, red } from '@mui/material/colors';
 import { alpha, type Theme } from '@mui/material/styles';
 
 import { TransactionCategory } from '@/constants/types';
@@ -28,26 +28,33 @@ import { useSettings } from '@/context/SettingsContexts';
 import { getTransactionSign, formatDate } from '@/lib/utils';
 import { Locale } from '@/locales';
 
-const actionButtonStyles =
-  (lightColor: string, darkColor: string) => (theme: Theme) => {
-    const color = theme.palette.mode === 'dark' ? darkColor : lightColor;
+const actionButtonStyles = (theme: Theme) => {
+  const color = theme.palette.mode === 'dark' ? indigo[300] : indigo[400];
 
-    return {
-      width: 44,
-      height: 44,
-      color,
-      transition: theme.transitions.create('background-color', {
-        duration: theme.transitions.duration.short,
-      }),
-      '&:hover, &.Mui-focusVisible': {
-        backgroundColor: alpha(color, 0.1),
-      },
-    };
+  return {
+    width: 44,
+    height: 44,
+    color,
+    transition: theme.transitions.create(['color', 'background-color'], {
+      duration: theme.transitions.duration.short,
+    }),
+    '&:hover, &:active, &.Mui-focusVisible': {
+      backgroundColor: alpha(color, 0.1),
+    },
   };
+};
 
-const editButtonStyles = actionButtonStyles(blue[600], blue[300]);
-const copyButtonStyles = actionButtonStyles(indigo[400], indigo[300]);
-const deleteButtonStyles = actionButtonStyles(red[400], red[300]);
+const deleteButtonStyles = (theme: Theme) => {
+  const color = theme.palette.mode === 'dark' ? red[300] : red[400];
+
+  return {
+    ...actionButtonStyles(theme),
+    '&:hover, &:active, &.Mui-focusVisible': {
+      color,
+      backgroundColor: alpha(color, 0.1),
+    },
+  };
+};
 
 interface Props {
   transaction: Transaction;
@@ -187,7 +194,7 @@ const TransactionItem: FC<Props> = ({
                 defaultMessage: 'Edit',
               })}
               onClick={() => handleEdit(id)}
-              sx={editButtonStyles}
+              sx={actionButtonStyles}
             >
               <EditIcon />
             </IconButton>
@@ -205,7 +212,7 @@ const TransactionItem: FC<Props> = ({
                   defaultMessage: 'Repeat transaction',
                 })}
                 onClick={() => handleCopy(id)}
-                sx={copyButtonStyles}
+                sx={actionButtonStyles}
               >
                 <ContentCopyIcon />
               </IconButton>
