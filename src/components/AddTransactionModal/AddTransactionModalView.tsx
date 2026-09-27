@@ -61,6 +61,7 @@ interface Props {
   category: string;
   currency: Currency;
   isEditMode: boolean;
+  isCopyMode?: boolean;
   isSubmitDisabled: boolean;
   isBaseAmountShown: boolean;
   isCreditTransaction: boolean;
@@ -94,6 +95,7 @@ const AddTransactionModalView: React.FC<Props> = ({
   category,
   currency,
   isEditMode,
+  isCopyMode = false,
   transactionType,
   isSubmitDisabled,
   isBaseAmountShown,
@@ -151,7 +153,12 @@ const AddTransactionModalView: React.FC<Props> = ({
       <Box sx={style}>
         <Stack direction="row" alignItems="center" spacing={2} marginBottom={3}>
           <Typography variant="h4" component="h3" flexGrow={1}>
-            {isEditMode ? (
+            {isCopyMode ? (
+              <FormattedMessage
+                id="home.repeatTransaction"
+                defaultMessage="Repeat transaction"
+              />
+            ) : isEditMode ? (
               <FormattedMessage
                 id="addTransaction.editTitle"
                 defaultMessage="Edit transaction"
