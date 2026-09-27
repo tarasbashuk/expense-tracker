@@ -84,6 +84,7 @@ const TransactionList = () => {
     setIsCopyTransactionFlow,
     setIsTransactionModalOpen,
     transactionsRefreshKey,
+    requestTransactionsRefresh,
   } = useTransactions();
 
   const [error, setError] = useState<string>('');
@@ -180,9 +181,12 @@ const TransactionList = () => {
 
       if (error) {
         toast.error(error);
+
+        return;
       }
 
       toast.success(message);
+      requestTransactionsRefresh();
       setTransactions((prevTrans: Transaction[]) => {
         const updatedTransactions = prevTrans.filter(
           (trans) => trans.id !== transactionId,
@@ -191,7 +195,7 @@ const TransactionList = () => {
         return updatedTransactions;
       });
     },
-    [setTransactions, formatMessage],
+    [setTransactions, formatMessage, requestTransactionsRefresh],
   );
 
   const handleTypeChange = useCallback(
@@ -482,6 +486,7 @@ const TransactionList = () => {
                   key={transaction.id}
                   transaction={transaction}
                   handleEdit={handleEditTransaction}
+                  handleCopy={handleCopyTransaction}
                   handleDelete={handleDeleteTransaction}
                 />
               ))}
