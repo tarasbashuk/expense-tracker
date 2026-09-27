@@ -8,6 +8,8 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    // Component tests need React's act(), including during Vercel production builds.
+    env: { NODE_ENV: 'test' },
     include: ['tests/**/*.test.ts'],
     clearMocks: true,
     restoreMocks: true,
