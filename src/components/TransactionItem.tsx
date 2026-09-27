@@ -19,13 +19,35 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import { getIconByName } from '@/lib/getCategoryIcon';
-import { green, red } from '@mui/material/colors';
+import { blue, green, indigo, red } from '@mui/material/colors';
+import { alpha, type Theme } from '@mui/material/styles';
 
 import { TransactionCategory } from '@/constants/types';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { useSettings } from '@/context/SettingsContexts';
 import { getTransactionSign, formatDate } from '@/lib/utils';
 import { Locale } from '@/locales';
+
+const actionButtonStyles =
+  (lightColor: string, darkColor: string) => (theme: Theme) => {
+    const color = theme.palette.mode === 'dark' ? darkColor : lightColor;
+
+    return {
+      width: 44,
+      height: 44,
+      color,
+      transition: theme.transitions.create('background-color', {
+        duration: theme.transitions.duration.short,
+      }),
+      '&:hover, &.Mui-focusVisible': {
+        backgroundColor: alpha(color, 0.1),
+      },
+    };
+  };
+
+const editButtonStyles = actionButtonStyles(blue[600], blue[300]);
+const copyButtonStyles = actionButtonStyles(indigo[400], indigo[300]);
+const deleteButtonStyles = actionButtonStyles(red[400], red[300]);
 
 interface Props {
   transaction: Transaction;
@@ -128,7 +150,10 @@ const TransactionItem: FC<Props> = ({
             color={
               type === TransactionType.Expense ? 'error.main' : 'success.main'
             }
-            sx={{ whiteSpace: 'nowrap' }}
+            sx={{
+              whiteSpace: 'nowrap',
+              fontSize: { xs: '1.125rem', sm: '1rem' },
+            }}
           >
             {sign}{' '}
             {formatCurrency(
@@ -162,7 +187,7 @@ const TransactionItem: FC<Props> = ({
                 defaultMessage: 'Edit',
               })}
               onClick={() => handleEdit(id)}
-              sx={{ width: 44, height: 44 }}
+              sx={editButtonStyles}
             >
               <EditIcon />
             </IconButton>
@@ -180,7 +205,7 @@ const TransactionItem: FC<Props> = ({
                   defaultMessage: 'Repeat transaction',
                 })}
                 onClick={() => handleCopy(id)}
-                sx={{ width: 44, height: 44 }}
+                sx={copyButtonStyles}
               >
                 <ContentCopyIcon />
               </IconButton>
@@ -198,11 +223,7 @@ const TransactionItem: FC<Props> = ({
                 defaultMessage: 'Delete',
               })}
               onClick={() => handleDelete(id)}
-              sx={{
-                width: 44,
-                height: 44,
-                '&:hover, &.Mui-focusVisible': { color: 'error.main' },
-              }}
+              sx={deleteButtonStyles}
             >
               <DeleteIcon />
             </IconButton>
