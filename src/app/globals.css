@@ -36,6 +36,7 @@ a {
   .container {
     margin-top: 20px;
     margin-bottom: 0;
+    padding-bottom: calc(140px + env(safe-area-inset-bottom));
   }
 }
 

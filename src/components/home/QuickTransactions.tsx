@@ -265,6 +265,10 @@ export default function QuickTransactions({
     setIsTransactionModalOpen,
   } = useTransactions();
 
+  useEffect(() => {
+    setTemplates(initialTemplates);
+  }, [initialTemplates]);
+
   const openTransaction = (template?: QuickTransactionTemplate) => {
     setTransactionId(null);
     setIsCopyTransactionFlow(false);

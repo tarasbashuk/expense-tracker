@@ -1,5 +1,6 @@
 'use client';
 import { FC } from 'react';
+import SaveTransactionTemplate from './SaveTransactionTemplate';
 import { format } from 'date-fns';
 import { Transaction, TransactionType } from '@prisma/client';
 import { useIntl } from 'react-intl';
@@ -218,6 +219,7 @@ const TransactionItem: FC<Props> = ({
               </IconButton>
             </Tooltip>
           )}
+          <SaveTransactionTemplate transaction={transaction} />
           <Tooltip
             title={formatMessage({
               id: 'common.delete',

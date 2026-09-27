@@ -205,5 +205,21 @@
   "recurring.forecast.historyDescription": "Average monthly spending over the last year",
   "recurring.forecast.categoriesTotal": "Total Forecast",
   "recurring.forecast.recurring": "Recurring Transactions",
-  "recurring.forecast.total": "Total"
+  "recurring.forecast.total": "Total",
+  "history.search": "Search descriptions",
+  "history.searchScope": "Search within the selected period",
+  "history.clearSearch": "Clear search",
+  "history.filters": "Filters ({count})",
+  "history.resetFilters": "Reset search and filters",
+  "history.filteredSum": "Net total for matching transactions:",
+  "history.noMatches": "No matching transactions in this period",
+  "history.periodTotals": "Entire selected period",
+  "navigation.more": "More",
+  "navigation.import": "Import",
+  "template.fromTransaction": "Save as shortcut",
+  "template.fromTransactionHint": "The shortcut keeps this transaction’s category, currency and type. Dates and recurring payments are not copied.",
+  "template.includeAmount": "Keep amount: {amount}",
+  "template.saved": "Shortcut added to your home screen",
+  "template.saveError": "Unable to save shortcut. Please try again.",
+  "template.descriptionTooLong": "Shorten the description to 160 characters."
 }

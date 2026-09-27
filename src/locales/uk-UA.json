@@ -206,5 +206,21 @@
   "recurring.forecast.historyDescription": "Середні місячні витрати за останній рік",
   "recurring.forecast.categoriesTotal": "Загальний прогноз",
   "recurring.forecast.recurring": "Повторювані транзакції",
-  "recurring.forecast.total": "Всього"
+  "recurring.forecast.total": "Всього",
+  "history.search": "Пошук за описом",
+  "history.searchScope": "Пошук у вибраному періоді",
+  "history.clearSearch": "Очистити пошук",
+  "history.filters": "Фільтри ({count})",
+  "history.resetFilters": "Скинути пошук і фільтри",
+  "history.filteredSum": "Баланс знайдених операцій:",
+  "history.noMatches": "У цьому періоді відповідних операцій немає",
+  "history.periodTotals": "За весь вибраний період",
+  "navigation.more": "Ще",
+  "navigation.import": "Імпорт",
+  "template.fromTransaction": "Зберегти як шаблон",
+  "template.fromTransactionHint": "Шаблон збереже категорію, валюту й тип операції. Дата та повторення не переносяться.",
+  "template.includeAmount": "Зберегти суму: {amount}",
+  "template.saved": "Шаблон додано на головну",
+  "template.saveError": "Не вдалося зберегти шаблон. Спробуйте ще раз.",
+  "template.descriptionTooLong": "Скоротіть опис до 160 символів."
 }

@@ -27,6 +27,7 @@ import { getTransactionSign, formatDate } from '@/lib/utils';
 import { useSettings } from '@/context/SettingsContexts';
 import { Locale } from '@/locales';
 import MobileWarning from './shared/MobileWarning';
+import SaveTransactionTemplate from './SaveTransactionTemplate';
 import { useCategoryI18n } from '@/lib/useCategoryI18n';
 
 interface TransactionsDataGridProps {
@@ -40,6 +41,7 @@ interface TransactionsDataGridProps {
 }
 
 interface ActionMenuProps {
+  transaction: Transaction;
   onCopy: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -98,7 +100,12 @@ const DefaultCurrencyHeader = () => {
   );
 };
 
-const ActionMenu: FC<ActionMenuProps> = ({ onCopy, onEdit, onDelete }) => {
+const ActionMenu: FC<ActionMenuProps> = ({
+  transaction,
+  onCopy,
+  onEdit,
+  onDelete,
+}) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const { formatMessage } = useIntl();
 
@@ -119,6 +126,7 @@ const ActionMenu: FC<ActionMenuProps> = ({ onCopy, onEdit, onDelete }) => {
         marginTop: '5px',
       }}
     >
+      <SaveTransactionTemplate transaction={transaction} />
       <Menu
         id="basic-menu"
         anchorEl={anchorEl}
@@ -298,11 +306,12 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
         sortable: false,
         filterable: false,
         renderHeader: () => null,
-        width: 40,
+        width: 100,
         align: 'center',
         renderCell: ({ row }) => {
           return (
             <ActionMenu
+              transaction={row}
               onEdit={() => handleEdit(row.id)}
               onCopy={() => handleCopy(row.id)}
               onDelete={() => handleDelete(row.id)}

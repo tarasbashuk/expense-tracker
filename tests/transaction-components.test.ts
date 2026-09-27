@@ -12,6 +12,7 @@ import TransactionList from '@/components/TransactionList';
 import RecentTransactions from '@/components/home/RecentTransactions';
 
 const mocks = vi.hoisted(() => ({
+  saveTemplate: vi.fn(),
   setTransactions: vi.fn(),
   setTransactionDraft: vi.fn(),
   setTransactionId: vi.fn(),
@@ -36,6 +37,10 @@ vi.mock('@/context/TranasctionsContext', () => ({
     transactions: [transaction],
     transactionsRefreshKey: 0,
   }),
+}));
+
+vi.mock('@/app/actions/quickTransactionTemplates', () => ({
+  saveQuickTransactionTemplate: mocks.saveTemplate,
 }));
 
 vi.mock('@/app/actions/getTransactions', () => ({
@@ -249,4 +254,65 @@ test('transaction history keeps the record when deletion fails', async () => {
   expect(mocks.setTransactions).not.toHaveBeenCalled();
   expect(mocks.success).not.toHaveBeenCalled();
   expect(mocks.requestTransactionsRefresh).not.toHaveBeenCalled();
+});
+
+test('description search filters locally and clearing restores results without another fetch', async () => {
+  const user = userEvent.setup();
+  await renderHistory();
+  const calls = mocks.getTransactions.mock.calls.length;
+
+  await user.type(
+    screen.getByRole('textbox', { name: 'Search descriptions' }),
+    'missing',
+  );
+
+  expect(screen.queryByText('Coffee')).toBeNull();
+  expect(
+    screen.getByText('No matching transactions in this period'),
+  ).toBeTruthy();
+  expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
+
+  await user.click(screen.getByRole('button', { name: 'Clear search' }));
+
+  expect(screen.getByText('Coffee')).toBeTruthy();
+  expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
+});
+
+test('saving a shortcut copies original currency and amount rather than the converted amount', async () => {
+  mocks.saveTemplate.mockResolvedValue({ template: { id: 'new-template' } });
+  const user = userEvent.setup();
+  renderRecent();
+
+  await user.click(screen.getByRole('button', { name: 'Save as shortcut' }));
+  await user.click(screen.getByRole('button', { name: 'Save' }));
+
+  expect(mocks.saveTemplate).toHaveBeenCalledExactlyOnceWith({
+    label: 'Coffee',
+    text: 'Coffee',
+    amount: 20,
+    currency: 'PLN',
+    category: 'dining',
+    type: 'Expense',
+  });
+  await waitFor(() => expect(mocks.refresh).toHaveBeenCalledOnce());
+});
+
+test('shortcut can omit the amount and preserves the dialog on failure', async () => {
+  mocks.saveTemplate.mockResolvedValue({ error: 'Template limit reached' });
+  const user = userEvent.setup();
+  renderRecent();
+
+  await user.click(screen.getByRole('button', { name: 'Save as shortcut' }));
+  await user.click(
+    screen.getByRole('checkbox', { name: 'Keep amount: 20 zł' }),
+  );
+  await user.click(screen.getByRole('button', { name: 'Save' }));
+
+  expect(mocks.saveTemplate.mock.calls[0][0].amount).toBeUndefined();
+  expect(await screen.findByRole('alert')).toHaveProperty(
+    'textContent',
+    'Template limit reached',
+  );
+  expect(screen.getByRole('dialog')).toBeTruthy();
+  expect(mocks.refresh).not.toHaveBeenCalled();
 });
