@@ -35,7 +35,7 @@ const fabContainerStyles = {
   zIndex: 1200,
   left: { xs: 0, sm: 'unset' },
   right: { xs: 0, sm: 20 },
-  bottom: { xs: 'calc(72px + env(safe-area-inset-bottom))', sm: 15 },
+  bottom: { xs: 'calc(54px + env(safe-area-inset-bottom))', sm: 15 },
   margin: '0 auto',
   width: { xs: 'fit-content', sm: 'auto' },
   display: 'flex',
