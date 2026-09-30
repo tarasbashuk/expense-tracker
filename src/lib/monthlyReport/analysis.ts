@@ -130,6 +130,7 @@ export async function getMonthlyAnalysis(
 Write all insights and reasons in ${language === 'UKR' ? 'Ukrainian' : 'English'}.
 Return 3–5 concise useful insights if data supports them; fewer for sparse data.
 Use supplied category totals, shares and changes as the numerical source of truth. Do not invent calculations, budgets, trends or motives.
+If forecast is provided, include one insight about its target month, using its supplied total and recurringTotal. This is an estimate, never an actual expense or a budget. It uses the same month last year, replacing historical recurring expenses and exact description/category matches with current recurring payments. Renamed payments may overlap; one-off historical purchases may not recur. If hasHistoricalExpenses is false, explicitly describe it as a partial recurring-only estimate; if neither history nor recurring expenses exist, say there is insufficient data instead of predicting zero spending. Do not invent inflation adjustments or exchange rates. If forecast is null, do not invent a forecast.
 If previousMonthHasRecords is false, do not claim spending increased from zero: history is unavailable.
 Null percentage changes are undefined, never interpret them as zero percent.
 Use gentle situational humor, never shame spending or speculate about who spent money or relationships. Be neutral about healthcare and donations.

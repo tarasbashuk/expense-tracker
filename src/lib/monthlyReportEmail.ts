@@ -1,4 +1,6 @@
 import nodemailer from 'nodemailer';
+import type { MonthlyForecast } from './monthlyReport/forecast';
+import { renderMonthlyForecast } from './monthlyReport/renderForecast';
 import type { MonthlyAnalysis } from './monthlyReport/analysis';
 import type { AnalysisInput } from './monthlyReport/data';
 import {
@@ -22,6 +24,7 @@ interface TopCategory {
 }
 
 interface MonthlyReportData {
+  forecast?: MonthlyForecast | null;
   analysis?: MonthlyAnalysis | null;
   analysisTransactions?: AnalysisInput['transactions'];
   language?: string;
@@ -293,6 +296,8 @@ export async function sendMonthlyReportEmail(
         `
             : ''
         }
+
+        ${renderMonthlyForecast(data.forecast, currency, data.language || 'ENG')}
 
         ${renderMonthlyAnalysis(data.analysis, data.analysisTransactions || [], data.language || 'ENG')}
 

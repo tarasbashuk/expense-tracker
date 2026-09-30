@@ -469,3 +469,85 @@ test('Clerk lookup failure skips delivery rather than guessing recipients', asyn
     error,
   );
 });
+
+test('cron forecasts the new month with decrypted seasonal data and shares totals with AI and email', async () => {
+  const school = transaction({
+    text: 'School',
+    category: 'education',
+    amount: 650,
+    amountDefaultCurrency: 650,
+    isRecurring: true,
+  });
+  const history = transaction({
+    text: 'School',
+    category: 'education',
+    date: new Date('2025-09-12'),
+    amount: 500,
+    amountDefaultCurrency: 500,
+  });
+  const encode = (row: typeof school) => ({
+    ...row,
+    text: encrypt(row.text, 'test-key'),
+    amount: encryptFloat(row.amount, 'test-key'),
+    amountDefaultCurrency: encryptFloat(row.amountDefaultCurrency, 'test-key'),
+  });
+
+  mocks.findUsers.mockResolvedValue([reportUser(true)]);
+  mocks.findTransactions
+    .mockResolvedValueOnce([encode(school)])
+    .mockResolvedValueOnce([encode(history)]);
+  mocks.createResponse.mockResolvedValue({
+    status: 'completed',
+    output_text: JSON.stringify({ insights: ['Прогноз.'], duplicates: [] }),
+  });
+
+  await GET(monthlyRequest());
+
+  const payload = JSON.parse(
+    mocks.createResponse.mock.lastCall![0].input[0].content,
+  );
+  const html = mocks.sendMail.mock.lastCall![0].html;
+
+  expect(payload.month).toBe('2026-08');
+  expect(payload.forecast.month).toBe('2026-09');
+  expect(payload.forecast.total).toBe(650);
+  expect(payload.forecast.replacedHistoricalTotal).toBe(500);
+  expect(payload.summary.totalExpenses).toBe(650);
+  expect(payload.transactions).toHaveLength(1);
+  expect(html).toContain('Прогноз витрат на 2026-09');
+  expect(mocks.findTransactions.mock.lastCall![0].where).toEqual({
+    userId: 'user-1',
+    OR: [
+      { date: { gte: new Date('2025-09-01'), lt: new Date('2025-10-01') } },
+      {
+        isRecurring: true,
+        date: { gte: new Date('2026-09-01'), lt: new Date('2026-10-01') },
+      },
+    ],
+  });
+});
+
+test('forecast remains in the email when AI is unavailable', async () => {
+  mocks.findTransactions
+    .mockResolvedValueOnce([transaction({ isRecurring: true })])
+    .mockResolvedValueOnce([]);
+  vi.stubEnv('MONTHLY_REPORT_AI_ENABLED', 'false');
+
+  await GET(monthlyRequest());
+
+  expect(mocks.sendMail.mock.lastCall![0].html).toContain('Частковий прогноз');
+  expect(mocks.createResponse).not.toHaveBeenCalled();
+});
+
+test('forecast data failure does not prevent the standard monthly report', async () => {
+  mocks.findTransactions
+    .mockResolvedValueOnce([transaction()])
+    .mockRejectedValueOnce(new Error('Forecast unavailable'));
+
+  await GET(monthlyRequest());
+
+  expect(mocks.sendMail).toHaveBeenCalledTimes(1);
+  expect(mocks.sendMail.mock.lastCall![0].html).not.toContain(
+    'Прогноз витрат на',
+  );
+});
