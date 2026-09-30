@@ -101,6 +101,7 @@ const input = () =>
   );
 
 const valid = () => ({
+  forecast: null,
   insights: ['Коротке спостереження.'],
   duplicates: [{ refs: [1, 2], reason: 'Однакова дата й сума, схожі описи.' }],
 });
@@ -470,7 +471,7 @@ test('Clerk lookup failure skips delivery rather than guessing recipients', asyn
   );
 });
 
-test('cron forecasts the new month with decrypted seasonal data and shares totals with AI and email', async () => {
+test('cron sends raw decrypted forecast data to AI and calculates email totals from its decisions', async () => {
   const school = transaction({
     text: 'School',
     category: 'education',
@@ -498,7 +499,15 @@ test('cron forecasts the new month with decrypted seasonal data and shares total
     .mockResolvedValueOnce([encode(history)]);
   mocks.createResponse.mockResolvedValue({
     status: 'completed',
-    output_text: JSON.stringify({ insights: ['Прогноз.'], duplicates: [] }),
+    output_text: JSON.stringify({
+      insights: ['Прогноз.'],
+      duplicates: [],
+      forecast: {
+        replacements: [{ ref: 2, replacementRef: 1, reason: 'Same school.' }],
+        optionalExpenses: [],
+        assumptions: [],
+      },
+    }),
   });
 
   await GET(monthlyRequest());
@@ -510,8 +519,24 @@ test('cron forecasts the new month with decrypted seasonal data and shares total
 
   expect(payload.month).toBe('2026-08');
   expect(payload.forecast.month).toBe('2026-09');
-  expect(payload.forecast.total).toBe(650);
-  expect(payload.forecast.replacedHistoricalTotal).toBe(500);
+  expect(payload.forecast.transactions).toEqual([
+    expect.objectContaining({
+      ref: 1,
+      source: 'previousRecurring',
+      description: 'School',
+      amountDefaultCurrency: 650,
+    }),
+    expect.objectContaining({
+      ref: 2,
+      source: 'historical',
+      description: 'School',
+      amountDefaultCurrency: 500,
+    }),
+  ]);
+  expect(payload.forecast.total).toBeUndefined();
+  expect(html).toContain('650,00');
+  expect(html).toContain('500,00');
+  expect(mocks.createResponse).toHaveBeenCalledTimes(1);
   expect(payload.summary.totalExpenses).toBe(650);
   expect(payload.transactions).toHaveLength(1);
   expect(html).toContain('Прогноз витрат на 2026-09');
@@ -527,7 +552,7 @@ test('cron forecasts the new month with decrypted seasonal data and shares total
   });
 });
 
-test('forecast remains in the email when AI is unavailable', async () => {
+test('forecast is explicitly unavailable when AI is disabled', async () => {
   mocks.findTransactions
     .mockResolvedValueOnce([transaction({ isRecurring: true })])
     .mockResolvedValueOnce([]);
@@ -535,7 +560,9 @@ test('forecast remains in the email when AI is unavailable', async () => {
 
   await GET(monthlyRequest());
 
-  expect(mocks.sendMail.mock.lastCall![0].html).toContain('Частковий прогноз');
+  expect(mocks.sendMail.mock.lastCall![0].html).toContain(
+    'AI-прогноз недоступний',
+  );
   expect(mocks.createResponse).not.toHaveBeenCalled();
 });
 
@@ -550,4 +577,32 @@ test('forecast data failure does not prevent the standard monthly report', async
   expect(mocks.sendMail.mock.lastCall![0].html).not.toContain(
     'Прогноз витрат на',
   );
+});
+
+test('invalid forecast decisions preserve valid report insights without displaying a forecast amount', async () => {
+  mocks.findTransactions
+    .mockResolvedValueOnce([transaction({ isRecurring: true })])
+    .mockResolvedValueOnce([]);
+  mocks.createResponse.mockResolvedValue({
+    status: 'completed',
+    output_text: JSON.stringify({
+      insights: ['Valid report insight.'],
+      duplicates: [],
+      forecast: {
+        replacements: [
+          { ref: 999, replacementRef: 1, reason: 'Invented reference' },
+        ],
+        optionalExpenses: [],
+        assumptions: [],
+      },
+    }),
+  });
+
+  await GET(monthlyRequest());
+
+  const html = mocks.sendMail.mock.lastCall![0].html;
+
+  expect(html).toContain('Valid report insight.');
+  expect(html).toContain('AI-прогноз недоступний');
+  expect(html).not.toContain('≈');
 });

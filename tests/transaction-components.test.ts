@@ -454,3 +454,31 @@ test.each([
     );
   },
 );
+
+test('recurring-only filters locally and reset restores the list and checkbox', async () => {
+  const user = userEvent.setup();
+
+  await renderHistory();
+
+  const calls = mocks.getTransactions.mock.calls.length;
+  const checkbox = screen.getByRole('checkbox', {
+    name: 'Recurring only',
+  }) as HTMLInputElement;
+
+  await user.click(checkbox);
+
+  expect(checkbox.checked).toBe(true);
+  expect(screen.queryByText('Coffee')).toBeNull();
+  expect(
+    screen.getByText('No matching transactions in this period'),
+  ).toBeTruthy();
+  expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
+
+  await user.click(
+    screen.getByRole('button', { name: 'Reset search and filters' }),
+  );
+
+  expect(checkbox.checked).toBe(false);
+  expect(screen.getByText('Coffee')).toBeTruthy();
+  expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
+});

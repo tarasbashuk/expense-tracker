@@ -15,130 +15,291 @@ export const getForecastPeriods = (now: Date) => {
   };
 };
 
-const isExpense = (t: Transaction) =>
-  t.type === 'Expense' && t.category !== ExpenseCategory.CCRepayment;
+type ForecastSource = 'historical' | 'previousRecurring' | 'currentRecurring';
 
-const matchKey = (t: Transaction) => {
-  const description = t.text
-    .normalize('NFKC')
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, ' ');
+export interface ForecastTransaction {
+  ref: number;
+  source: ForecastSource;
+  description: string;
+  category: string;
+  date: string;
+  amount: number;
+  currency: string;
+  amountDefaultCurrency: number;
+  isRecurring: boolean;
+  recurringEndDate: string | null;
+}
 
-  return description ? JSON.stringify([t.category, description]) : null;
+export interface ForecastInput {
+  month: string;
+  historicalMonth: string;
+  transactions: ForecastTransaction[];
+}
+
+interface ForecastDecisions {
+  replacements: { ref: number; replacementRef: number; reason: string }[];
+  optionalExpenses: { ref: number; reason: string }[];
+  assumptions: string[];
+}
+
+const reasonSchema = { type: 'string', minLength: 1, maxLength: 500 };
+
+export const forecastDecisionSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    replacements: {
+      type: 'array',
+      maxItems: 200,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          ref: { type: 'integer' },
+          replacementRef: { type: 'integer' },
+          reason: reasonSchema,
+        },
+        required: ['ref', 'replacementRef', 'reason'],
+      },
+    },
+    optionalExpenses: {
+      type: 'array',
+      maxItems: 100,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: { ref: { type: 'integer' }, reason: reasonSchema },
+        required: ['ref', 'reason'],
+      },
+    },
+    assumptions: { type: 'array', maxItems: 5, items: reasonSchema },
+  },
+  required: ['replacements', 'optionalExpenses', 'assumptions'],
 };
 
-const total = (rows: Transaction[]) =>
-  rows.reduce(
-    (value, t) => value.plus(t.amountDefaultCurrency),
-    new Decimal(0),
-  );
-
-const money = (value: Decimal) => value.toDecimalPlaces(2).toNumber();
-
-export function buildMonthlyForecast(transactions: Transaction[], now: Date) {
+export function buildForecastInput(
+  transactions: Transaction[],
+  now: Date,
+): ForecastInput {
   const periods = getForecastPeriods(now);
-  const expenses = transactions.filter(isExpense);
-  const history = expenses.filter(
-    (t) => t.date >= periods.historicalStart && t.date < periods.historicalEnd,
-  );
-  const previousRecurring = expenses.filter(
-    (t) =>
-      t.isRecurring &&
-      t.date >= periods.previousStart &&
-      t.date < periods.start,
-  );
-  const currentRecurring = expenses.filter(
-    (t) => t.isRecurring && t.date >= periods.start && t.date < periods.end,
-  );
-  const unmatchedCurrent = [...currentRecurring];
-  const recurring: Transaction[] = [];
+  const lastDay = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  const rows: ForecastTransaction[] = [];
 
-  for (const source of previousRecurring) {
-    const key = matchKey(source);
-    const currentIndex =
-      key === null
-        ? -1
-        : unmatchedCurrent.findIndex((t) => matchKey(t) === key);
-
-    if (currentIndex >= 0) {
-      recurring.push(...unmatchedCurrent.splice(currentIndex, 1));
-
+  for (const t of transactions) {
+    if (t.type !== 'Expense' || t.category === ExpenseCategory.CCRepayment) {
       continue;
     }
 
-    const lastDay = new Date(
-      Date.UTC(
-        periods.start.getUTCFullYear(),
-        periods.start.getUTCMonth() + 1,
-        0,
-      ),
-    ).getUTCDate();
-    const dueDate = new Date(
-      Date.UTC(
-        periods.start.getUTCFullYear(),
-        periods.start.getUTCMonth(),
-        Math.min(source.date.getUTCDate(), lastDay),
-      ),
-    );
+    let source: ForecastSource;
 
-    if (!source.recurringEndDate || dueDate <= source.recurringEndDate) {
-      recurring.push(source);
-    }
-  }
+    if (t.date >= periods.historicalStart && t.date < periods.historicalEnd) {
+      source = 'historical';
+    } else if (
+      t.isRecurring &&
+      t.date >= periods.previousStart &&
+      t.date < periods.start
+    ) {
+      const dueDate = new Date(
+        Date.UTC(
+          now.getUTCFullYear(),
+          now.getUTCMonth(),
+          Math.min(t.date.getUTCDate(), lastDay),
+        ),
+      );
 
-  recurring.push(...unmatchedCurrent);
+      if (t.recurringEndDate && dueDate > t.recurringEndDate) {
+        continue;
+      }
 
-  // Replace at most one historical expense per recurring payment. Never erase
-  // a whole category: school fees and school supplies can share a category.
-  const availableMatches = [...recurring];
-  const retainedHistory: Transaction[] = [];
-  const removedHistory: Transaction[] = [];
-
-  for (const historical of history) {
-    const key = matchKey(historical);
-    const matchIndex =
-      key === null
-        ? -1
-        : availableMatches.findIndex((t) => matchKey(t) === key);
-
-    if (matchIndex >= 0) {
-      availableMatches.splice(matchIndex, 1);
-      removedHistory.push(historical);
-    } else if (historical.isRecurring) {
-      // Last year's recurring payments are superseded by the current schedule.
-      removedHistory.push(historical);
+      source = 'previousRecurring';
+    } else if (
+      t.isRecurring &&
+      t.date >= periods.start &&
+      t.date < periods.end
+    ) {
+      source = 'currentRecurring';
     } else {
-      retainedHistory.push(historical);
+      continue;
     }
+
+    if (
+      !Number.isFinite(t.amount) ||
+      !Number.isFinite(t.amountDefaultCurrency)
+    ) {
+      throw new Error('Invalid forecast amounts');
+    }
+
+    rows.push({
+      ref: rows.length + 1,
+      source,
+      description: t.text,
+      category: t.category,
+      date: t.date.toISOString().slice(0, 10),
+      amount: t.amount,
+      currency: t.currency,
+      amountDefaultCurrency: t.amountDefaultCurrency,
+      isRecurring: Boolean(t.isRecurring),
+      recurringEndDate: t.recurringEndDate?.toISOString().slice(0, 10) ?? null,
+    });
   }
 
+  return {
+    month: periods.start.toISOString().slice(0, 7),
+    historicalMonth: periods.historicalStart.toISOString().slice(0, 7),
+    transactions: rows,
+  };
+}
+
+const validReason = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim().length > 0 && value.length <= 500;
+
+const invalidForecast = (): never => {
+  throw new Error('Invalid forecast decisions');
+};
+
+const total = (rows: ForecastTransaction[]) =>
+  rows
+    .reduce((sum, row) => sum.plus(row.amountDefaultCurrency), new Decimal(0))
+    .toDecimalPlaces(2)
+    .toNumber();
+
+export function calculateForecast(input: ForecastInput, value: unknown) {
+  if (!value || typeof value !== 'object') {
+    return invalidForecast();
+  }
+
+  const decisions = value as ForecastDecisions;
+
+  if (
+    !Array.isArray(decisions.replacements) ||
+    decisions.replacements.length > 200 ||
+    !Array.isArray(decisions.optionalExpenses) ||
+    decisions.optionalExpenses.length > 100 ||
+    !Array.isArray(decisions.assumptions) ||
+    decisions.assumptions.length > 5 ||
+    !decisions.assumptions.every(validReason)
+  ) {
+    return invalidForecast();
+  }
+
+  const byRef = new Map(input.transactions.map((row) => [row.ref, row]));
+  const replaced = new Set<number>();
+  const targetSlots = new Set<string>();
+
+  for (const replacement of decisions.replacements) {
+    if (
+      !replacement ||
+      !Number.isInteger(replacement.ref) ||
+      !Number.isInteger(replacement.replacementRef) ||
+      !validReason(replacement.reason)
+    ) {
+      return invalidForecast();
+    }
+
+    const from = byRef.get(replacement.ref);
+    const to = byRef.get(replacement.replacementRef);
+
+    if (!from || !to || replaced.has(from.ref)) {
+      return invalidForecast();
+    }
+
+    const allowed =
+      (from.source === 'historical' && to.source !== 'historical') ||
+      (from.source === 'previousRecurring' && to.source === 'currentRecurring');
+    // One payment can replace one historical and one previous-month payment,
+    // but cannot erase two distinct purchases within either source period.
+    const slot = `${from.source}:${to.ref}`;
+
+    if (!allowed || targetSlots.has(slot)) {
+      return invalidForecast();
+    }
+
+    replaced.add(from.ref);
+    targetSlots.add(slot);
+  }
+
+  // Require direct references to the retained payment, never replacement chains.
+  if (decisions.replacements.some((r) => replaced.has(r.replacementRef))) {
+    return invalidForecast();
+  }
+
+  const optional = new Set<number>();
+
+  for (const item of decisions.optionalExpenses) {
+    if (!item || !Number.isInteger(item.ref) || !validReason(item.reason)) {
+      return invalidForecast();
+    }
+
+    const row = byRef.get(item.ref);
+
+    if (
+      !row ||
+      row.source !== 'historical' ||
+      row.isRecurring ||
+      replaced.has(item.ref) ||
+      optional.has(item.ref)
+    ) {
+      return invalidForecast();
+    }
+
+    optional.add(item.ref);
+  }
+
+  const history = input.transactions.filter(
+    (row) => row.source === 'historical',
+  );
+  const removedHistory = history.filter(
+    (row) => row.isRecurring || replaced.has(row.ref),
+  );
+  const retainedHistory = history.filter(
+    (row) =>
+      !row.isRecurring && !replaced.has(row.ref) && !optional.has(row.ref),
+  );
+  const recurring = input.transactions.filter(
+    (row) => row.source !== 'historical' && !replaced.has(row.ref),
+  );
+  const optionalRows = history.filter((row) => optional.has(row.ref));
   const projected = [...retainedHistory, ...recurring];
   const categories = new Map<string, Decimal>();
 
   for (const row of projected) {
     categories.set(
       row.category,
-      (categories.get(row.category) || new Decimal(0)).plus(
+      (categories.get(row.category) ?? new Decimal(0)).plus(
         row.amountDefaultCurrency,
       ),
     );
   }
 
   return {
-    month: periods.start.toISOString().slice(0, 7),
-    historicalMonth: periods.historicalStart.toISOString().slice(0, 7),
+    month: input.month,
+    historicalMonth: input.historicalMonth,
     hasHistoricalExpenses: history.length > 0,
     hasRecurringExpenses: recurring.length > 0,
-    historicalTotal: money(total(history)),
-    replacedHistoricalTotal: money(total(removedHistory)),
-    recurringTotal: money(total(recurring)),
-    total: money(total(projected)),
+    historicalTotal: total(history),
+    replacedHistoricalTotal: total(removedHistory),
+    recurringTotal: total(recurring),
+    total: total(projected),
+    optionalTotal: total(optionalRows),
+    totalWithOptional: total([...projected, ...optionalRows]),
     categories: Array.from(categories, ([category, amount]) => ({
       category,
-      total: money(amount),
+      total: amount.toDecimalPlaces(2).toNumber(),
     })).sort((a, b) => b.total - a.total),
+    replacements: decisions.replacements.map((item) => ({
+      description: byRef.get(item.ref)!.description,
+      replacementDescription: byRef.get(item.replacementRef)!.description,
+      reason: item.reason,
+    })),
+    optionalExpenses: decisions.optionalExpenses.map((item) => ({
+      description: byRef.get(item.ref)!.description,
+      amount: byRef.get(item.ref)!.amountDefaultCurrency,
+      reason: item.reason,
+    })),
+    assumptions: decisions.assumptions,
   };
 }
 
-export type MonthlyForecast = ReturnType<typeof buildMonthlyForecast>;
+export type MonthlyForecast = ReturnType<typeof calculateForecast>;

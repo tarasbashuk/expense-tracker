@@ -18,7 +18,7 @@ import {
 } from '@/lib/monthlyReport/analysis';
 import * as Sentry from '@sentry/nextjs';
 import {
-  buildMonthlyForecast,
+  buildForecastInput,
   getForecastPeriods,
 } from '@/lib/monthlyReport/forecast';
 import { sendMonthlyReportEmail } from '@/lib/monthlyReportEmail';
@@ -172,7 +172,7 @@ export async function GET(request: NextRequest) {
             clerkUser?.primaryEmailAddressId,
           );
 
-          forecast = buildMonthlyForecast(
+          forecast = buildForecastInput(
             [...transactions, ...decodedForecastRows],
             today,
           );
@@ -198,7 +198,7 @@ export async function GET(request: NextRequest) {
 
         // Generate the analysis once, then send a separate copy to each recipient.
         const report = {
-          forecast,
+          forecast: analysis?.forecast ?? null,
           analysis,
           analysisTransactions: analysisInput.transactions,
           language,
