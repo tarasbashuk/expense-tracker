@@ -160,7 +160,7 @@ export type ForecastValidationCode =
   | 'invalid_structure'
   | 'invalid_replacement'
   | 'unknown_or_reused_reference'
-  | 'invalid_direction_or_shared_target'
+  | 'invalid_replacement_direction'
   | 'replacement_chain'
   | 'invalid_optional_expense'
   | 'optional_expense_conflict';
@@ -203,7 +203,6 @@ export function calculateForecast(input: ForecastInput, value: unknown) {
 
   const byRef = new Map(input.transactions.map((row) => [row.ref, row]));
   const replaced = new Set<number>();
-  const targetSlots = new Set<string>();
 
   for (const replacement of decisions.replacements) {
     if (
@@ -225,16 +224,13 @@ export function calculateForecast(input: ForecastInput, value: unknown) {
     const allowed =
       (from.source === 'historical' && to.source !== 'historical') ||
       (from.source === 'previousRecurring' && to.source === 'currentRecurring');
-    // One payment can replace one historical and one previous-month payment,
-    // but cannot erase two distinct purchases within either source period.
-    const slot = `${from.source}:${to.ref}`;
-
-    if (!allowed || targetSlots.has(slot)) {
-      return invalidForecast('invalid_direction_or_shared_target');
+    if (!allowed) {
+      return invalidForecast('invalid_replacement_direction');
     }
 
+    // Multiple old charges may become one bundled bill. Each source is removed
+    // once; the retained target is added once from the input, not per match.
     replaced.add(from.ref);
-    targetSlots.add(slot);
   }
 
   // Require direct references to the retained payment, never replacement chains.

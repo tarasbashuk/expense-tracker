@@ -175,10 +175,6 @@ test.each([
     { ref: 1, replacementRef: 5, reason: 'Two' },
   ],
   [
-    { ref: 1, replacementRef: 6, reason: 'One' },
-    { ref: 2, replacementRef: 6, reason: 'Erases books too' },
-  ],
-  [
     { ref: 1, replacementRef: 5, reason: 'Chain' },
     { ref: 5, replacementRef: 6, reason: 'Chain' },
   ],
@@ -267,4 +263,49 @@ test('distinguishes partial, empty and unavailable forecasts without showing inv
   expect(renderMonthlyForecast(empty, 'EUR', 'ENG')).not.toContain('≈');
   expect(renderMonthlyForecast(null, 'EUR', 'ENG')).toContain('unavailable');
   expect(renderMonthlyForecast(null, 'EUR', 'ENG')).not.toContain('≈');
+});
+
+test('a combined current subscription replaces multiple old charges without adding the target twice', () => {
+  const input = buildForecastInput(
+    [
+      historical({ text: 'News A', amountDefaultCurrency: 4 }),
+      historical({ text: 'News B', amountDefaultCurrency: 6 }),
+      recurring({ text: 'News A', amountDefaultCurrency: 5 }),
+      recurring({ text: 'News B', amountDefaultCurrency: 7 }),
+      recurring({
+        text: 'News A+B',
+        amountDefaultCurrency: 9,
+        date: new Date('2026-09-10'),
+      }),
+      historical({ text: 'Separate purchase', amountDefaultCurrency: 20 }),
+    ],
+    now,
+  );
+
+  const result = calculateForecast(input, {
+    replacements: [1, 2, 3, 4].map((ref) => ({
+      ref,
+      replacementRef: 5,
+      reason: 'The two subscriptions are now billed as one bundle.',
+    })),
+    optionalExpenses: [],
+    assumptions: [],
+  });
+
+  expect(result.historicalTotal).toBe(30);
+  expect(result.replacedHistoricalTotal).toBe(10);
+  expect(result.recurringTotal).toBe(9);
+  expect(result.total).toBe(29);
+  expect(result.replacements).toHaveLength(4);
+});
+
+test('invalid replacement direction has a distinct diagnostic code', () => {
+  expect(() =>
+    calculateForecast(exampleInput(), {
+      ...emptyDecisions(),
+      replacements: [
+        { ref: 6, replacementRef: 5, reason: 'Reversed direction' },
+      ],
+    }),
+  ).toThrow(expect.objectContaining({ code: 'invalid_replacement_direction' }));
 });
