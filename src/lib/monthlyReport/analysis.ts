@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/nextjs';
 import type { AnalysisInput } from './data';
 import {
   calculateForecast,
+  createForecastDecisionSchema,
   forecastDecisionSchema,
   ForecastValidationError,
   type MonthlyForecast,
@@ -201,7 +202,7 @@ export async function getMonthlyAnalysis(
 Write all insights and reasons in ${language === 'UKR' ? 'Ukrainian' : 'English'}.
 Return 3–5 concise useful insights if data supports them; fewer for sparse data.
 Use supplied category totals, shares and changes as the numerical source of truth. Do not invent calculations, budgets, trends or motives.
-The forecast input contains raw expenses with its own independent ref namespace and three sources: historical (same month last year), previousRecurring (last month's still-active recurring payments), currentRecurring (target month's recurring records). Do not mix forecast refs with report transaction refs used for duplicates.
+The forecast input contains raw expenses with its own independent ref namespace and three sources: historical (same month last year), previousRecurring (last month's still-active recurring payments), currentRecurring (target month's recurring records). Forecast refs are strings such as F1, F2; copy them exactly. Report duplicate refs are separate integers. Never renumber refs or use report refs in forecast decisions. Emit each replacement source ref exactly once; never propose competing targets for one source.
 If forecast input is null, return forecast: null. Otherwise return forecast decisions, never calculated totals. Do not state forecast sums in insights: code will calculate and display them separately.
 Match payments by meaning, merchant, service, timing and category, including renamed descriptions, different languages and changed amounts. Equal amounts or the same category alone do not establish a match. Different services from the same provider (e.g. dental vs general insurance) can be separate.
 Use replacements from previousRecurring to currentRecurring for the same obligation, retaining the current amount. Use replacements from historical to a retained recurring payment for the same obligation, retaining the current amount. When both old periods match, point both directly to the retained current payment; never make replacement chains. Each source ref may be replaced once; a retained payment may replace multiple old records only when they are components of the same obligation, a combined subscription or split installments now billed together. Explain the consolidation in each reason. Never merge unrelated purchases merely because they share a category. Do not delete an entire category. The ref is ALWAYS the old payment to remove; replacementRef is ALWAYS the retained payment. Allowed source directions are historical -> previousRecurring, historical -> currentRecurring, previousRecurring -> currentRecurring. Never reverse these directions or match within the same source period.
@@ -225,7 +226,15 @@ Return plain text strings only, no HTML or Markdown, and only the requested JSON
           type: 'json_schema',
           name: 'monthly_report_analysis',
           strict: true,
-          schema,
+          schema: {
+            ...schema,
+            properties: {
+              ...schema.properties,
+              forecast: input.forecast
+                ? createForecastDecisionSchema(input.forecast)
+                : { type: 'null' },
+            },
+          },
         },
       },
     });

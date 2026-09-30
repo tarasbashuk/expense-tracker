@@ -18,7 +18,7 @@ export const getForecastPeriods = (now: Date) => {
 type ForecastSource = 'historical' | 'previousRecurring' | 'currentRecurring';
 
 export interface ForecastTransaction {
-  ref: number;
+  ref: string;
   source: ForecastSource;
   description: string;
   category: string;
@@ -37,8 +37,8 @@ export interface ForecastInput {
 }
 
 interface ForecastDecisions {
-  replacements: { ref: number; replacementRef: number; reason: string }[];
-  optionalExpenses: { ref: number; reason: string }[];
+  replacements: { ref: string; replacementRef: string; reason: string }[];
+  optionalExpenses: { ref: string; reason: string }[];
   assumptions: string[];
 }
 
@@ -55,8 +55,8 @@ export const forecastDecisionSchema = {
         type: 'object',
         additionalProperties: false,
         properties: {
-          ref: { type: 'integer' },
-          replacementRef: { type: 'integer' },
+          ref: { type: 'string' },
+          replacementRef: { type: 'string' },
           reason: reasonSchema,
         },
         required: ['ref', 'replacementRef', 'reason'],
@@ -68,7 +68,7 @@ export const forecastDecisionSchema = {
       items: {
         type: 'object',
         additionalProperties: false,
-        properties: { ref: { type: 'integer' }, reason: reasonSchema },
+        properties: { ref: { type: 'string' }, reason: reasonSchema },
         required: ['ref', 'reason'],
       },
     },
@@ -76,6 +76,60 @@ export const forecastDecisionSchema = {
   },
   required: ['replacements', 'optionalExpenses', 'assumptions'],
 };
+
+// Constrain references to this request's forecast records. Report duplicate
+// refs use numbers; forecast refs use F-prefixed strings and cannot collide.
+export function createForecastDecisionSchema(input: ForecastInput) {
+  const refsFor = (source: ForecastSource) =>
+    input.transactions
+      .filter((row) => row.source === source)
+      .map((row) => row.ref);
+  const historical = refsFor('historical');
+  const previous = refsFor('previousRecurring');
+  const current = refsFor('currentRecurring');
+  const directions = [
+    { from: historical, to: [...previous, ...current] },
+    { from: previous, to: current },
+  ].filter(({ from, to }) => from.length > 0 && to.length > 0);
+  const replacementItems = directions.map(({ from, to }) => ({
+    ...forecastDecisionSchema.properties.replacements.items,
+    properties: {
+      ref: { type: 'string', enum: from },
+      replacementRef: { type: 'string', enum: to },
+      reason: reasonSchema,
+    },
+  }));
+  const optionalRefs = input.transactions
+    .filter((row) => row.source === 'historical' && !row.isRecurring)
+    .map((row) => row.ref);
+
+  return {
+    ...forecastDecisionSchema,
+    properties: {
+      ...forecastDecisionSchema.properties,
+      replacements: {
+        ...forecastDecisionSchema.properties.replacements,
+        maxItems: replacementItems.length ? 200 : 0,
+        items: replacementItems.length
+          ? { anyOf: replacementItems }
+          : forecastDecisionSchema.properties.replacements.items,
+      },
+      optionalExpenses: {
+        ...forecastDecisionSchema.properties.optionalExpenses,
+        maxItems: optionalRefs.length ? 100 : 0,
+        items: {
+          ...forecastDecisionSchema.properties.optionalExpenses.items,
+          properties: {
+            ref: optionalRefs.length
+              ? { type: 'string', enum: optionalRefs }
+              : { type: 'string' },
+            reason: reasonSchema,
+          },
+        },
+      },
+    },
+  };
+}
 
 export function buildForecastInput(
   transactions: Transaction[],
@@ -132,7 +186,7 @@ export function buildForecastInput(
     }
 
     rows.push({
-      ref: rows.length + 1,
+      ref: `F${rows.length + 1}`,
       source,
       description: t.text,
       category: t.category,
@@ -159,7 +213,9 @@ export type ForecastValidationCode =
   | 'invalid_object'
   | 'invalid_structure'
   | 'invalid_replacement'
-  | 'unknown_or_reused_reference'
+  | 'unknown_source_reference'
+  | 'unknown_target_reference'
+  | 'conflicting_replacement'
   | 'invalid_replacement_direction'
   | 'replacement_chain'
   | 'invalid_optional_expense'
@@ -202,13 +258,17 @@ export function calculateForecast(input: ForecastInput, value: unknown) {
   }
 
   const byRef = new Map(input.transactions.map((row) => [row.ref, row]));
-  const replaced = new Set<number>();
+  const replaced = new Set<string>();
+  const replacements = new Map<
+    string,
+    ForecastDecisions['replacements'][number]
+  >();
 
   for (const replacement of decisions.replacements) {
     if (
       !replacement ||
-      !Number.isInteger(replacement.ref) ||
-      !Number.isInteger(replacement.replacementRef) ||
+      typeof replacement.ref !== 'string' ||
+      typeof replacement.replacementRef !== 'string' ||
       !validReason(replacement.reason)
     ) {
       return invalidForecast('invalid_replacement');
@@ -217,8 +277,23 @@ export function calculateForecast(input: ForecastInput, value: unknown) {
     const from = byRef.get(replacement.ref);
     const to = byRef.get(replacement.replacementRef);
 
-    if (!from || !to || replaced.has(from.ref)) {
-      return invalidForecast('unknown_or_reused_reference');
+    if (!from) {
+      return invalidForecast('unknown_source_reference');
+    }
+
+    if (!to) {
+      return invalidForecast('unknown_target_reference');
+    }
+
+    const existing = replacements.get(from.ref);
+
+    if (existing) {
+      if (existing.replacementRef !== to.ref) {
+        return invalidForecast('conflicting_replacement');
+      }
+
+      // Repeating the same match is harmless; apply and display it only once.
+      continue;
     }
 
     const allowed =
@@ -231,6 +306,7 @@ export function calculateForecast(input: ForecastInput, value: unknown) {
     // Multiple old charges may become one bundled bill. Each source is removed
     // once; the retained target is added once from the input, not per match.
     replaced.add(from.ref);
+    replacements.set(from.ref, replacement);
   }
 
   // Require direct references to the retained payment, never replacement chains.
@@ -238,10 +314,10 @@ export function calculateForecast(input: ForecastInput, value: unknown) {
     return invalidForecast('replacement_chain');
   }
 
-  const optional = new Set<number>();
+  const optional = new Set<string>();
 
   for (const item of decisions.optionalExpenses) {
-    if (!item || !Number.isInteger(item.ref) || !validReason(item.reason)) {
+    if (!item || typeof item.ref !== 'string' || !validReason(item.reason)) {
       return invalidForecast('invalid_optional_expense');
     }
 
@@ -301,7 +377,7 @@ export function calculateForecast(input: ForecastInput, value: unknown) {
       category,
       total: amount.toDecimalPlaces(2).toNumber(),
     })).sort((a, b) => b.total - a.total),
-    replacements: decisions.replacements.map((item) => ({
+    replacements: Array.from(replacements.values(), (item) => ({
       description: byRef.get(item.ref)!.description,
       replacementDescription: byRef.get(item.replacementRef)!.description,
       reason: item.reason,

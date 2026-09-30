@@ -509,7 +509,9 @@ test('cron sends raw decrypted forecast data to AI and calculates email totals f
       insights: ['Прогноз.'],
       duplicates: [],
       forecast: {
-        replacements: [{ ref: 2, replacementRef: 1, reason: 'Same school.' }],
+        replacements: [
+          { ref: 'F2', replacementRef: 'F1', reason: 'Same school.' },
+        ],
         optionalExpenses: [],
         assumptions: [],
       },
@@ -527,18 +529,29 @@ test('cron sends raw decrypted forecast data to AI and calculates email totals f
   expect(payload.forecast.month).toBe('2026-09');
   expect(payload.forecast.transactions).toEqual([
     expect.objectContaining({
-      ref: 1,
+      ref: 'F1',
       source: 'previousRecurring',
       description: 'School',
       amountDefaultCurrency: 650,
     }),
     expect.objectContaining({
-      ref: 2,
+      ref: 'F2',
       source: 'historical',
       description: 'School',
       amountDefaultCurrency: 500,
     }),
   ]);
+  const forecastSchema =
+    mocks.createResponse.mock.lastCall![0].text.format.schema.properties
+      .forecast;
+
+  expect(
+    forecastSchema.properties.replacements.items.anyOf[0].properties.ref.enum,
+  ).toEqual(['F2']);
+  expect(
+    forecastSchema.properties.replacements.items.anyOf[0].properties
+      .replacementRef.enum,
+  ).toEqual(['F1']);
   expect(payload.forecast.total).toBeUndefined();
   expect(html).toContain('650,00');
   expect(html).toContain('500,00');
@@ -596,7 +609,7 @@ test('invalid forecast decisions preserve valid report insights without displayi
       duplicates: [],
       forecast: {
         replacements: [
-          { ref: 999, replacementRef: 1, reason: 'Invented reference' },
+          { ref: 'F999', replacementRef: 'F1', reason: 'Invented reference' },
         ],
         optionalExpenses: [],
         assumptions: [],

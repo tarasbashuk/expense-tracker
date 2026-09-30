@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import {
   buildForecastInput,
+  createForecastDecisionSchema,
   calculateForecast,
   getForecastPeriods,
 } from '@/lib/monthlyReport/forecast';
@@ -61,18 +62,18 @@ const exampleInput = () =>
 const exampleDecisions = () => ({
   replacements: [
     {
-      ref: 1,
-      replacementRef: 6,
+      ref: 'F1',
+      replacementRef: 'F6',
       reason: 'Same school tuition with a new name and price.',
     },
     {
-      ref: 5,
-      replacementRef: 6,
+      ref: 'F5',
+      replacementRef: 'F6',
       reason: 'Current school payment replaces the previous month.',
     },
   ],
   optionalExpenses: [
-    { ref: 3, reason: 'A phone purchase may not repeat annually.' },
+    { ref: 'F3', reason: 'A phone purchase may not repeat annually.' },
   ],
   assumptions: [
     'Annual vehicle maintenance is retained at its historical price.',
@@ -117,7 +118,7 @@ test('raw input separates periods, strips private fields and excludes expired re
     'previousRecurring',
     'currentRecurring',
   ]);
-  expect(input.transactions.map((r) => r.ref)).toEqual([1, 2, 3]);
+  expect(input.transactions.map((r) => r.ref)).toEqual(['F1', 'F2', 'F3']);
   expect(JSON.stringify(input)).not.toContain('userId');
   expect(JSON.stringify(input)).not.toContain('test-user');
   expect(JSON.stringify(input)).not.toContain('createdAt');
@@ -164,19 +165,19 @@ test('removes historical recurring records, adds new obligations and sums decima
 });
 
 test.each([
-  [{ ref: 99, replacementRef: 6, reason: 'Unknown ref' }],
-  [{ ref: 1, replacementRef: 1, reason: 'Self replacement' }],
-  [{ ref: 6, replacementRef: 5, reason: 'Reversed priority' }],
-  [{ ref: 1, replacementRef: 2, reason: 'Historical target' }],
-  [{ ref: 1, replacementRef: 6, reason: '' }],
-  [{ ref: '1', replacementRef: 6, reason: 'Wrong type' }],
+  [{ ref: 'F99', replacementRef: 'F6', reason: 'Unknown ref' }],
+  [{ ref: 'F1', replacementRef: 'F1', reason: 'Self replacement' }],
+  [{ ref: 'F6', replacementRef: 'F5', reason: 'Reversed priority' }],
+  [{ ref: 'F1', replacementRef: 'F2', reason: 'Historical target' }],
+  [{ ref: 'F1', replacementRef: 'F6', reason: '' }],
+  [{ ref: '1', replacementRef: 'F6', reason: 'Wrong type' }],
   [
-    { ref: 1, replacementRef: 6, reason: 'One' },
-    { ref: 1, replacementRef: 5, reason: 'Two' },
+    { ref: 'F1', replacementRef: 'F6', reason: 'One' },
+    { ref: 'F1', replacementRef: 'F5', reason: 'Two' },
   ],
   [
-    { ref: 1, replacementRef: 5, reason: 'Chain' },
-    { ref: 5, replacementRef: 6, reason: 'Chain' },
+    { ref: 'F1', replacementRef: 'F5', reason: 'Chain' },
+    { ref: 'F5', replacementRef: 'F6', reason: 'Chain' },
   ],
 ])('rejects invalid replacement graph %#', (...replacements) => {
   expect(() =>
@@ -185,12 +186,12 @@ test.each([
 });
 
 test.each([
-  [{ ref: 99, reason: 'Unknown' }],
-  [{ ref: 5, reason: 'Cannot remove active obligations' }],
-  [{ ref: 1, reason: 'Already replaced' }],
+  [{ ref: 'F99', reason: 'Unknown' }],
+  [{ ref: 'F5', reason: 'Cannot remove active obligations' }],
+  [{ ref: 'F1', reason: 'Already replaced' }],
   [
-    { ref: 3, reason: 'Phone' },
-    { ref: 3, reason: 'Phone twice' },
+    { ref: 'F3', reason: 'Phone' },
+    { ref: 'F3', reason: 'Phone twice' },
   ],
 ])(
   'rejects optional expenses with invalid or conflicting refs %#',
@@ -214,7 +215,7 @@ test('rejects malformed decisions and optional historical recurring payments', (
   expect(() =>
     calculateForecast(input, {
       ...emptyDecisions(),
-      optionalExpenses: [{ ref: 1, reason: 'Already excluded' }],
+      optionalExpenses: [{ ref: 'F1', reason: 'Already excluded' }],
     }),
   ).toThrow();
   expect(() =>
@@ -284,8 +285,8 @@ test('a combined current subscription replaces multiple old charges without addi
 
   const result = calculateForecast(input, {
     replacements: [1, 2, 3, 4].map((ref) => ({
-      ref,
-      replacementRef: 5,
+      ref: `F${ref}`,
+      replacementRef: 'F5',
       reason: 'The two subscriptions are now billed as one bundle.',
     })),
     optionalExpenses: [],
@@ -304,8 +305,75 @@ test('invalid replacement direction has a distinct diagnostic code', () => {
     calculateForecast(exampleInput(), {
       ...emptyDecisions(),
       replacements: [
-        { ref: 6, replacementRef: 5, reason: 'Reversed direction' },
+        { ref: 'F6', replacementRef: 'F5', reason: 'Reversed direction' },
       ],
     }),
   ).toThrow(expect.objectContaining({ code: 'invalid_replacement_direction' }));
+});
+
+test('identical replacement pairs are applied and displayed once', () => {
+  const decisions = exampleDecisions();
+  decisions.replacements.push({
+    ...decisions.replacements[0],
+    reason: 'Repeated explanation',
+  });
+
+  const result = calculateForecast(exampleInput(), decisions);
+
+  expect(result.total).toBe(1500);
+  expect(result.replacedHistoricalTotal).toBe(500);
+  expect(result.replacements).toHaveLength(2);
+});
+
+test.each([
+  ['F999', 'F6', 'unknown_source_reference'],
+  ['F1', 'F999', 'unknown_target_reference'],
+  ['F1', 'F5', 'conflicting_replacement'],
+])('diagnostics distinguish %s -> %s as %s', (ref, replacementRef, code) => {
+  const decisions = exampleDecisions();
+  decisions.replacements.push({
+    ref,
+    replacementRef,
+    reason: 'Invalid additional match',
+  });
+
+  expect(() => calculateForecast(exampleInput(), decisions)).toThrow(
+    expect.objectContaining({ code }),
+  );
+});
+
+test('response schema allows only supplied forecast refs in valid period directions', () => {
+  const schema = createForecastDecisionSchema(exampleInput());
+  const items = schema.properties.replacements.items;
+
+  expect('anyOf' in items).toBe(true);
+
+  if (!('anyOf' in items)) {
+    throw new Error('Missing direction constraints');
+  }
+
+  expect(
+    items.anyOf.map((item) => [
+      item.properties.ref.enum,
+      item.properties.replacementRef.enum,
+    ]),
+  ).toEqual([
+    [
+      ['F1', 'F2', 'F3', 'F4'],
+      ['F5', 'F6'],
+    ],
+    [['F5'], ['F6']],
+  ]);
+  expect(schema.properties.optionalExpenses.items.properties.ref).toEqual({
+    type: 'string',
+    enum: ['F1', 'F2', 'F3', 'F4'],
+  });
+});
+
+test('empty forecast schema requires empty decision arrays without invalid empty enums', () => {
+  const schema = createForecastDecisionSchema(buildForecastInput([], now));
+
+  expect(schema.properties.replacements.maxItems).toBe(0);
+  expect(schema.properties.optionalExpenses.maxItems).toBe(0);
+  expect(JSON.stringify(schema)).not.toContain('"enum":[]');
 });
