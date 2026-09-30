@@ -15,9 +15,11 @@ import { renderMonthlyAnalysis } from '@/lib/monthlyReport/renderAnalysis';
 import { encrypt, encryptFloat } from '@/lib/crypto';
 import { GET, maxDuration } from '@/app/api/cron/monthly-report/route';
 import { transaction } from './fixtures';
+import * as Sentry from '@sentry/nextjs';
 
 const mocks = vi.hoisted(() => ({
   createResponse: vi.fn(),
+  createClient: vi.fn(),
   getClerkUser: vi.fn(),
   findUsers: vi.fn(),
   findTransactions: vi.fn(),
@@ -26,6 +28,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('openai', () => ({
   default: class {
+    constructor(options: unknown) {
+      mocks.createClient(options);
+    }
+
     responses = { create: mocks.createResponse };
   },
 }));
@@ -101,6 +107,7 @@ const input = () =>
   );
 
 const valid = () => ({
+  forecast: null,
   insights: ['Коротке спостереження.'],
   duplicates: [{ refs: [1, 2], reason: 'Однакова дата й сума, схожі описи.' }],
 });
@@ -353,7 +360,7 @@ test('cron fits the Hobby duration limit and skips AI when setup consumes its bu
   expect(maxDuration).toBeLessThanOrEqual(60);
   const periods = getReportPeriods(new Date());
   mocks.findUsers.mockImplementationOnce(async () => {
-    vi.setSystemTime(Date.now() + 20_000);
+    vi.setSystemTime(Date.now() + 36_000);
 
     return [reportUser()];
   });
@@ -467,5 +474,226 @@ test('Clerk lookup failure skips delivery rather than guessing recipients', asyn
   expect(consoleError).toHaveBeenCalledExactlyOnceWith(
     'Failed to process monthly report for test@example.invalid:',
     error,
+  );
+});
+
+test('cron sends raw decrypted forecast data to AI and calculates email totals from its decisions', async () => {
+  const school = transaction({
+    text: 'School',
+    category: 'education',
+    amount: 650,
+    amountDefaultCurrency: 650,
+    isRecurring: true,
+  });
+  const history = transaction({
+    text: 'School',
+    category: 'education',
+    date: new Date('2025-09-12'),
+    amount: 500,
+    amountDefaultCurrency: 500,
+  });
+  const encode = (row: typeof school) => ({
+    ...row,
+    text: encrypt(row.text, 'test-key'),
+    amount: encryptFloat(row.amount, 'test-key'),
+    amountDefaultCurrency: encryptFloat(row.amountDefaultCurrency, 'test-key'),
+  });
+
+  mocks.findUsers.mockResolvedValue([reportUser(true)]);
+  mocks.findTransactions
+    .mockResolvedValueOnce([encode(school)])
+    .mockResolvedValueOnce([encode(history)]);
+  mocks.createResponse.mockResolvedValue({
+    status: 'completed',
+    output_text: JSON.stringify({
+      insights: ['Прогноз.'],
+      duplicates: [],
+      forecast: {
+        replacements: [
+          { ref: 'F2', replacementRef: 'F1', reason: 'Same school.' },
+        ],
+        optionalExpenses: [],
+        assumptions: [],
+      },
+    }),
+  });
+
+  await GET(monthlyRequest());
+
+  const payload = JSON.parse(
+    mocks.createResponse.mock.lastCall![0].input[0].content,
+  );
+  const html = mocks.sendMail.mock.lastCall![0].html;
+
+  expect(payload.month).toBe('2026-08');
+  expect(payload.forecast.month).toBe('2026-09');
+  expect(payload.forecast.transactions).toEqual([
+    expect.objectContaining({
+      ref: 'F1',
+      source: 'previousRecurring',
+      description: 'School',
+      amountDefaultCurrency: 650,
+    }),
+    expect.objectContaining({
+      ref: 'F2',
+      source: 'historical',
+      description: 'School',
+      amountDefaultCurrency: 500,
+    }),
+  ]);
+  const forecastSchema =
+    mocks.createResponse.mock.lastCall![0].text.format.schema.properties
+      .forecast;
+
+  expect(
+    forecastSchema.properties.replacements.items.anyOf[0].properties.ref.enum,
+  ).toEqual(['F2']);
+  expect(
+    forecastSchema.properties.replacements.items.anyOf[0].properties
+      .replacementRef.enum,
+  ).toEqual(['F1']);
+  expect(payload.forecast.total).toBeUndefined();
+  expect(html).toContain('650,00');
+  expect(html).toContain('500,00');
+  expect(mocks.createResponse).toHaveBeenCalledTimes(1);
+  expect(payload.summary.totalExpenses).toBe(650);
+  expect(payload.transactions).toHaveLength(1);
+  expect(html).toContain('Прогноз витрат на 2026-09');
+  expect(mocks.findTransactions.mock.lastCall![0].where).toEqual({
+    userId: 'user-1',
+    OR: [
+      { date: { gte: new Date('2025-09-01'), lt: new Date('2025-10-01') } },
+      {
+        isRecurring: true,
+        date: { gte: new Date('2026-09-01'), lt: new Date('2026-10-01') },
+      },
+    ],
+  });
+});
+
+test('forecast is explicitly unavailable when AI is disabled', async () => {
+  mocks.findTransactions
+    .mockResolvedValueOnce([transaction({ isRecurring: true })])
+    .mockResolvedValueOnce([]);
+  vi.stubEnv('MONTHLY_REPORT_AI_ENABLED', 'false');
+
+  await GET(monthlyRequest());
+
+  expect(mocks.sendMail.mock.lastCall![0].html).toContain(
+    'AI-прогноз недоступний',
+  );
+  expect(mocks.createResponse).not.toHaveBeenCalled();
+});
+
+test('forecast data failure does not prevent the standard monthly report', async () => {
+  mocks.findTransactions
+    .mockResolvedValueOnce([transaction()])
+    .mockRejectedValueOnce(new Error('Forecast unavailable'));
+
+  await GET(monthlyRequest());
+
+  expect(mocks.sendMail).toHaveBeenCalledTimes(1);
+  expect(mocks.sendMail.mock.lastCall![0].html).not.toContain(
+    'Прогноз витрат на',
+  );
+});
+
+test('invalid forecast decisions preserve valid report insights without displaying a forecast amount', async () => {
+  mocks.findTransactions
+    .mockResolvedValueOnce([transaction({ isRecurring: true })])
+    .mockResolvedValueOnce([]);
+  mocks.createResponse.mockResolvedValue({
+    status: 'completed',
+    output_text: JSON.stringify({
+      insights: ['Valid report insight.'],
+      duplicates: [],
+      forecast: {
+        replacements: [
+          { ref: 'F999', replacementRef: 'F1', reason: 'Invented reference' },
+        ],
+        optionalExpenses: [],
+        assumptions: [],
+      },
+    }),
+  });
+
+  await GET(monthlyRequest());
+
+  const html = mocks.sendMail.mock.lastCall![0].html;
+
+  expect(html).toContain('Valid report insight.');
+  expect(html).toContain('AI-прогноз недоступний');
+  expect(html).not.toContain('≈');
+});
+
+test('slow report preparation uses the remaining AI budget and preserves the delivery reserve', async () => {
+  mocks.findUsers.mockImplementationOnce(async () => {
+    vi.setSystemTime(Date.now() + 20_000);
+
+    return [reportUser()];
+  });
+  mocks.findTransactions.mockResolvedValue([transaction()]);
+  mocks.createResponse.mockResolvedValue({
+    status: 'completed',
+    output_text: JSON.stringify(valid()),
+  });
+
+  await GET(monthlyRequest());
+
+  expect(mocks.createClient).toHaveBeenCalledWith({
+    timeout: 25_000,
+    maxRetries: 0,
+  });
+  expect(mocks.createResponse).toHaveBeenCalledTimes(1);
+  expect(mocks.sendMail).toHaveBeenCalledTimes(1);
+});
+
+test('diagnostics classify API failures without exposing error messages or bodies', async () => {
+  const error = Object.assign(new Error('private transaction contents'), {
+    status: 400,
+    body: 'private provider body',
+  });
+  mocks.createResponse.mockRejectedValue(error);
+
+  const result = await getMonthlyAnalysis(input(), 'ENG');
+
+  expect(result).toBeNull();
+  expect(Sentry.captureMessage).toHaveBeenCalledWith(
+    'Monthly AI analysis unavailable; sending standard report',
+    expect.objectContaining({
+      extra: expect.objectContaining({ stage: 'api_request', httpStatus: 400 }),
+    }),
+  );
+  expect(
+    JSON.stringify(vi.mocked(Sentry.captureMessage).mock.calls),
+  ).not.toContain('private');
+});
+
+test('diagnostics distinguish timeouts and exhausted output tokens', async () => {
+  const error = new Error('Private timeout details');
+  error.name = 'APIConnectionTimeoutError';
+  mocks.createResponse.mockRejectedValueOnce(error);
+
+  await getMonthlyAnalysis(input(), 'ENG');
+
+  expect(Sentry.captureMessage).toHaveBeenCalledWith(
+    'Monthly AI analysis unavailable; sending standard report',
+    expect.objectContaining({
+      extra: expect.objectContaining({ reason: 'timeout' }),
+    }),
+  );
+
+  mocks.createResponse.mockResolvedValueOnce({
+    status: 'incomplete',
+    incomplete_details: { reason: 'max_output_tokens' },
+  });
+
+  await getMonthlyAnalysis(input(), 'ENG');
+
+  expect(Sentry.captureMessage).toHaveBeenCalledWith(
+    'Monthly AI response incomplete',
+    expect.objectContaining({
+      extra: expect.objectContaining({ reason: 'max_output_tokens' }),
+    }),
   );
 });

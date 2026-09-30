@@ -5,6 +5,7 @@ export function filterTransactions(
   search: string,
   category: string,
   type: TransactionType | 'all',
+  recurringOnly = false,
 ): Transaction[] {
   const query = search.trim().normalize('NFC').toLocaleLowerCase();
 
@@ -17,6 +18,10 @@ export function filterTransactions(
       category === 'all' || transaction.category === category;
     const matchesType = type === 'all' || transaction.type === type;
 
-    return matchesDescription && matchesCategory && matchesType;
+    const matchesRecurring = !recurringOnly || transaction.isRecurring === true;
+
+    return (
+      matchesDescription && matchesCategory && matchesType && matchesRecurring
+    );
   });
 }

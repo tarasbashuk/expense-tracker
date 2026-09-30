@@ -1,4 +1,5 @@
 import Decimal from 'decimal.js';
+import type { ForecastInput } from './forecast';
 import { Transaction, TransactionType } from '@prisma/client';
 import { decrypt, decryptFloat } from '../crypto';
 import { isCreditCardCategory } from '../../constants/constants';
@@ -114,6 +115,7 @@ export const buildAnalysisInput = (
   previousTransactions: Transaction[],
   currency: string,
   month: string,
+  forecast: ForecastInput | null = null,
 ) => {
   const current = summarizeMonth(transactions);
   const previous = summarizeMonth(previousTransactions);
@@ -131,6 +133,7 @@ export const buildAnalysisInput = (
   return {
     month,
     currency,
+    forecast,
     previousMonthHasRecords: previousTransactions.length > 0,
     summary: {
       totalExpenses: current.totalExpenses,

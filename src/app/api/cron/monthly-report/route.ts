@@ -15,8 +15,13 @@ import {
 import {
   getMonthlyAnalysis,
   MONTHLY_ANALYSIS_TIMEOUT_MS,
+  MIN_MONTHLY_ANALYSIS_TIMEOUT_MS,
 } from '@/lib/monthlyReport/analysis';
 import * as Sentry from '@sentry/nextjs';
+import {
+  buildForecastInput,
+  getForecastPeriods,
+} from '@/lib/monthlyReport/forecast';
 import { sendMonthlyReportEmail } from '@/lib/monthlyReportEmail';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/constants/constants';
 import { processYearlyReportForUsers } from '../yearly-report/processYearlyReport';
@@ -135,20 +140,86 @@ export async function GET(request: NextRequest) {
         const topCategories = [...summary.categories]
           .sort((a, b) => b.count - a.count)
           .slice(0, 5);
+        let forecast = null;
+
+        try {
+          const forecastPeriods = getForecastPeriods(today);
+          const forecastRows = await db.transaction.findMany({
+            where: {
+              userId: user.clerkUserId,
+              OR: [
+                {
+                  date: {
+                    gte: forecastPeriods.historicalStart,
+                    lt: forecastPeriods.historicalEnd,
+                  },
+                },
+                {
+                  isRecurring: true,
+                  date: {
+                    gte: forecastPeriods.start,
+                    lt: forecastPeriods.end,
+                  },
+                },
+              ],
+            },
+          });
+          const decodedForecastRows = decodeReportTransactions(
+            getReportTransactions(
+              forecastRows,
+              user.settings?.creditCardTrackingEnabled ?? false,
+            ),
+            encrypted,
+            clerkUser?.primaryEmailAddressId,
+          );
+
+          forecast = buildForecastInput(
+            [...transactions, ...decodedForecastRows],
+            today,
+          );
+        } catch {
+          Sentry.captureMessage(
+            'Monthly forecast unavailable; sending standard report',
+            'warning',
+          );
+        }
+
         const analysisInput = buildAnalysisInput(
           transactions,
           previousTransactions,
           user.settings?.defaultCurrency || Currency.EUR,
           lastMonth.toISOString().slice(0, 7),
+          forecast,
         );
         const language = user.settings?.language || 'ENG';
-        const analysis =
-          Date.now() + MONTHLY_ANALYSIS_TIMEOUT_MS < analysisDeadline
-            ? await getMonthlyAnalysis(analysisInput, language)
-            : null;
+        const remainingAnalysisMs = analysisDeadline - Date.now();
+        const hasAnalysisBudget =
+          remainingAnalysisMs >= MIN_MONTHLY_ANALYSIS_TIMEOUT_MS;
+
+        if (!hasAnalysisBudget) {
+          Sentry.captureMessage(
+            'Monthly AI analysis skipped: insufficient time budget',
+            {
+              level: 'warning',
+              extra: {
+                remainingAnalysisMs,
+                requiredMs: MIN_MONTHLY_ANALYSIS_TIMEOUT_MS,
+              },
+            },
+          );
+        }
+
+        const analysis = hasAnalysisBudget
+          ? await getMonthlyAnalysis(
+              analysisInput,
+              language,
+              Math.min(remainingAnalysisMs, MONTHLY_ANALYSIS_TIMEOUT_MS),
+            )
+          : null;
 
         // Generate the analysis once, then send a separate copy to each recipient.
         const report = {
+          forecast: analysis?.forecast ?? null,
           analysis,
           analysisTransactions: analysisInput.transactions,
           language,
