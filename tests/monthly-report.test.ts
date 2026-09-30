@@ -15,9 +15,11 @@ import { renderMonthlyAnalysis } from '@/lib/monthlyReport/renderAnalysis';
 import { encrypt, encryptFloat } from '@/lib/crypto';
 import { GET, maxDuration } from '@/app/api/cron/monthly-report/route';
 import { transaction } from './fixtures';
+import * as Sentry from '@sentry/nextjs';
 
 const mocks = vi.hoisted(() => ({
   createResponse: vi.fn(),
+  createClient: vi.fn(),
   getClerkUser: vi.fn(),
   findUsers: vi.fn(),
   findTransactions: vi.fn(),
@@ -26,6 +28,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('openai', () => ({
   default: class {
+    constructor(options: unknown) {
+      mocks.createClient(options);
+    }
+
     responses = { create: mocks.createResponse };
   },
 }));
@@ -354,7 +360,7 @@ test('cron fits the Hobby duration limit and skips AI when setup consumes its bu
   expect(maxDuration).toBeLessThanOrEqual(60);
   const periods = getReportPeriods(new Date());
   mocks.findUsers.mockImplementationOnce(async () => {
-    vi.setSystemTime(Date.now() + 20_000);
+    vi.setSystemTime(Date.now() + 36_000);
 
     return [reportUser()];
   });
@@ -605,4 +611,76 @@ test('invalid forecast decisions preserve valid report insights without displayi
   expect(html).toContain('Valid report insight.');
   expect(html).toContain('AI-прогноз недоступний');
   expect(html).not.toContain('≈');
+});
+
+test('slow report preparation uses the remaining AI budget and preserves the delivery reserve', async () => {
+  mocks.findUsers.mockImplementationOnce(async () => {
+    vi.setSystemTime(Date.now() + 20_000);
+
+    return [reportUser()];
+  });
+  mocks.findTransactions.mockResolvedValue([transaction()]);
+  mocks.createResponse.mockResolvedValue({
+    status: 'completed',
+    output_text: JSON.stringify(valid()),
+  });
+
+  await GET(monthlyRequest());
+
+  expect(mocks.createClient).toHaveBeenCalledWith({
+    timeout: 25_000,
+    maxRetries: 0,
+  });
+  expect(mocks.createResponse).toHaveBeenCalledTimes(1);
+  expect(mocks.sendMail).toHaveBeenCalledTimes(1);
+});
+
+test('diagnostics classify API failures without exposing error messages or bodies', async () => {
+  const error = Object.assign(new Error('private transaction contents'), {
+    status: 400,
+    body: 'private provider body',
+  });
+  mocks.createResponse.mockRejectedValue(error);
+
+  const result = await getMonthlyAnalysis(input(), 'ENG');
+
+  expect(result).toBeNull();
+  expect(Sentry.captureMessage).toHaveBeenCalledWith(
+    'Monthly AI analysis unavailable; sending standard report',
+    expect.objectContaining({
+      extra: expect.objectContaining({ stage: 'api_request', httpStatus: 400 }),
+    }),
+  );
+  expect(
+    JSON.stringify(vi.mocked(Sentry.captureMessage).mock.calls),
+  ).not.toContain('private');
+});
+
+test('diagnostics distinguish timeouts and exhausted output tokens', async () => {
+  const error = new Error('Private timeout details');
+  error.name = 'APIConnectionTimeoutError';
+  mocks.createResponse.mockRejectedValueOnce(error);
+
+  await getMonthlyAnalysis(input(), 'ENG');
+
+  expect(Sentry.captureMessage).toHaveBeenCalledWith(
+    'Monthly AI analysis unavailable; sending standard report',
+    expect.objectContaining({
+      extra: expect.objectContaining({ reason: 'timeout' }),
+    }),
+  );
+
+  mocks.createResponse.mockResolvedValueOnce({
+    status: 'incomplete',
+    incomplete_details: { reason: 'max_output_tokens' },
+  });
+
+  await getMonthlyAnalysis(input(), 'ENG');
+
+  expect(Sentry.captureMessage).toHaveBeenCalledWith(
+    'Monthly AI response incomplete',
+    expect.objectContaining({
+      extra: expect.objectContaining({ reason: 'max_output_tokens' }),
+    }),
+  );
 });

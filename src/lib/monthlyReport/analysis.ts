@@ -4,10 +4,12 @@ import type { AnalysisInput } from './data';
 import {
   calculateForecast,
   forecastDecisionSchema,
+  ForecastValidationError,
   type MonthlyForecast,
 } from './forecast';
 
 export const MONTHLY_ANALYSIS_TIMEOUT_MS = 35_000;
+export const MIN_MONTHLY_ANALYSIS_TIMEOUT_MS = 10_000;
 
 const MAX_DUPLICATE_DATE_SPAN_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -62,7 +64,9 @@ export const validateAnalysis = (
 ): MonthlyAnalysis => {
   if (!value || typeof value !== 'object') return fail();
 
-  const result = value as Omit<MonthlyAnalysis, 'forecast'> & { forecast?: unknown };
+  const result = value as Omit<MonthlyAnalysis, 'forecast'> & {
+    forecast?: unknown;
+  };
 
   if (
     !Array.isArray(result.insights) ||
@@ -113,33 +117,80 @@ export const validateAnalysis = (
   if (input.forecast && result.forecast != null) {
     try {
       forecast = calculateForecast(input.forecast, result.forecast);
-    } catch {
+    } catch (error) {
       Sentry.captureMessage(
         'Monthly forecast decisions invalid; omitting forecast',
-        'warning',
+        {
+          level: 'warning',
+          extra: {
+            reason:
+              error instanceof ForecastValidationError
+                ? error.code
+                : 'unexpected_validation_error',
+          },
+        },
       );
     }
+  } else if (input.forecast) {
+    Sentry.captureMessage(
+      'Monthly forecast missing from AI response',
+      'warning',
+    );
   }
 
   return { insights: result.insights, duplicates, forecast };
 };
 
+const getHttpStatus = (error: unknown): number | undefined => {
+  if (!error || typeof error !== 'object' || !('status' in error)) {
+    return undefined;
+  }
+
+  const status = error.status;
+
+  return typeof status === 'number' &&
+    Number.isInteger(status) &&
+    status >= 400 &&
+    status <= 599
+    ? status
+    : undefined;
+};
+
 export async function getMonthlyAnalysis(
   input: AnalysisInput,
   language: string,
+  timeoutMs = MONTHLY_ANALYSIS_TIMEOUT_MS,
 ): Promise<MonthlyAnalysis | null> {
   if (
     !process.env.OPENAI_API_KEY ||
     process.env.MONTHLY_REPORT_AI_ENABLED === 'false'
-  )
+  ) {
+    Sentry.captureMessage('Monthly AI analysis disabled', {
+      level: 'info',
+      extra: {
+        reason: !process.env.OPENAI_API_KEY
+          ? 'missing_api_key'
+          : 'disabled_by_configuration',
+      },
+    });
+
     return null;
+  }
+
+  let stage = 'serialize_input';
+  const startedAt = Date.now();
+
   try {
     const payload = JSON.stringify(input);
+
     // Skip oversized inputs rather than silently analyzing only part of a month.
     if (payload.length > 300_000)
       throw new Error('Monthly analysis input too large');
+
+    stage = 'api_request';
+
     const client = new OpenAI({
-      timeout: MONTHLY_ANALYSIS_TIMEOUT_MS,
+      timeout: Math.min(timeoutMs, MONTHLY_ANALYSIS_TIMEOUT_MS),
       maxRetries: 0,
     });
     const response = await client.responses.create({
@@ -178,15 +229,51 @@ Return plain text strings only, no HTML or Markdown, and only the requested JSON
         },
       },
     });
-    if (response.status !== 'completed' || !response.output_text)
-      throw new Error('Monthly analysis incomplete');
+    if (response.status !== 'completed' || !response.output_text) {
+      const refused = response.output?.some(
+        (item) =>
+          item.type === 'message' &&
+          item.content.some((content) => content.type === 'refusal'),
+      );
 
-    return validateAnalysis(JSON.parse(response.output_text), input);
-  } catch {
+      Sentry.captureMessage('Monthly AI response incomplete', {
+        level: 'warning',
+        extra: {
+          reason: refused
+            ? 'refusal'
+            : response.incomplete_details?.reason === 'max_output_tokens'
+              ? 'max_output_tokens'
+              : 'missing_completed_output',
+          elapsedMs: Date.now() - startedAt,
+        },
+      });
+
+      return null;
+    }
+
+    stage = 'parse_response';
+    const result: unknown = JSON.parse(response.output_text);
+    stage = 'validate_response';
+
+    return validateAnalysis(result, input);
+  } catch (error) {
     // Do not log prompts, responses, transaction descriptions or provider error bodies.
     Sentry.captureMessage(
       'Monthly AI analysis unavailable; sending standard report',
-      'warning',
+      {
+        level: 'warning',
+        extra: {
+          stage,
+          elapsedMs: Date.now() - startedAt,
+          reason:
+            error instanceof Error && error.name === 'APIConnectionTimeoutError'
+              ? 'timeout'
+              : 'request_or_processing_failed',
+          // Provider messages and bodies may contain transaction data. Only log
+          // an HTTP status from the allowlisted numeric range, never the error.
+          httpStatus: getHttpStatus(error),
+        },
+      },
     );
 
     return null;

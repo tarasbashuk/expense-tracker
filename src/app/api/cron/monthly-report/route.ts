@@ -15,6 +15,7 @@ import {
 import {
   getMonthlyAnalysis,
   MONTHLY_ANALYSIS_TIMEOUT_MS,
+  MIN_MONTHLY_ANALYSIS_TIMEOUT_MS,
 } from '@/lib/monthlyReport/analysis';
 import * as Sentry from '@sentry/nextjs';
 import {
@@ -191,10 +192,30 @@ export async function GET(request: NextRequest) {
           forecast,
         );
         const language = user.settings?.language || 'ENG';
-        const analysis =
-          Date.now() + MONTHLY_ANALYSIS_TIMEOUT_MS < analysisDeadline
-            ? await getMonthlyAnalysis(analysisInput, language)
-            : null;
+        const remainingAnalysisMs = analysisDeadline - Date.now();
+        const hasAnalysisBudget =
+          remainingAnalysisMs >= MIN_MONTHLY_ANALYSIS_TIMEOUT_MS;
+
+        if (!hasAnalysisBudget) {
+          Sentry.captureMessage(
+            'Monthly AI analysis skipped: insufficient time budget',
+            {
+              level: 'warning',
+              extra: {
+                remainingAnalysisMs,
+                requiredMs: MIN_MONTHLY_ANALYSIS_TIMEOUT_MS,
+              },
+            },
+          );
+        }
+
+        const analysis = hasAnalysisBudget
+          ? await getMonthlyAnalysis(
+              analysisInput,
+              language,
+              Math.min(remainingAnalysisMs, MONTHLY_ANALYSIS_TIMEOUT_MS),
+            )
+          : null;
 
         // Generate the analysis once, then send a separate copy to each recipient.
         const report = {

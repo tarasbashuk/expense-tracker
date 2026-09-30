@@ -155,8 +155,25 @@ export function buildForecastInput(
 const validReason = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0 && value.length <= 500;
 
-const invalidForecast = (): never => {
-  throw new Error('Invalid forecast decisions');
+export type ForecastValidationCode =
+  | 'invalid_object'
+  | 'invalid_structure'
+  | 'invalid_replacement'
+  | 'unknown_or_reused_reference'
+  | 'invalid_direction_or_shared_target'
+  | 'replacement_chain'
+  | 'invalid_optional_expense'
+  | 'optional_expense_conflict';
+
+export class ForecastValidationError extends Error {
+  constructor(public readonly code: ForecastValidationCode) {
+    super('Invalid forecast decisions');
+    this.name = 'ForecastValidationError';
+  }
+}
+
+const invalidForecast = (code: ForecastValidationCode): never => {
+  throw new ForecastValidationError(code);
 };
 
 const total = (rows: ForecastTransaction[]) =>
@@ -167,7 +184,7 @@ const total = (rows: ForecastTransaction[]) =>
 
 export function calculateForecast(input: ForecastInput, value: unknown) {
   if (!value || typeof value !== 'object') {
-    return invalidForecast();
+    return invalidForecast('invalid_object');
   }
 
   const decisions = value as ForecastDecisions;
@@ -181,7 +198,7 @@ export function calculateForecast(input: ForecastInput, value: unknown) {
     decisions.assumptions.length > 5 ||
     !decisions.assumptions.every(validReason)
   ) {
-    return invalidForecast();
+    return invalidForecast('invalid_structure');
   }
 
   const byRef = new Map(input.transactions.map((row) => [row.ref, row]));
@@ -195,14 +212,14 @@ export function calculateForecast(input: ForecastInput, value: unknown) {
       !Number.isInteger(replacement.replacementRef) ||
       !validReason(replacement.reason)
     ) {
-      return invalidForecast();
+      return invalidForecast('invalid_replacement');
     }
 
     const from = byRef.get(replacement.ref);
     const to = byRef.get(replacement.replacementRef);
 
     if (!from || !to || replaced.has(from.ref)) {
-      return invalidForecast();
+      return invalidForecast('unknown_or_reused_reference');
     }
 
     const allowed =
@@ -213,7 +230,7 @@ export function calculateForecast(input: ForecastInput, value: unknown) {
     const slot = `${from.source}:${to.ref}`;
 
     if (!allowed || targetSlots.has(slot)) {
-      return invalidForecast();
+      return invalidForecast('invalid_direction_or_shared_target');
     }
 
     replaced.add(from.ref);
@@ -222,14 +239,14 @@ export function calculateForecast(input: ForecastInput, value: unknown) {
 
   // Require direct references to the retained payment, never replacement chains.
   if (decisions.replacements.some((r) => replaced.has(r.replacementRef))) {
-    return invalidForecast();
+    return invalidForecast('replacement_chain');
   }
 
   const optional = new Set<number>();
 
   for (const item of decisions.optionalExpenses) {
     if (!item || !Number.isInteger(item.ref) || !validReason(item.reason)) {
-      return invalidForecast();
+      return invalidForecast('invalid_optional_expense');
     }
 
     const row = byRef.get(item.ref);
@@ -241,7 +258,7 @@ export function calculateForecast(input: ForecastInput, value: unknown) {
       replaced.has(item.ref) ||
       optional.has(item.ref)
     ) {
-      return invalidForecast();
+      return invalidForecast('optional_expense_conflict');
     }
 
     optional.add(item.ref);
