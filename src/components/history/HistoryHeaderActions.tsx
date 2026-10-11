@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { IconButton, Stack } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -57,7 +59,9 @@ export default function HistoryHeaderActions() {
         </IconButton>
       </Stack>
       {importOpen && (
-        <ImportStatementModal onClose={() => setImportOpen(false)} />
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <ImportStatementModal onClose={() => setImportOpen(false)} />
+        </LocalizationProvider>
       )}
     </>
   );

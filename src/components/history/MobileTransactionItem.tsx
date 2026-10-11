@@ -1,13 +1,14 @@
 'use client';
 
-import { Box, ButtonBase, ListItem, Typography } from '@mui/material';
+import { Box, ButtonBase, ListItem, Tooltip, Typography } from '@mui/material';
 import { Transaction } from '@prisma/client';
 import { Repeat2 } from 'lucide-react';
 import { useIntl } from 'react-intl';
 import TransactionActionsMenu from '../TransactionActionsMenu';
 import { useSettings } from '@/context/SettingsContexts';
 import { formatCurrency } from '@/lib/formatCurrency';
-import { getTransactionSign } from '@/lib/utils';
+import { Locale } from '@/locales';
+import { getTransactionSign, formatDate } from '@/lib/utils';
 import { historyColors as colors } from './tokens';
 
 export type TransactionTagLabels =
@@ -31,7 +32,7 @@ export default function MobileTransactionItem({
   handleDelete,
 }: Props) {
   const { settings } = useSettings();
-  const { formatMessage } = useIntl();
+  const { formatMessage, locale } = useIntl();
   const {
     id,
     text,
@@ -46,6 +47,10 @@ export default function MobileTransactionItem({
     { description: text },
   );
   const amountColor = type === 'Expense' ? colors.expense : colors.income;
+  const recurringLabel = formatMessage({ id: 'grid.recurringTooltip' });
+  const recurringDetails = transaction.recurringEndDate
+    ? `${formatMessage({ id: 'grid.until' })} ${formatDate(transaction.recurringEndDate, locale as Locale)}`
+    : formatMessage({ id: 'grid.infinite' });
 
   return (
     <ListItem
@@ -99,17 +104,19 @@ export default function MobileTransactionItem({
               {text}
             </Typography>
             {isRecurring && (
-              <Box
-                component="span"
-                aria-label={formatMessage({ id: 'history.recurringOnly' })}
-                sx={{
-                  color: colors.income,
-                  flexShrink: 0,
-                  display: 'inline-flex',
-                }}
-              >
-                <Repeat2 size={16} aria-hidden="true" />
-              </Box>
+              <Tooltip title={`${recurringLabel} (${recurringDetails})`} arrow>
+                <Box
+                  component="span"
+                  aria-label={recurringLabel}
+                  sx={{
+                    color: colors.income,
+                    flexShrink: 0,
+                    display: 'inline-flex',
+                  }}
+                >
+                  <Repeat2 size={16} aria-hidden="true" />
+                </Box>
+              </Tooltip>
             )}
           </Box>
           {!!tags?.length && (

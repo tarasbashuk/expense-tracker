@@ -82,7 +82,7 @@ export default function RecentTransactions({
             })}
           </Typography>
         ) : (
-          <List disablePadding>
+          <List disablePadding sx={{ '& > li > h3': { pl: 1.25 } }}>
             <TransactionRows
               transactions={transactions}
               handleEdit={(id) => openTransaction(id, false)}

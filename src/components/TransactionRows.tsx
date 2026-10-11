@@ -10,7 +10,7 @@ import { historyColors } from './history/tokens';
 
 type Props = Omit<
   ComponentProps<typeof TransactionItem>,
-  'transaction' | 'mobileGrouped'
+  'transaction' | 'mobileGrouped' | 'tags'
 > & {
   transactions: Transaction[];
   stickyDates?: boolean;

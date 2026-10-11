@@ -106,6 +106,7 @@ const TransactionList = () => {
     transactions,
     setTransactions,
     setTransactionId,
+    setTransactionDraft,
     setIsCopyTransactionFlow,
     setIsTransactionModalOpen,
     transactionsRefreshKey,
@@ -231,9 +232,16 @@ const TransactionList = () => {
   const handleEditTransaction = useCallback(
     (transactionId: string) => {
       setTransactionId(transactionId);
+      setTransactionDraft(null);
+      setIsCopyTransactionFlow(false);
       setIsTransactionModalOpen(true);
     },
-    [setTransactionId, setIsTransactionModalOpen],
+    [
+      setTransactionId,
+      setTransactionDraft,
+      setIsCopyTransactionFlow,
+      setIsTransactionModalOpen,
+    ],
   );
 
   const handleCopyTransaction = useCallback(
@@ -336,14 +344,6 @@ const TransactionList = () => {
     transactionsRefreshKey,
   ]);
 
-  if (error) {
-    return (
-      <Typography variant="h5" component="p" color="error" my="4">
-        {error}
-      </Typography>
-    );
-  }
-
   return (
     <Box sx={{ width: '100%', minWidth: 0 }}>
       <GlobalStyles
@@ -382,7 +382,7 @@ const TransactionList = () => {
       <Stack
         direction="column"
         spacing={2}
-        sx={{ width: { xs: '100%', sm: 400 } }}
+        sx={{ width: { xs: '100%', sm: 400 }, mx: 'auto' }}
       >
         <DatePeriodFilter
           compact={isMobile}
@@ -634,9 +634,15 @@ const TransactionList = () => {
         )}
       </Stack>
 
+      {error && (
+        <Typography role="alert" color="error" my={4}>
+          {error}
+        </Typography>
+      )}
+
       {isLoading && !transactions.length && <CircularProgress sx={{ my: 5 }} />}
 
-      {!visibleTransactions.length && !isLoading && (
+      {!error && !visibleTransactions.length && !isLoading && (
         <Typography variant="h5" component="p" gutterBottom mt={4}>
           {formatMessage({
             id: hasFilters ? 'history.noMatches' : 'transactions.noRecords',
@@ -647,7 +653,7 @@ const TransactionList = () => {
         </Typography>
       )}
 
-      {!!visibleTransactions.length && (
+      {!error && !!visibleTransactions.length && (
         <>
           {!isMobile && (
             <Box

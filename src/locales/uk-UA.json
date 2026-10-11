@@ -1,4 +1,5 @@
 {
+  "grid.recurringTooltip": "Регулярна транзакція",
   "history.editTransaction": "Редагувати транзакцію: {description}",
   "history.periodBalance": "Баланс періоду",
   "history.filtersTitle": "Фільтри",

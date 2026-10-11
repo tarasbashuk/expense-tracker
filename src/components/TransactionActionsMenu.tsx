@@ -64,7 +64,7 @@ export default function TransactionActionsMenu({
           onClick={(event) => setAnchor(event.currentTarget)}
           sx={{
             width: categoryButton ? 52 : 44,
-            height: 48,
+            height: categoryButton ? 48 : 44,
             flexShrink: 0,
             borderRadius: categoryButton ? '10px' : '50%',
             ...(categoryButton && {

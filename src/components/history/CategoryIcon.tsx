@@ -57,7 +57,9 @@ const icons: Record<TransactionCategory, LucideIcon> = {
 };
 
 export default function CategoryIcon({ category }: { category: string }) {
-  const Icon = icons[category as TransactionCategory] || CircleEllipsis;
+  const Icon = Object.hasOwn(icons, category)
+    ? icons[category as TransactionCategory]
+    : CircleEllipsis;
 
   return <Icon size={22} strokeWidth={1.75} aria-hidden="true" />;
 }

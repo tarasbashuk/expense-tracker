@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -24,6 +24,8 @@ import { TransactionType } from '@prisma/client';
 import { useIntl } from 'react-intl';
 import { TransactionCategory } from '@/constants/types';
 import {
+  EXPENSE_CATEGORIES,
+  INCOME_CATEGORIES,
   EXPENSE_CATEGORIES_LIST,
   INCOME_CATEGORIES_LIST,
   isCreditCardCategory,
@@ -37,7 +39,10 @@ export interface HistoryFilters {
   search: string;
 }
 
-const allCategories = [...INCOME_CATEGORIES_LIST, ...EXPENSE_CATEGORIES_LIST];
+const allCategories = Object.entries({
+  ...INCOME_CATEGORIES,
+  ...EXPENSE_CATEGORIES,
+}).map(([value, label]) => ({ value, label }));
 const categoriesByType = {
   all: allCategories,
   Income: INCOME_CATEGORIES_LIST,
@@ -65,6 +70,36 @@ export default function HistoryFiltersSheet({
   onApply,
 }: Props) {
   const [draft, setDraft] = useState(value);
+  const [viewport, setViewport] = useState<{
+    height: number;
+    bottom: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const visualViewport = window.visualViewport;
+
+    if (!visualViewport) return;
+
+    const updateViewport = () => {
+      setViewport({
+        height: visualViewport.height,
+        bottom: Math.max(
+          0,
+          window.innerHeight - visualViewport.height - visualViewport.offsetTop,
+        ),
+      });
+    };
+
+    updateViewport();
+    visualViewport.addEventListener('resize', updateViewport);
+    visualViewport.addEventListener('scroll', updateViewport);
+
+    return () => {
+      visualViewport.removeEventListener('resize', updateViewport);
+      visualViewport.removeEventListener('scroll', updateViewport);
+    };
+  }, []);
+
   const { formatMessage } = useIntl();
   const categories = categoriesByType[draft.type].filter(
     (category) =>
@@ -81,7 +116,8 @@ export default function HistoryFiltersSheet({
         'aria-modal': true,
         'aria-labelledby': 'history-filters-title',
         sx: {
-          maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - 16px)',
+          maxHeight: `calc(${viewport ? `${viewport.height}px` : '100dvh'} - env(safe-area-inset-top, 0px) - 16px)`,
+          bottom: viewport?.bottom ?? 0,
           borderRadius: '20px 20px 0 0',
           pb: 'env(safe-area-inset-bottom, 0px)',
         },

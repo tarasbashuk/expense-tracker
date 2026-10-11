@@ -1,4 +1,5 @@
 {
+  "grid.recurringTooltip": "Recurring transaction",
   "history.editTransaction": "Edit transaction: {description}",
   "history.periodBalance": "Period balance",
   "history.filtersTitle": "Filters",
