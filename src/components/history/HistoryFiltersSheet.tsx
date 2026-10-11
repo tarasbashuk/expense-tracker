@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Drawer,
+  Dialog,
   FormControl,
   FormControlLabel,
   IconButton,
@@ -31,6 +32,7 @@ import {
   isCreditCardCategory,
 } from '@/constants/constants';
 import CategoryIcon from './CategoryIcon';
+import { cardRadius } from './tokens';
 
 export interface HistoryFilters {
   type: TransactionType | 'all';
@@ -56,6 +58,7 @@ const emptyFilters: HistoryFilters = {
 };
 
 interface Props {
+  desktop?: boolean;
   value: HistoryFilters;
   creditCardTrackingEnabled: boolean;
   onClose: () => void;
@@ -65,11 +68,18 @@ interface Props {
 // Mount for each opening so closing always discards the draft.
 export default function HistoryFiltersSheet({
   value,
+  desktop = false,
   creditCardTrackingEnabled,
   onClose,
   onApply,
 }: Props) {
   const [draft, setDraft] = useState(value);
+
+  // A search applied outside this dialog must survive an older filter draft.
+  useEffect(() => {
+    setDraft((current) => ({ ...current, search: value.search }));
+  }, [value.search]);
+
   const [viewport, setViewport] = useState<{
     height: number;
     bottom: number;
@@ -106,10 +116,14 @@ export default function HistoryFiltersSheet({
       creditCardTrackingEnabled || !isCreditCardCategory(category.value),
   );
 
+  const Surface = desktop ? Dialog : Drawer;
+
   return (
-    <Drawer
+    <Surface
       open
-      anchor="bottom"
+      {...(desktop
+        ? { fullWidth: true, maxWidth: 'sm' as const }
+        : { anchor: 'bottom' as const })}
       onClose={onClose}
       PaperProps={{
         role: 'dialog',
@@ -117,8 +131,8 @@ export default function HistoryFiltersSheet({
         'aria-labelledby': 'history-filters-title',
         sx: {
           maxHeight: `calc(${viewport ? `${viewport.height}px` : '100dvh'} - env(safe-area-inset-top, 0px) - 16px)`,
-          bottom: viewport?.bottom ?? 0,
-          borderRadius: '20px 20px 0 0',
+          bottom: desktop ? undefined : (viewport?.bottom ?? 0),
+          borderRadius: desktop ? cardRadius : '20px 20px 0 0',
           pb: 'env(safe-area-inset-bottom, 0px)',
         },
       }}
@@ -126,6 +140,7 @@ export default function HistoryFiltersSheet({
       <Box sx={{ p: 2, overflowY: 'auto' }}>
         <Box
           sx={{
+            display: desktop ? 'none' : 'block',
             width: 40,
             height: 5,
             borderRadius: 3,
@@ -154,7 +169,10 @@ export default function HistoryFiltersSheet({
           component="form"
           onSubmit={(event) => {
             event.preventDefault();
-            onApply(draft);
+            onApply({
+              ...draft,
+              search: desktop ? value.search : draft.search,
+            });
           }}
         >
           <ToggleButtonGroup
@@ -224,31 +242,33 @@ export default function HistoryFiltersSheet({
             }
             label={formatMessage({ id: 'history.recurringOnly' })}
           />
-          <TextField
-            label={formatMessage({ id: 'history.search' })}
-            value={draft.search}
-            onChange={(event) =>
-              setDraft({ ...draft, search: event.target.value })
-            }
-            helperText={formatMessage({ id: 'history.searchScope' })}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search size={20} />
-                </InputAdornment>
-              ),
-              endAdornment: draft.search ? (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label={formatMessage({ id: 'history.clearSearch' })}
-                    onClick={() => setDraft({ ...draft, search: '' })}
-                  >
-                    <X size={20} />
-                  </IconButton>
-                </InputAdornment>
-              ) : undefined,
-            }}
-          />
+          {!desktop && (
+            <TextField
+              label={formatMessage({ id: 'history.search' })}
+              value={draft.search}
+              onChange={(event) =>
+                setDraft({ ...draft, search: event.target.value })
+              }
+              helperText={formatMessage({ id: 'history.searchScope' })}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search size={20} />
+                  </InputAdornment>
+                ),
+                endAdornment: draft.search ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={formatMessage({ id: 'history.clearSearch' })}
+                      onClick={() => setDraft({ ...draft, search: '' })}
+                    >
+                      <X size={20} />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+            />
+          )}
           <Button
             type="submit"
             variant="contained"
@@ -259,6 +279,6 @@ export default function HistoryFiltersSheet({
           </Button>
         </Stack>
       </Box>
-    </Drawer>
+    </Surface>
   );
 }

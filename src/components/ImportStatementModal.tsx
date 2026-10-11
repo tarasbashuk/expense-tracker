@@ -32,6 +32,7 @@ import { useCurrencies } from '@/context/CurrenciesContext';
 import { useSettings } from '@/context/SettingsContexts';
 import { useTransactions } from '@/context/TranasctionsContext';
 import { convertAmountToDefaultCurrency } from '@/lib/currency/convertAmountToDefaultCurrency';
+import { cardRadius } from './history/tokens';
 import { compressImageFile } from '@/lib/image/compressImageFile';
 
 const modalStyle = {
@@ -46,7 +47,7 @@ const modalStyle = {
   overflowY: 'auto',
   bgcolor: 'background.paper',
   border: 'none',
-  borderRadius: { xs: 0, sm: 2 },
+  borderRadius: { xs: 0, sm: cardRadius },
   boxShadow: 24,
   p: { xs: 2, sm: 3 },
 };
@@ -344,9 +345,14 @@ export default function ImportStatementModal({
         onClose();
       }}
     >
-      <Box sx={modalStyle}>
+      <Box
+        sx={{
+          ...modalStyle,
+          maxWidth: { xs: '100%', sm: rows.length ? 1200 : 580 },
+        }}
+      >
         <Stack direction="row" alignItems="center" spacing={2} mb={2}>
-          <Typography variant="h4" component="h3" flexGrow={1}>
+          <Typography variant="h6" component="h2" flexGrow={1}>
             {formatMessage({
               id: 'importStatement.title',
               defaultMessage: 'Smart import',

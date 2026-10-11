@@ -14,6 +14,7 @@ import TransactionList from '@/components/TransactionList';
 import TransactionRows from '@/components/TransactionRows';
 import MobileTransactionItem from '@/components/history/MobileTransactionItem';
 import PeriodBalance from '@/components/history/PeriodBalance';
+import HistoryFiltersSheet from '@/components/history/HistoryFiltersSheet';
 import RecentTransactions from '@/components/home/RecentTransactions';
 
 const mocks = vi.hoisted(() => ({
@@ -385,14 +386,13 @@ test('shortcut can omit the amount and preserves the dialog on failure', async (
   expect(mocks.refresh).not.toHaveBeenCalled();
 });
 
-test('desktop search is the last filter and exposes a reset action', async () => {
+test('desktop search is directly available while additional filters are closed', async () => {
   const user = userEvent.setup();
   await renderHistory();
-  const filters = document.getElementById('history-filters')!;
   const search = screen.getByRole('textbox', { name: 'Search descriptions' });
 
-  expect(filters.contains(search)).toBe(true);
-  expect(filters.lastElementChild?.contains(search)).toBe(true);
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(screen.queryByRole('combobox')).toBeNull();
   expect(screen.queryByText('Entire selected period')).toBeNull();
 
   await user.type(search, 'Coffee');
@@ -407,7 +407,9 @@ test('transaction actions stay hidden until the menu opens and Escape dismisses 
   renderRecent();
 
   expect(screen.queryByRole('menuitem')).toBeNull();
-  expect(screen.getAllByRole('button')).toHaveLength(1);
+  expect(
+    screen.getByRole('button', { name: 'Edit transaction: Coffee' }),
+  ).toBeTruthy();
 
   await user.click(screen.getByRole('button', { name: 'Transaction actions' }));
 
@@ -470,20 +472,21 @@ test.each([
   );
 });
 
-test('recurring-only filters locally and reset restores the list and checkbox', async () => {
+test('desktop recurring filter applies a draft, preserves search and resets without refetching', async () => {
   const user = userEvent.setup();
-
   await renderHistory();
-
   const calls = mocks.getTransactions.mock.calls.length;
-  const checkbox = screen.getByRole('checkbox', {
-    name: 'Recurring only',
-  }) as HTMLInputElement;
+  const search = screen.getByRole('textbox', { name: 'Search descriptions' });
 
-  await user.click(checkbox);
+  await user.type(search, 'Coffee');
+  await user.click(screen.getByRole('button', { name: 'Filters (1)' }));
+  await user.click(screen.getByRole('checkbox', { name: 'Recurring only' }));
 
-  expect(checkbox.checked).toBe(true);
-  expect(screen.queryByText('Coffee')).toBeNull();
+  expect(screen.getByText('Coffee')).toBeTruthy();
+
+  await user.click(screen.getByRole('button', { name: 'Apply' }));
+
+  expect((search as HTMLInputElement).value).toBe('Coffee');
   expect(
     screen.getByText('No matching transactions in this period'),
   ).toBeTruthy();
@@ -492,8 +495,15 @@ test('recurring-only filters locally and reset restores the list and checkbox', 
   await user.click(
     screen.getByRole('button', { name: 'Reset search and filters' }),
   );
+  await user.click(screen.getByRole('button', { name: 'Filters (0)' }));
 
-  expect(checkbox.checked).toBe(false);
+  expect(
+    (
+      screen.getByRole('checkbox', {
+        name: 'Recurring only',
+      }) as HTMLInputElement
+    ).checked,
+  ).toBe(false);
   expect(screen.getByText('Coffee')).toBeTruthy();
   expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
 });
@@ -834,4 +844,41 @@ test('saving a shortcut transfers focus from the menu into its dialog', async ()
   await waitFor(() =>
     expect(dialog.contains(document.activeElement)).toBe(true),
   );
+});
+
+test('desktop filter draft preserves a newer applied search', async () => {
+  const user = userEvent.setup();
+  const onApply = vi.fn();
+  const props = {
+    desktop: true,
+    creditCardTrackingEnabled: false,
+    onClose: vi.fn(),
+    onApply,
+    value: {
+      type: 'all' as const,
+      category: 'all' as const,
+      recurringOnly: false,
+      search: 'old search',
+    },
+  };
+  const renderDialog = (search: string) =>
+    createElement(
+      IntlProvider,
+      { locale: 'en-US', messages: messages['en-US'] },
+      createElement(HistoryFiltersSheet, {
+        ...props,
+        value: { ...props.value, search },
+      }),
+    );
+  const view = render(renderDialog('old search'));
+
+  await user.click(screen.getByRole('checkbox', { name: 'Recurring only' }));
+  view.rerender(renderDialog('new search'));
+  await user.click(screen.getByRole('button', { name: 'Apply' }));
+
+  expect(onApply).toHaveBeenCalledExactlyOnceWith({
+    ...props.value,
+    recurringOnly: true,
+    search: 'new search',
+  });
 });

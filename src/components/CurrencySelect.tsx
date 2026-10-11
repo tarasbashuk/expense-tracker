@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useId } from 'react';
 import { Currency } from '@prisma/client';
 import {
   FormControl,
@@ -18,15 +18,22 @@ interface Props {
 
 const CurrencySelect: FC<Props> = ({ value, onChange, label }) => {
   const { formatMessage } = useIntl();
+  const labelId = useId();
   const defaultLabel = formatMessage({
     id: 'addTransaction.currency',
     defaultMessage: 'Currency',
   });
 
   return (
-    <FormControl variant="standard" fullWidth>
-      <InputLabel>{label || defaultLabel}</InputLabel>
-      <Select name="currency" value={value as string} onChange={onChange}>
+    <FormControl variant="outlined" fullWidth>
+      <InputLabel id={labelId}>{label || defaultLabel}</InputLabel>
+      <Select
+        labelId={labelId}
+        label={label || defaultLabel}
+        name="currency"
+        value={value as string}
+        onChange={onChange}
+      >
         {Object.values(Currency).map((currency) => {
           return (
             <MenuItem key={currency} value={currency}>

@@ -42,6 +42,8 @@ export default function HomeMonthlySummary({ summary }: { summary: Summary }) {
         minWidth: 0,
         width: '100%',
         color: 'inherit',
+        display: 'block',
+        overflowWrap: 'anywhere',
         textDecoration: 'none',
         transition: (theme) =>
           theme.transitions.create(['box-shadow', 'transform'], {

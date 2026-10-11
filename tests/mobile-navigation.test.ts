@@ -97,7 +97,8 @@ test('more menu preserves access to recurring payments, yearly stats, settings a
   expect(mocks.push).toHaveBeenCalledExactlyOnceWith('/settings');
 });
 
-test('add and labelled import remain directly accessible', async () => {
+test('other pages retain the floating add and import actions', async () => {
+  mocks.pathname = '/stats';
   const user = userEvent.setup();
   renderNavigation();
 
@@ -126,3 +127,16 @@ test('home is active at the root route and always navigates to the absolute home
 
   expect(mocks.push).toHaveBeenCalledExactlyOnceWith('/');
 });
+
+test.each(['/', '/transactions'])(
+  'redesigned page %s has no duplicate floating actions',
+  (pathname) => {
+    mocks.pathname = pathname;
+    renderNavigation();
+
+    expect(
+      screen.queryByRole('button', { name: 'Add transaction' }),
+    ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Import' })).toBeNull();
+  },
+);

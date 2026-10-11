@@ -7,7 +7,7 @@
 }
 
 body {
-  background-color: #f7f7f7;
+  background-color: #f3f6fa;
   margin: 0;
   font-family: 'Lato', sans-serif;
 }
@@ -32,7 +32,7 @@ a {
   justify-content: center;
 }
 
-@media (max-width: 599px) {
+@media (max-width: 1199px) {
   .container {
     margin-top: 20px;
     margin-bottom: 0;
@@ -143,7 +143,7 @@ input[type='number'] {
   font-size: 1.25rem;
   line-height: 1.6;
   letter-spacing: 0.0075em;
-  color: #fff;
+  color: #18202f;
 }
 
 .btn {

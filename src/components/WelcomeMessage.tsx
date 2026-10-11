@@ -1,6 +1,7 @@
 'use client';
 import { Box, Typography } from '@mui/material';
 import { useIntl } from 'react-intl';
+import { pageHeaderStyles } from './history/tokens';
 import HistoryHeaderActions from './history/HistoryHeaderActions';
 
 interface Props {
@@ -11,22 +12,17 @@ const WelcomeMessage = ({ firstName }: Props) => {
   const { formatMessage } = useIntl();
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 2,
-        mb: 2,
-      }}
-    >
+    <Box sx={pageHeaderStyles}>
       <Typography
         variant="h4"
         component="h1"
         sx={{
           minWidth: 0,
-          overflowWrap: 'anywhere',
-          fontSize: { xs: 28, sm: 34 },
+          overflow: 'hidden',
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          fontSize: { xs: 22, sm: 34 },
           fontWeight: 600,
         }}
       >
@@ -35,7 +31,7 @@ const WelcomeMessage = ({ firstName }: Props) => {
           { name: firstName || '' },
         )}
       </Typography>
-      <Box sx={{ display: { xs: 'block', sm: 'none' }, flexShrink: 0 }}>
+      <Box sx={{ flexShrink: 0 }}>
         <HistoryHeaderActions />
       </Box>
     </Box>

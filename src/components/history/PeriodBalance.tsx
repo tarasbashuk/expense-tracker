@@ -22,7 +22,16 @@ export default function PeriodBalance({
   const balance = income - expense;
 
   return (
-    <Box sx={{ bgcolor: colors.card, borderRadius: cardRadius, p: 2 }}>
+    <Box
+      sx={{
+        bgcolor: colors.card,
+        borderRadius: cardRadius,
+        p: 2,
+        display: { sm: 'flex' },
+        alignItems: 'center',
+        gap: 3,
+      }}
+    >
       <ButtonBase
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
@@ -30,7 +39,8 @@ export default function PeriodBalance({
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
-          width: '100%',
+          width: { xs: '100%', sm: open ? '34%' : '100%' },
+          flexShrink: 0,
           textAlign: 'left',
           minHeight: 44,
           borderRadius: 1,
@@ -40,7 +50,7 @@ export default function PeriodBalance({
           },
         }}
       >
-        <Box component="span">
+        <Box component="span" sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
           <Typography
             component="span"
             sx={{ display: 'block', fontSize: 14, color: colors.secondary }}
@@ -66,16 +76,16 @@ export default function PeriodBalance({
         </Box>
         {open ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
       </ButtonBase>
-      <Collapse in={open} unmountOnExit>
+      <Collapse in={open} unmountOnExit sx={{ flex: 1, minWidth: 0 }}>
         <Box
           id={id}
           sx={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
             gap: 2,
-            borderTop: `1px solid ${colors.divider}`,
-            mt: 1,
-            pt: 1,
+            borderTop: { xs: `1px solid ${colors.divider}`, sm: 0 },
+            mt: { xs: 1, sm: 0 },
+            pt: { xs: 1, sm: 0 },
           }}
         >
           {[

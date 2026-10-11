@@ -5,8 +5,6 @@ import { format } from 'date-fns';
 import { Transaction, TransactionType } from '@prisma/client';
 import { useIntl } from 'react-intl';
 import {
-  useMediaQuery,
-  useTheme,
   Avatar,
   Divider,
   ListItem,
@@ -48,9 +46,6 @@ const TransactionItem: FC<Props> = ({
   handleDelete,
   handleCopy,
 }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
   // TODO: pass as prop
   const { settings } = useSettings();
   const { locale } = useIntl();
@@ -81,7 +76,7 @@ const TransactionItem: FC<Props> = ({
     ? `Recurring transaction${recurringEndDateFormatted ? ` until ${recurringEndDateFormatted}` : ' (infinite)'}`
     : '';
 
-  if (mobileGrouped && isMobile) {
+  if (mobileGrouped) {
     return (
       <MobileTransactionItem
         transaction={transaction}

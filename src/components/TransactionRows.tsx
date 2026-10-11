@@ -43,16 +43,15 @@ export default function TransactionRows({
       key={group.transactions[0].id}
       sx={{
         listStyle: 'none',
-        display: { xs: 'block', sm: 'contents' },
-        mb: { xs: 1.5, sm: 0 },
+        display: 'block',
+        mb: 1.5,
       }}
     >
       <Typography
         component="h3"
         sx={{
-          display: { xs: 'block', sm: 'none' },
-          position: stickyDates ? 'sticky' : 'static',
-          top: 'env(safe-area-inset-top, 0px)',
+          position: { xs: stickyDates ? 'sticky' : 'static', sm: 'static' },
+          top: 'var(--page-header-height)',
           zIndex: 1,
           bgcolor: historyColors.background,
           py: 1.25,
@@ -74,11 +73,11 @@ export default function TransactionRows({
       <List
         disablePadding
         sx={{
-          display: { xs: 'block', sm: 'contents' },
-          bgcolor: { xs: historyColors.card, sm: 'transparent' },
+          display: 'block',
+          bgcolor: historyColors.card,
           borderRadius: cardRadius,
           '& > li:not(:last-child)': {
-            borderBottom: { xs: `1px solid ${historyColors.divider}`, sm: 0 },
+            borderBottom: `1px solid ${historyColors.divider}`,
           },
         }}
       >

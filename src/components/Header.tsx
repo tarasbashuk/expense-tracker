@@ -1,134 +1,105 @@
 'use client';
+
 import Link from 'next/link';
-import { Suspense } from 'react';
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
-import HomeIcon from '@mui/icons-material/Home';
-import Typography from '@mui/material/Typography';
-import ReceiptIcon from '@mui/icons-material/Receipt';
-import DonutSmallIcon from '@mui/icons-material/DonutSmall';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import SettingsIcon from '@mui/icons-material/Settings';
-import RepeatIcon from '@mui/icons-material/Repeat';
+import { usePathname } from 'next/navigation';
+import { Box, Button, Stack } from '@mui/material';
+import {
+  Home,
+  List,
+  ChartPie,
+  CalendarDays,
+  Repeat,
+  Settings,
+} from 'lucide-react';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 import { NavigationPath } from '@/constants/types';
 import { FormattedMessage } from 'react-intl';
 
-const Header = () => {
-  return (
-    <Box sx={{ top: 'auto', bottom: 0, display: { xs: 'none', sm: 'block' } }}>
-      <nav className="navbar">
-        <div className="navbar-container">
-          <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-            <Link href="/">
-              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                <HomeIcon />
-                <Typography variant="h6">
-                  <FormattedMessage
-                    id="navigation.home"
-                    defaultMessage="Home"
-                  />
-                </Typography>
-              </Stack>
-            </Link>
-            <SignedIn>
-              <Link href={NavigationPath.Transactions} className="nav-link">
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{ alignItems: 'center' }}
-                >
-                  <ReceiptIcon />
-                  <Typography variant="h6">
-                    <FormattedMessage
-                      id="navigation.transactions"
-                      defaultMessage="Transactions"
-                    />
-                  </Typography>
-                </Stack>
-              </Link>
-              <Link href={NavigationPath.Stats} className="nav-link">
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{ alignItems: 'center' }}
-                >
-                  <DonutSmallIcon />
-                  <Typography variant="h6">
-                    <FormattedMessage
-                      id="navigation.stats"
-                      defaultMessage="Stats"
-                    />
-                  </Typography>
-                </Stack>
-              </Link>
-              <Link href={NavigationPath.YearlyStats} className="nav-link">
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{ alignItems: 'center' }}
-                >
-                  <BarChartIcon />
-                  <Typography variant="h6">
-                    <FormattedMessage
-                      id="navigation.yearlyStats"
-                      defaultMessage="Yearly stats"
-                    />
-                  </Typography>
-                </Stack>
-              </Link>
-              <Link href={NavigationPath.Recurring} className="nav-link">
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{ alignItems: 'center' }}
-                >
-                  <RepeatIcon />
-                  <Typography variant="h6">
-                    <FormattedMessage
-                      id="navigation.recurring"
-                      defaultMessage="Recurring"
-                    />
-                  </Typography>
-                </Stack>
-              </Link>
-              <Link href={NavigationPath.Settings} className="nav-link">
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{ alignItems: 'center' }}
-                >
-                  <SettingsIcon />
-                  <Typography variant="h6">
-                    <FormattedMessage
-                      id="navigation.settings"
-                      defaultMessage="Settings"
-                    />
-                  </Typography>
-                </Stack>
-              </Link>
-            </SignedIn>
-          </Stack>
-          <Suspense fallback={<Box sx={{ height: 44 }} />}>
-            <SignedOut>
-              <SignInButton>
-                <Button variant="contained" sx={{ textTransform: 'none' }}>
-                  Sign In
-                </Button>
-              </SignInButton>
-            </SignedOut>
+const destinations = [
+  { path: NavigationPath.Home, label: 'home', icon: Home },
+  { path: NavigationPath.Transactions, label: 'transactions', icon: List },
+  { path: NavigationPath.Stats, label: 'stats', icon: ChartPie },
+  {
+    path: NavigationPath.YearlyStats,
+    label: 'yearlyStats',
+    icon: CalendarDays,
+  },
+  { path: NavigationPath.Recurring, label: 'recurring', icon: Repeat },
+  { path: NavigationPath.Settings, label: 'settings', icon: Settings },
+];
 
-            <SignedIn>
-              <Typography variant="h6">
-                <UserButton showName />
-              </Typography>
-            </SignedIn>
-          </Suspense>
-        </div>
-      </nav>
+export default function Header() {
+  const pathname = usePathname();
+
+  return (
+    <Box
+      component="nav"
+      sx={{
+        display: { xs: 'none', lg: 'block' },
+        bgcolor: 'background.paper',
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+      }}
+    >
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        gap={2}
+        sx={{ maxWidth: 1400, mx: 'auto', px: 3, py: 1.5 }}
+      >
+        <Stack direction="row" gap={0.5}>
+          {destinations.map(({ path, label, icon: Icon }) => {
+            const active = pathname === path;
+            const link = (
+              <Button
+                component={Link}
+                href={path}
+                aria-current={active ? 'page' : undefined}
+                startIcon={<Icon size={19} />}
+                sx={{
+                  color: active ? 'primary.main' : 'text.secondary',
+                  bgcolor: active ? '#EDF2FF' : 'transparent',
+                  px: 1.5,
+                  minHeight: 44,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <FormattedMessage id={`navigation.${label}`} />
+              </Button>
+            );
+
+            return path === NavigationPath.Home ? (
+              <Box key={path}>{link}</Box>
+            ) : (
+              <SignedIn key={path}>{link}</SignedIn>
+            );
+          })}
+        </Stack>
+        <Box
+          sx={{
+            flexShrink: 0,
+            maxWidth: 180,
+            '& .cl-userButtonOuterIdentifier': {
+              color: 'text.primary',
+              fontSize: 14,
+              maxWidth: 110,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            },
+          }}
+        >
+          <SignedIn>
+            <UserButton showName />
+          </SignedIn>
+          <SignedOut>
+            <SignInButton>
+              <Button variant="contained">Sign In</Button>
+            </SignInButton>
+          </SignedOut>
+        </Box>
+      </Stack>
     </Box>
   );
-};
-
-export default Header;
+}

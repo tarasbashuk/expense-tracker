@@ -72,7 +72,7 @@ export default function MobileTransactionItem({
           minWidth: 0,
           minHeight: 44,
           display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr) auto',
+          gridTemplateColumns: 'minmax(0, 1fr) minmax(0, auto)',
           gap: 1,
           textAlign: 'left',
           borderRadius: 1,
@@ -149,7 +149,8 @@ export default function MobileTransactionItem({
           component="span"
           sx={{
             textAlign: 'right',
-            whiteSpace: 'nowrap',
+            minWidth: 0,
+            overflowWrap: 'anywhere',
             fontVariantNumeric: 'tabular-nums',
           }}
         >

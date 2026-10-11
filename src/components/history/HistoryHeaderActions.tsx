@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { IconButton, Stack } from '@mui/material';
+import { Button, Box, Stack } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useIntl } from 'react-intl';
@@ -29,12 +29,15 @@ export default function HistoryHeaderActions() {
 
   return (
     <>
-      <Stack direction="row" spacing={1}>
-        <IconButton
+      <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+        <Button
           aria-label={formatMessage({ id: 'navigation.import' })}
           onClick={() => setImportOpen(true)}
           sx={{
-            width: 44,
+            minWidth: 44,
+            px: { xs: 0, sm: 2 },
+            gap: 1,
+            whiteSpace: 'nowrap',
             height: 44,
             borderRadius: '12px',
             bgcolor: '#EEE8FF',
@@ -42,12 +45,18 @@ export default function HistoryHeaderActions() {
           }}
         >
           <AutoAwesomeIcon />
-        </IconButton>
-        <IconButton
+          <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+            Smart import
+          </Box>
+        </Button>
+        <Button
           aria-label={formatMessage({ id: 'addTransaction.title' })}
           onClick={addTransaction}
           sx={{
-            width: 44,
+            minWidth: 44,
+            px: { xs: 0, sm: 2 },
+            gap: 1,
+            whiteSpace: 'nowrap',
             height: 44,
             borderRadius: '12px',
             bgcolor: 'primary.main',
@@ -56,7 +65,10 @@ export default function HistoryHeaderActions() {
           }}
         >
           <AddIcon />
-        </IconButton>
+          <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+            {formatMessage({ id: 'home.newTransaction' })}
+          </Box>
+        </Button>
       </Stack>
       {importOpen && (
         <LocalizationProvider dateAdapter={AdapterDateFns}>

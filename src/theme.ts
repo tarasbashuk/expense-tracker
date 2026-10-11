@@ -10,7 +10,14 @@ export const appTheme = createTheme({
     text: { primary: historyColors.text, secondary: historyColors.secondary },
   },
   components: {
-    MuiButton: { styleOverrides: { root: { borderRadius: cardRadius } } },
+    MuiButton: {
+      defaultProps: { disableElevation: true },
+      styleOverrides: {
+        root: { borderRadius: cardRadius, textTransform: 'none' },
+      },
+    },
+    MuiDialog: { styleOverrides: { paper: { borderRadius: cardRadius } } },
+    MuiDialogTitle: { styleOverrides: { root: { fontSize: 22 } } },
     MuiOutlinedInput: {
       styleOverrides: { root: { borderRadius: cardRadius } },
     },

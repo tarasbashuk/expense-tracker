@@ -97,6 +97,7 @@ export default function RecentTransactions({
       ) : (
         <List disablePadding sx={{ '& > li > h3': { pl: 1.25 } }}>
           <TransactionRows
+            stickyDates
             transactions={transactions}
             handleEdit={(id) => openTransaction(id, false)}
             handleCopy={(id) => openTransaction(id, true)}

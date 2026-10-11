@@ -389,7 +389,11 @@ export default function QuickTransactions({
         </Tooltip>
       </Stack>
 
-      <Stack gap={1} minWidth={0}>
+      <Stack
+        gap={1}
+        minWidth={0}
+        sx={{ flexDirection: { xs: 'column', sm: 'row' }, flexWrap: 'wrap' }}
+      >
         {templates.map((template) => (
           <ButtonBase
             key={template.id}
@@ -398,7 +402,8 @@ export default function QuickTransactions({
               ...cardStyles,
               p: 1.5,
               minHeight: 64,
-              width: '100%',
+              width: { xs: '100%', sm: 300 },
+              maxWidth: '100%',
               gap: 1.5,
               textAlign: 'left',
               '&.Mui-focusVisible': {

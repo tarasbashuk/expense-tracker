@@ -33,11 +33,11 @@ import { NavigationPath } from '@/constants/types';
 const fabContainerStyles = {
   position: 'fixed',
   zIndex: 1200,
-  left: { xs: 0, sm: 'unset' },
-  right: { xs: 0, sm: 20 },
-  bottom: { xs: 'calc(54px + env(safe-area-inset-bottom))', sm: 15 },
+  left: { xs: 0, lg: 'unset' },
+  right: { xs: 0, lg: 20 },
+  bottom: { xs: 'calc(54px + env(safe-area-inset-bottom))', lg: 15 },
   margin: '0 auto',
-  width: { xs: 'fit-content', sm: 'auto' },
+  width: { xs: 'fit-content', lg: 'auto' },
   display: 'flex',
   gap: 1.5,
   alignItems: 'center',
@@ -48,7 +48,7 @@ const appBarStyles = {
   zIndex: 1100,
   top: 'auto',
   bottom: 0,
-  display: { xs: 'block', sm: 'none' },
+  display: { xs: 'block', lg: 'none' },
 };
 
 const MobileAppBar = () => {
@@ -217,14 +217,11 @@ const MobileAppBar = () => {
           <Box
             sx={{
               ...fabContainerStyles,
-              display: {
-                xs:
-                  pathname === NavigationPath.Transactions ||
-                  pathname === NavigationPath.Home
-                    ? 'none'
-                    : 'flex',
-                sm: 'flex',
-              },
+              display:
+                pathname === NavigationPath.Transactions ||
+                pathname === NavigationPath.Home
+                  ? 'none'
+                  : 'flex',
             }}
           >
             <Fab

@@ -22,3 +22,27 @@ export const cardStyles = {
   borderRadius: cardRadius,
   boxShadow: 'none',
 };
+
+export const pageStyles = {
+  width: '100%',
+  maxWidth: '900px',
+  boxSizing: 'border-box',
+  minWidth: 0,
+  mx: 'auto',
+  '--page-header-height': 'calc(64px + env(safe-area-inset-top, 0px))',
+};
+
+export const pageHeaderStyles = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 1,
+  mb: 2,
+  position: { xs: 'sticky', sm: 'static' },
+  top: 0,
+  height: { xs: 'var(--page-header-height)', sm: 'auto' },
+  pt: { xs: 'env(safe-area-inset-top, 0px)', sm: 0 },
+  bgcolor: historyColors.background,
+  borderBottom: { xs: `1px solid ${historyColors.divider}`, sm: 0 },
+  zIndex: 1100,
+};
