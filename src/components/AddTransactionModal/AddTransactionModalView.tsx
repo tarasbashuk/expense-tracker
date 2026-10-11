@@ -18,8 +18,8 @@ import {
   SelectChangeEvent,
   FormControlLabel,
   Checkbox,
+  Switch,
 } from '@mui/material';
-import RepeatIcon from '@mui/icons-material/Repeat';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 
 import {
@@ -345,22 +345,20 @@ const AddTransactionModalView: React.FC<Props> = ({
                 />
               )}
               <FormControlLabel
+                labelPlacement="start"
+                sx={{ width: '100%', mx: 0, justifyContent: 'space-between' }}
                 control={
-                  <Checkbox
+                  <Switch
                     checked={isRecurring || false}
                     onChange={handleIsRecurringChange}
+                    inputProps={{ role: 'switch' }}
                   />
                 }
                 label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <RepeatIcon
-                      sx={{ fontSize: '1.2rem', color: 'success.main' }}
-                    />
-                    <FormattedMessage
-                      id="addTransaction.recurring"
-                      defaultMessage="Recurring (monthly)"
-                    />
-                  </Box>
+                  <FormattedMessage
+                    id="addTransaction.recurring"
+                    defaultMessage="Recurring (monthly)"
+                  />
                 }
               />
             </Grid>

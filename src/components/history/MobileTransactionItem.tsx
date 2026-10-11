@@ -47,6 +47,7 @@ export default function MobileTransactionItem({
     { id: 'history.editTransaction' },
     { description: text },
   );
+  const hasTags = Boolean(transaction.tags?.length || tags?.length);
   const amountColor = type === 'Expense' ? colors.expense : colors.income;
   const recurringLabel = formatMessage({ id: 'grid.recurringTooltip' });
   const recurringDetails = transaction.recurringEndDate
@@ -74,7 +75,7 @@ export default function MobileTransactionItem({
           minHeight: 44,
           display: 'grid',
           gridTemplateColumns: 'minmax(0, 1fr) auto',
-          alignItems: 'start',
+          alignItems: 'center',
           gap: 1,
           textAlign: 'left',
           borderRadius: 1,
@@ -102,9 +103,12 @@ export default function MobileTransactionItem({
                 fontSize: 16,
                 lineHeight: 1.4,
                 overflow: 'hidden',
-                display: 'block',
+                display: hasTags ? 'block' : '-webkit-box',
                 minWidth: 0,
-                whiteSpace: 'nowrap',
+                whiteSpace: hasTags ? 'nowrap' : 'normal',
+                WebkitLineClamp: hasTags ? undefined : 2,
+                WebkitBoxOrient: hasTags ? undefined : 'vertical',
+                overflowWrap: 'anywhere',
                 textOverflow: 'ellipsis',
               }}
             >
@@ -142,7 +146,7 @@ export default function MobileTransactionItem({
           sx={{
             textAlign: 'right',
             whiteSpace: 'nowrap',
-            alignSelf: 'start',
+            alignSelf: 'center',
             fontVariantNumeric: 'tabular-nums',
           }}
         >

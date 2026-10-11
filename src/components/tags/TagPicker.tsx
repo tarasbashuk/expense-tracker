@@ -153,8 +153,8 @@ export default function TagPicker({
                 borderRadius: '22px',
                 border: '1px solid',
                 borderColor: selected ? palette.text : 'divider',
-                bgcolor: selected ? palette.background : 'background.paper',
-                color: selected ? palette.text : 'text.primary',
+                bgcolor: palette.background,
+                color: palette.text,
                 '&.Mui-disabled': { opacity: 0.45 },
                 '&.Mui-focusVisible': {
                   outline: '2px solid',

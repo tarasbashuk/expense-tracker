@@ -130,6 +130,8 @@ test('picker allows zero, one, two and removal; a third selection is disabled', 
   }) as HTMLInputElement;
 
   expect(first.getAttribute('aria-checked')).toBe('false');
+  expect(getComputedStyle(first).backgroundColor).toBe('rgb(219, 234, 254)');
+  expect(getComputedStyle(first).color).toBe('rgb(30, 58, 138)');
 
   await user.click(first);
   await user.click(second);
@@ -484,5 +486,31 @@ test.each([390, 393, 402])(
 
     expect(count).toBe(3);
     expect(fitTagPreview(available, [600, 600, 600], 64, 80)).toBe(1);
+  },
+);
+
+test.each([0, 1, 2])(
+  'transaction descriptions allow two lines only without tags; tags=%s',
+  (count) => {
+    render(
+      translated(
+        createElement(MobileTransactionItem, {
+          transaction: transaction({
+            text: 'A long description with emoji 🏖️',
+            tags: tags.slice(0, count),
+          }),
+          handleEdit: vi.fn(),
+          handleDelete: vi.fn(),
+        }),
+      ),
+    );
+    const description = screen.getByText('A long description with emoji 🏖️');
+    const style = getComputedStyle(description);
+    const editButton = description.closest('button')!;
+
+    expect(style.whiteSpace).toBe(count ? 'nowrap' : 'normal');
+    expect(style.display).toBe(count ? 'block' : '-webkit-box');
+    expect(getComputedStyle(editButton).alignItems).toBe('center');
+    expect(getComputedStyle(editButton.lastElementChild!).alignSelf).toBe('center');
   },
 );
