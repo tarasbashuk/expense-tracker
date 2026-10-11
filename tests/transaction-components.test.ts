@@ -11,6 +11,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { Transaction } from '@prisma/client';
 import TransactionItem from '@/components/TransactionItem';
 import TransactionList from '@/components/TransactionList';
+import TransactionRows from '@/components/TransactionRows';
 import RecentTransactions from '@/components/home/RecentTransactions';
 
 const mocks = vi.hoisted(() => ({
@@ -481,4 +482,65 @@ test('recurring-only filters locally and reset restores the list and checkbox', 
   expect(checkbox.checked).toBe(false);
   expect(screen.getByText('Coffee')).toBeTruthy();
   expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
+});
+
+test('date groups share a heading per day and preserve transaction order and amounts', () => {
+  const transactions = [
+    {
+      ...transaction,
+      id: 'first',
+      text: 'First',
+      date: new Date(2026, 9, 11, 18),
+    },
+    {
+      ...transaction,
+      id: 'second',
+      text: 'Second',
+      date: new Date(2026, 9, 11, 8),
+    },
+    {
+      ...transaction,
+      id: 'third',
+      text: 'Third',
+      date: new Date(2026, 9, 10, 12),
+    },
+  ];
+
+  const { container, rerender } = renderWithIntl(
+    createElement(TransactionRows, {
+      transactions,
+      handleEdit: vi.fn(),
+      handleDelete: vi.fn(),
+    }),
+  );
+
+  expect(
+    Array.from(container.querySelectorAll('time')).map((time) => time.dateTime),
+  ).toEqual(['2026-10-11', '2026-10-10']);
+  expect(
+    screen
+      .getAllByText(/^(First|Second|Third)$/)
+      .map((item) => item.textContent),
+  ).toEqual(['First', 'Second', 'Third']);
+  expect(screen.getAllByText('20 zł')).toHaveLength(3);
+  expect(
+    screen.getAllByRole('button', { name: 'Transaction actions' }),
+  ).toHaveLength(3);
+
+  rerender(
+    createElement(
+      IntlProvider,
+      { locale: 'en-US', messages: messages['en-US'] },
+      createElement(TransactionRows, {
+        transactions: [transactions[2]],
+        handleEdit: vi.fn(),
+        handleDelete: vi.fn(),
+      }),
+    ),
+  );
+
+  expect(
+    Array.from(container.querySelectorAll('time')).map((time) => time.dateTime),
+  ).toEqual(['2026-10-10']);
+  expect(screen.queryByText('First')).toBeNull();
 });

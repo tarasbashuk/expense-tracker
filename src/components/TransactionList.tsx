@@ -10,7 +10,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { filterTransactions } from '@/lib/filterTransactions';
 
-import TransactionItem from './TransactionItem';
+import TransactionRows from './TransactionRows';
 import getTransactions from '@/app/actions/getTransactions';
 import deleteTransaction from '@/app/actions/deleteTransaction';
 import { useTransactions } from '@/context/TranasctionsContext';
@@ -590,15 +590,12 @@ const TransactionList = () => {
             />
           ) : (
             <List>
-              {visibleTransactions.map((transaction: Transaction) => (
-                <TransactionItem
-                  key={transaction.id}
-                  transaction={transaction}
-                  handleEdit={handleEditTransaction}
-                  handleCopy={handleCopyTransaction}
-                  handleDelete={handleDeleteTransaction}
-                />
-              ))}
+              <TransactionRows
+                transactions={visibleTransactions}
+                handleEdit={handleEditTransaction}
+                handleCopy={handleCopyTransaction}
+                handleDelete={handleDeleteTransaction}
+              />
             </List>
           )}
         </>

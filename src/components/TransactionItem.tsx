@@ -26,6 +26,7 @@ import { Locale } from '@/locales';
 
 interface Props {
   transaction: Transaction;
+  mobileGrouped?: boolean;
   /* eslint-disable no-unused-vars*/
   handleEdit: (id: string) => void;
   handleDelete: (id: string) => void;
@@ -35,6 +36,7 @@ interface Props {
 
 const TransactionItem: FC<Props> = ({
   transaction,
+  mobileGrouped = false,
   handleEdit,
   handleDelete,
   handleCopy,
@@ -76,11 +78,25 @@ const TransactionItem: FC<Props> = ({
         sx={{
           display: 'grid',
           gridTemplateColumns: {
-            xs: '36px minmax(0, 1fr) auto 44px',
+            xs: mobileGrouped
+              ? '36px minmax(0, 1fr) 44px'
+              : '36px minmax(0, 1fr) auto 44px',
             sm: '40px minmax(0, 1fr) auto 44px',
           },
           columnGap: { xs: 0.5, sm: 2 },
-          py: 1,
+          py: { xs: mobileGrouped ? 2 : 1, sm: 1 },
+          ...(mobileGrouped && {
+            rowGap: { xs: 1, sm: 0 },
+            alignItems: { xs: 'start', sm: 'center' },
+            '& > .MuiListItemAvatar-root': {
+              gridColumn: { xs: 1, sm: 'auto' },
+              gridRow: { xs: '1 / 3', sm: 'auto' },
+            },
+            '& > .MuiIconButton-root': {
+              gridColumn: { xs: 3, sm: 'auto' },
+              gridRow: { xs: '1 / 3', sm: 'auto' },
+            },
+          }),
           minWidth: 0,
         }}
       >
@@ -96,7 +112,15 @@ const TransactionItem: FC<Props> = ({
           </Avatar>
         </ListItemAvatar>
         <ListItemText
-          sx={{ minWidth: 0 }}
+          sx={{
+            minWidth: 0,
+            ...(mobileGrouped && {
+              gridColumn: { xs: 2, sm: 'auto' },
+              '& .MuiListItemText-secondary': {
+                display: { xs: 'none', sm: 'block' },
+              },
+            }),
+          }}
           primary={
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography
@@ -105,7 +129,11 @@ const TransactionItem: FC<Props> = ({
                   minWidth: 0,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
+                  whiteSpace: {
+                    xs: mobileGrouped ? 'normal' : 'nowrap',
+                    sm: 'nowrap',
+                  },
+                  ...(mobileGrouped && { overflowWrap: 'anywhere' }),
                 }}
               >
                 {text}
@@ -126,7 +154,20 @@ const TransactionItem: FC<Props> = ({
           }
           secondary={formattedDate}
         />
-        <Box sx={{ textAlign: 'right', minWidth: 0 }}>
+        <Box
+          sx={{
+            textAlign: 'right',
+            minWidth: 0,
+            ...(mobileGrouped && {
+              gridColumn: { xs: 2, sm: 'auto' },
+              display: { xs: 'flex', sm: 'block' },
+              flexWrap: 'wrap',
+              alignItems: 'baseline',
+              justifyContent: 'flex-end',
+              gap: 1,
+            }),
+          }}
+        >
           <Typography
             color={
               type === TransactionType.Expense ? 'error.main' : 'success.main'

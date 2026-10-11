@@ -6,7 +6,7 @@ import { useIntl } from 'react-intl';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
 
-import TransactionItem from '@/components/TransactionItem';
+import TransactionRows from '@/components/TransactionRows';
 import deleteTransaction from '@/app/actions/deleteTransaction';
 import { useTransactions } from '@/context/TranasctionsContext';
 
@@ -83,15 +83,12 @@ export default function RecentTransactions({
           </Typography>
         ) : (
           <List disablePadding>
-            {transactions.map((transaction) => (
-              <TransactionItem
-                key={transaction.id}
-                transaction={transaction}
-                handleEdit={(id) => openTransaction(id, false)}
-                handleCopy={(id) => openTransaction(id, true)}
-                handleDelete={handleDelete}
-              />
-            ))}
+            <TransactionRows
+              transactions={transactions}
+              handleEdit={(id) => openTransaction(id, false)}
+              handleCopy={(id) => openTransaction(id, true)}
+              handleDelete={handleDelete}
+            />
           </List>
         )}
       </CardContent>
