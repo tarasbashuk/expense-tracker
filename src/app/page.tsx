@@ -40,7 +40,7 @@ const HomePage = async () => {
         maxWidth: 900,
         minWidth: 0,
         mx: 'auto',
-        pb: { xs: 10, sm: 3 },
+        pb: { xs: 0, sm: 3 },
       }}
     >
       <WelcomeMessage firstName={user.firstName} />

@@ -218,7 +218,11 @@ const MobileAppBar = () => {
             sx={{
               ...fabContainerStyles,
               display: {
-                xs: pathname === NavigationPath.Transactions ? 'none' : 'flex',
+                xs:
+                  pathname === NavigationPath.Transactions ||
+                  pathname === NavigationPath.Home
+                    ? 'none'
+                    : 'flex',
                 sm: 'flex',
               },
             }}

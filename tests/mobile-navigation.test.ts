@@ -4,16 +4,20 @@ import { createElement, type ReactNode } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { IntlProvider } from 'react-intl';
-import { afterEach, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 import MobileAppBar from '@/components/MobileAppBar';
 import { messages } from '@/locales';
 
-const mocks = vi.hoisted(() => ({ push: vi.fn(), openTransaction: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  push: vi.fn(),
+  openTransaction: vi.fn(),
+  pathname: '/transactions',
+}));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mocks.push }),
-  usePathname: () => '/transactions',
+  usePathname: () => mocks.pathname,
 }));
 
 vi.mock('@mui/x-date-pickers', () => ({
@@ -59,6 +63,10 @@ const renderNavigation = () =>
     ),
   );
 
+beforeEach(() => {
+  mocks.pathname = '/transactions';
+});
+
 afterEach(() => {
   cleanup();
 });
@@ -98,4 +106,23 @@ test('add and labelled import remain directly accessible', async () => {
 
   expect(mocks.openTransaction).toHaveBeenCalledExactlyOnceWith(true);
   expect(screen.getByRole('dialog').textContent).toBe('Import statement');
+});
+
+test('home is active at the root route and always navigates to the absolute home path', async () => {
+  mocks.pathname = '/';
+  const user = userEvent.setup();
+  renderNavigation();
+
+  const home = screen.getByRole('button', { name: 'Home' });
+
+  expect(home.getAttribute('aria-current')).toBe('page');
+  expect(
+    screen
+      .getByRole('button', { name: 'History' })
+      .getAttribute('aria-current'),
+  ).toBeNull();
+
+  await user.click(home);
+
+  expect(mocks.push).toHaveBeenCalledExactlyOnceWith('/');
 });

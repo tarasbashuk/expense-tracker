@@ -11,14 +11,10 @@ import {
   MenuItem,
   Tooltip,
 } from '@mui/material';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Pencil, Copy, BookmarkPlus, Trash2 } from 'lucide-react';
 import CategoryIcon from './history/CategoryIcon';
-import { historyColors } from './history/tokens';
+import { cardRadius, historyColors } from './history/tokens';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import EditIcon from '@mui/icons-material/Edit';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import BookmarkAddOutlinedIcon from '@mui/icons-material/BookmarkAddOutlined';
-import DeleteIcon from '@mui/icons-material/Delete';
 import { useIntl } from 'react-intl';
 
 import SaveTransactionTemplate from './SaveTransactionTemplate';
@@ -42,6 +38,13 @@ export default function TransactionActionsMenu({
   const id = useId();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [templateOpen, setTemplateOpen] = useState(false);
+  const isExpense = transaction.type === 'Expense';
+  const categoryBackground = isExpense
+    ? historyColors.expenseBackground
+    : historyColors.incomeBackground;
+  const activeCategoryBackground = isExpense
+    ? historyColors.expenseActiveBackground
+    : historyColors.incomeActiveBackground;
   const title = formatMessage({
     id: 'transactions.actions',
     defaultMessage: 'Transaction actions',
@@ -68,10 +71,9 @@ export default function TransactionActionsMenu({
             flexShrink: 0,
             borderRadius: categoryButton ? '10px' : '50%',
             ...(categoryButton && {
-              bgcolor:
-                transaction.type === 'Expense'
-                  ? historyColors.expenseBackground
-                  : historyColors.incomeBackground,
+              boxShadow: anchor ? 'inset 0 0 0 1px #CBD5E1' : undefined,
+              bgcolor: anchor ? activeCategoryBackground : categoryBackground,
+              '&:hover': { bgcolor: activeCategoryBackground },
               color:
                 transaction.type === 'Expense'
                   ? historyColors.expenseIcon
@@ -87,7 +89,11 @@ export default function TransactionActionsMenu({
             {categoryButton ? (
               <>
                 <CategoryIcon category={transaction.category} />
-                <ChevronDown size={12} aria-hidden="true" />
+                <ChevronDown
+                  size={12}
+                  aria-hidden="true"
+                  style={{ transform: anchor ? 'rotate(180deg)' : undefined }}
+                />
               </>
             ) : (
               <MoreHorizIcon />
@@ -100,11 +106,50 @@ export default function TransactionActionsMenu({
         anchorEl={anchor}
         open={Boolean(anchor)}
         onClose={() => setAnchor(null)}
-        MenuListProps={{ 'aria-labelledby': `${id}-button` }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        marginThreshold={12}
+        PaperProps={{
+          sx: {
+            mt: 0.75,
+            width: 292,
+            maxWidth: 'calc(100vw - 24px)',
+            borderRadius: cardRadius,
+            bgcolor: historyColors.card,
+            border: `1px solid ${historyColors.divider}`,
+            boxShadow: '0 8px 28px rgba(41, 50, 65, 0.14)',
+            '& .MuiMenuItem-root': {
+              minHeight: 48,
+              px: 1.5,
+              py: 1,
+              borderRadius: '10px',
+              whiteSpace: 'normal',
+              color: historyColors.expense,
+              '&:hover, &.Mui-focusVisible': {
+                bgcolor: historyColors.expenseBackground,
+              },
+            },
+            '& .MuiListItemIcon-root': {
+              minWidth: 32,
+              color: historyColors.secondary,
+            },
+            '& .MuiListItemText-primary': {
+              fontSize: 15,
+              lineHeight: 1.4,
+              overflowWrap: 'anywhere',
+            },
+            '& .transaction-delete': {
+              color: historyColors.negativeBalance,
+              '& .MuiListItemIcon-root': { color: 'inherit' },
+              '&:hover, &.Mui-focusVisible': { bgcolor: '#FCEEEF' },
+            },
+          },
+        }}
+        MenuListProps={{ 'aria-labelledby': `${id}-button`, sx: { p: 0.75 } }}
       >
         <MenuItem onClick={() => runAction(onEdit)}>
           <ListItemIcon>
-            <EditIcon fontSize="small" />
+            <Pencil size={20} />
           </ListItemIcon>
           <ListItemText>
             {formatMessage({ id: 'common.edit', defaultMessage: 'Edit' })}
@@ -113,7 +158,7 @@ export default function TransactionActionsMenu({
         {onCopy && (
           <MenuItem onClick={() => runAction(onCopy)}>
             <ListItemIcon>
-              <ContentCopyIcon fontSize="small" />
+              <Copy size={20} />
             </ListItemIcon>
             <ListItemText>
               {formatMessage({
@@ -125,7 +170,7 @@ export default function TransactionActionsMenu({
         )}
         <MenuItem onClick={() => runAction(() => setTemplateOpen(true))}>
           <ListItemIcon>
-            <BookmarkAddOutlinedIcon fontSize="small" />
+            <BookmarkPlus size={20} />
           </ListItemIcon>
           <ListItemText>
             {formatMessage({
@@ -136,11 +181,12 @@ export default function TransactionActionsMenu({
         </MenuItem>
         <Divider />
         <MenuItem
+          className="transaction-delete"
           onClick={() => runAction(onDelete)}
           sx={{ color: 'error.main' }}
         >
           <ListItemIcon sx={{ color: 'inherit' }}>
-            <DeleteIcon fontSize="small" />
+            <Trash2 size={20} />
           </ListItemIcon>
           <ListItemText>
             {formatMessage({ id: 'common.delete', defaultMessage: 'Delete' })}

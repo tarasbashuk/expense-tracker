@@ -6,7 +6,7 @@ import { Transaction } from '@prisma/client';
 import { useIntl } from 'react-intl';
 import TransactionItem from './TransactionItem';
 import { dateKeyFromLocalDate } from '@/lib/dateRange';
-import { historyColors } from './history/tokens';
+import { cardRadius, historyColors } from './history/tokens';
 
 type Props = Omit<
   ComponentProps<typeof TransactionItem>,
@@ -76,7 +76,7 @@ export default function TransactionRows({
         sx={{
           display: { xs: 'block', sm: 'contents' },
           bgcolor: { xs: historyColors.card, sm: 'transparent' },
-          borderRadius: '16px',
+          borderRadius: cardRadius,
           '& > li:not(:last-child)': {
             borderBottom: { xs: `1px solid ${historyColors.divider}`, sm: 0 },
           },

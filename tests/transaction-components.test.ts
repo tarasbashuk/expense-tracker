@@ -797,3 +797,41 @@ test('mobile header actions remain available when loading history fails', async 
   expect(screen.getByRole('button', { name: 'Import' })).toBeTruthy();
   expect(screen.queryByText('Coffee')).toBeNull();
 });
+
+test('menu supports keyboard navigation and restores focus after Escape', async () => {
+  const user = userEvent.setup();
+  const handleCopy = vi.fn();
+  renderWithIntl(
+    createElement(MobileTransactionItem, {
+      transaction,
+      handleEdit: vi.fn(),
+      handleDelete: vi.fn(),
+      handleCopy,
+    }),
+  );
+  const trigger = screen.getByRole('button', { name: 'Transaction actions' });
+
+  await user.click(trigger);
+  await user.keyboard('{Escape}');
+
+  await waitFor(() => expect(document.activeElement).toBe(trigger));
+
+  await user.click(trigger);
+  await user.keyboard('{ArrowDown}{Enter}');
+
+  expect(handleCopy).toHaveBeenCalledExactlyOnceWith(transaction.id);
+});
+
+test('saving a shortcut transfers focus from the menu into its dialog', async () => {
+  const user = userEvent.setup();
+  renderRecent();
+
+  await user.click(screen.getByRole('button', { name: 'Transaction actions' }));
+  await user.click(screen.getByRole('menuitem', { name: 'Save as shortcut' }));
+
+  const dialog = screen.getByRole('dialog');
+
+  await waitFor(() =>
+    expect(dialog.contains(document.activeElement)).toBe(true),
+  );
+});

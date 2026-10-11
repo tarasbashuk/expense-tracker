@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { Box, Card, CardContent, Stack, Typography } from '@mui/material';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import { TrendingDown, TrendingUp } from 'lucide-react';
+import { cardStyles, historyColors } from '../history/tokens';
 import { useIntl } from 'react-intl';
 
 import { HomeMonthlySummary as Summary } from '@/app/actions/getHomeDashboard';
@@ -12,10 +12,20 @@ import { useSettings } from '@/context/SettingsContexts';
 import { formatCurrency } from '@/lib/formatCurrency';
 
 export default function HomeMonthlySummary({ summary }: { summary: Summary }) {
-  const { formatMessage } = useIntl();
+  const { formatMessage, locale } = useIntl();
   const {
     settings: { defaultCurrency },
   } = useSettings();
+  const formattedAmounts = [summary.income, summary.expense, summary.net].map(
+    (amount) => formatCurrency(amount, defaultCurrency),
+  );
+  const columnWidth = Math.max(
+    90,
+    ...formattedAmounts.map((amount) => amount.length * 11 + 12),
+  );
+  const monthLabel = new Intl.DateTimeFormat(locale, { month: 'long' }).format(
+    new Date(),
+  );
   const change = summary.expenseChangePercent;
   const isSpendingDown = change != null && change <= 0;
 
@@ -28,6 +38,7 @@ export default function HomeMonthlySummary({ summary }: { summary: Summary }) {
         defaultMessage: 'Open monthly transactions',
       })}
       sx={{
+        ...cardStyles,
         minWidth: 0,
         width: '100%',
         color: 'inherit',
@@ -37,7 +48,7 @@ export default function HomeMonthlySummary({ summary }: { summary: Summary }) {
             duration: theme.transitions.duration.shortest,
           }),
         '&:hover': {
-          boxShadow: 4,
+          bgcolor: '#FAFCFF',
           transform: 'translateY(-1px)',
         },
         '&:focus-visible': {
@@ -53,13 +64,34 @@ export default function HomeMonthlySummary({ summary }: { summary: Summary }) {
           '&:last-child': { pb: { xs: 2, sm: 3 } },
         }}
       >
-        <Typography variant="h6" gutterBottom>
-          {formatMessage({
-            id: 'home.thisMonth',
-            defaultMessage: 'This month',
-          })}
-        </Typography>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+        <Stack
+          direction="row"
+          alignItems="baseline"
+          justifyContent="space-between"
+          gap={1}
+          mb={2}
+        >
+          <Typography variant="h6" component="h2" fontWeight={600}>
+            {formatMessage({
+              id: 'home.thisMonth',
+              defaultMessage: 'This month',
+            })}
+          </Typography>
+          <Typography
+            color="text.secondary"
+            sx={{ textTransform: 'capitalize' }}
+          >
+            {monthLabel}
+          </Typography>
+        </Stack>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${columnWidth}px), 1fr))`,
+            gap: 2,
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
           <Box flex={1}>
             <Typography variant="body2" color="text.secondary">
               {formatMessage({
@@ -67,7 +99,7 @@ export default function HomeMonthlySummary({ summary }: { summary: Summary }) {
                 defaultMessage: 'Income',
               })}
             </Typography>
-            <Typography variant="h6" color="success.main">
+            <Typography variant="h6" color={historyColors.income}>
               {formatCurrency(summary.income, defaultCurrency)}
             </Typography>
           </Box>
@@ -78,7 +110,7 @@ export default function HomeMonthlySummary({ summary }: { summary: Summary }) {
                 defaultMessage: 'Expense',
               })}
             </Typography>
-            <Typography variant="h6" color="error.main">
+            <Typography variant="h6" color={historyColors.expense}>
               {formatCurrency(summary.expense, defaultCurrency)}
             </Typography>
           </Box>
@@ -88,12 +120,17 @@ export default function HomeMonthlySummary({ summary }: { summary: Summary }) {
             </Typography>
             <Typography
               variant="h6"
-              color={summary.net >= 0 ? 'success.main' : 'error.main'}
+              color={
+                summary.net >= 0
+                  ? historyColors.income
+                  : historyColors.negativeBalance
+              }
             >
+              {summary.net > 0 ? '+' : ''}
               {formatCurrency(summary.net, defaultCurrency)}
             </Typography>
           </Box>
-        </Stack>
+        </Box>
 
         {change != null && (
           <Stack
@@ -104,9 +141,9 @@ export default function HomeMonthlySummary({ summary }: { summary: Summary }) {
             color={isSpendingDown ? 'success.main' : 'warning.main'}
           >
             {isSpendingDown ? (
-              <TrendingDownIcon fontSize="small" />
+              <TrendingDown size={20} />
             ) : (
-              <TrendingUpIcon fontSize="small" />
+              <TrendingUp size={20} />
             )}
             <Typography variant="body2">
               {formatMessage(

@@ -1,7 +1,10 @@
 'use client';
 
 import { Transaction } from '@prisma/client';
-import { Card, CardContent, List, Typography } from '@mui/material';
+import { Box, Button, List, Typography } from '@mui/material';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
+import { NavigationPath } from '@/constants/types';
 import { useIntl } from 'react-intl';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
@@ -59,39 +62,48 @@ export default function RecentTransactions({
   };
 
   return (
-    <Card sx={{ minWidth: 0, width: '100%' }}>
-      <CardContent
+    <Box component="section" sx={{ minWidth: 0, width: '100%' }}>
+      <Box
         sx={{
-          p: { xs: 2, sm: 3 },
-          minWidth: 0,
-          '&:last-child': { pb: { xs: 2, sm: 3 } },
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 1,
         }}
       >
-        <Typography variant="h6">
+        <Typography variant="h6" component="h2" fontWeight={600}>
           {formatMessage({
             id: 'home.recentTransactions',
             defaultMessage: 'Recent transactions',
           })}
         </Typography>
+        <Button
+          component={Link}
+          href={NavigationPath.Transactions}
+          endIcon={<ArrowRight size={18} />}
+          sx={{ flexShrink: 0, textTransform: 'none', minHeight: 44 }}
+        >
+          {formatMessage({ id: 'home.allTransactions', defaultMessage: 'All' })}
+        </Button>
+      </Box>
 
-        {!transactions.length ? (
-          <Typography color="text.secondary" mt={2}>
-            {formatMessage({
-              id: 'home.noRecentTransactions',
-              defaultMessage: 'No transactions yet',
-            })}
-          </Typography>
-        ) : (
-          <List disablePadding sx={{ '& > li > h3': { pl: 1.25 } }}>
-            <TransactionRows
-              transactions={transactions}
-              handleEdit={(id) => openTransaction(id, false)}
-              handleCopy={(id) => openTransaction(id, true)}
-              handleDelete={handleDelete}
-            />
-          </List>
-        )}
-      </CardContent>
-    </Card>
+      {!transactions.length ? (
+        <Typography color="text.secondary" mt={2}>
+          {formatMessage({
+            id: 'home.noRecentTransactions',
+            defaultMessage: 'No transactions yet',
+          })}
+        </Typography>
+      ) : (
+        <List disablePadding sx={{ '& > li > h3': { pl: 1.25 } }}>
+          <TransactionRows
+            transactions={transactions}
+            handleEdit={(id) => openTransaction(id, false)}
+            handleCopy={(id) => openTransaction(id, true)}
+            handleDelete={handleDelete}
+          />
+        </List>
+      )}
+    </Box>
   );
 }

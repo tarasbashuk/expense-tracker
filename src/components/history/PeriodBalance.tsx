@@ -6,7 +6,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useIntl } from 'react-intl';
 import { useSettings } from '@/context/SettingsContexts';
 import { formatCurrency } from '@/lib/formatCurrency';
-import { historyColors as colors } from './tokens';
+import { cardRadius, historyColors as colors } from './tokens';
 
 export default function PeriodBalance({
   income,
@@ -22,7 +22,7 @@ export default function PeriodBalance({
   const balance = income - expense;
 
   return (
-    <Box sx={{ bgcolor: colors.card, borderRadius: '16px', p: 2 }}>
+    <Box sx={{ bgcolor: colors.card, borderRadius: cardRadius, p: 2 }}>
       <ButtonBase
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}

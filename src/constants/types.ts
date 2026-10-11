@@ -13,7 +13,7 @@ export type UserSettings = Pick<
 >;
 
 export enum NavigationPath {
-  Home = './',
+  Home = '/',
   Transactions = '/transactions',
   Stats = '/stats',
   Settings = '/settings',
