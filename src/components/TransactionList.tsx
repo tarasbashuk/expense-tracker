@@ -37,6 +37,8 @@ import {
   InputAdornment,
   TextField,
   FormControl,
+  FormControlLabel,
+  Checkbox,
   InputLabel,
   Select,
   MenuItem,
@@ -114,6 +116,7 @@ const TransactionList = () => {
     TransactionType | 'all'
   >('all');
   const [search, setSearch] = useState('');
+  const [recurringOnly, setRecurringOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const visibleTransactions = useMemo(
     () =>
@@ -122,8 +125,15 @@ const TransactionList = () => {
         search,
         selectedCategory,
         selectedTransactionType,
+        recurringOnly,
       ),
-    [transactions, search, selectedCategory, selectedTransactionType],
+    [
+      transactions,
+      search,
+      selectedCategory,
+      selectedTransactionType,
+      recurringOnly,
+    ],
   );
   const filteredSum = visibleTransactions.reduce(
     (sum, transaction) =>
@@ -149,7 +159,8 @@ const TransactionList = () => {
     Number(isPeriodFiltered) +
     Number(selectedCategory !== 'all') +
     Number(selectedTransactionType !== 'all') +
-    Number(Boolean(search.trim()));
+    Number(Boolean(search.trim())) +
+    Number(recurringOnly);
   const hasFilters = activeFilterCount > 0;
 
   const resetFilters = () => {
@@ -159,6 +170,7 @@ const TransactionList = () => {
     setAnchorDate(defaults.anchorDate);
     setCustomRange(defaults.customRange);
     setSearch('');
+    setRecurringOnly(false);
     setSelectedCategory('all');
     setSelectedTransactionType('all');
   };
@@ -437,6 +449,19 @@ const TransactionList = () => {
               })}
             </Select>
           </FormControl>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={recurringOnly}
+                onChange={(event) => setRecurringOnly(event.target.checked)}
+                size="small"
+              />
+            }
+            label={formatMessage({
+              id: 'history.recurringOnly',
+              defaultMessage: 'Recurring only',
+            })}
+          />
           <TextField
             label={formatMessage({
               id: 'history.search',
