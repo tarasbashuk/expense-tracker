@@ -1,6 +1,6 @@
 import { currentUser } from '@clerk/nextjs/server';
 import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
+import { pageStyles } from '@/components/history/tokens';
 
 import Guest from '@/components/Guest';
 import Balance from '@/components/Balance';
@@ -33,23 +33,43 @@ const HomePage = async () => {
   };
 
   return (
-    <Box
-      component="section"
-      sx={{
-        width: '100%',
-        maxWidth: 900,
-        minWidth: 0,
-        mx: 'auto',
-        pb: { xs: 10, sm: 3 },
-      }}
-    >
+    <Box component="section" sx={pageStyles}>
       <WelcomeMessage firstName={user.firstName} />
-      <Balance />
-      <Stack spacing={2} mt={2} minWidth={0} width="100%">
-        <QuickTransactions initialTemplates={templates || []} />
-        <HomeMonthlySummary summary={monthlySummary} />
-        <RecentTransactions transactions={data?.recentTransactions || []} />
-      </Stack>
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 2,
+          gridTemplateColumns: {
+            xs: 'minmax(0, 1fr)',
+            md: 'minmax(0, 0.85fr) minmax(0, 1.35fr)',
+          },
+        }}
+      >
+        <Box sx={{ minWidth: 0, '& > *': { height: '100%' } }}>
+          <Balance />
+        </Box>
+        <Box
+          sx={{
+            minWidth: 0,
+            gridArea: { md: '2 / 1 / 3 / 3' },
+          }}
+        >
+          <QuickTransactions initialTemplates={templates || []} />
+        </Box>
+        <Box
+          sx={{
+            minWidth: 0,
+            gridColumn: { md: 2 },
+            gridRow: { md: 1 },
+            '& > *': { height: '100%' },
+          }}
+        >
+          <HomeMonthlySummary summary={monthlySummary} />
+        </Box>
+        <Box sx={{ minWidth: 0, gridColumn: { md: '1 / -1' } }}>
+          <RecentTransactions transactions={data?.recentTransactions || []} />
+        </Box>
+      </Box>
     </Box>
   );
 };

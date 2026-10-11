@@ -8,8 +8,8 @@ import {
 } from '@prisma/client';
 import {
   Button,
-  Card,
-  CardContent,
+  Box,
+  ButtonBase,
   Dialog,
   DialogActions,
   DialogContent,
@@ -28,13 +28,6 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import CloseIcon from '@mui/icons-material/Close';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import SettingsIcon from '@mui/icons-material/Settings';
 import { toast } from 'react-toastify';
 import { useIntl } from 'react-intl';
 
@@ -52,7 +45,18 @@ import { TransactionCategory } from '@/constants/types';
 import { useSettings } from '@/context/SettingsContexts';
 import { useTransactions } from '@/context/TranasctionsContext';
 import { formatCurrency } from '@/lib/formatCurrency';
-import { getIconByName } from '@/lib/getCategoryIcon';
+import CategoryIcon from '../history/CategoryIcon';
+import { cardStyles, historyColors } from '../history/tokens';
+import {
+  ChevronRight,
+  Settings,
+  Plus as AddIcon,
+  X as CloseIcon,
+  ArrowDown as ArrowDownwardIcon,
+  ArrowUp as ArrowUpwardIcon,
+  Trash2 as DeleteIcon,
+  Pencil as EditIcon,
+} from 'lucide-react';
 import { useCategoryI18n } from '@/lib/useCategoryI18n';
 import CurrencySelect from '@/components/CurrencySelect';
 import TransactionTypeButtonGroup from '@/components/shared/TransactionTypeButtonGroup';
@@ -85,6 +89,7 @@ function TemplateEditorDialog({
 
   useEffect(() => {
     if (!open) return;
+
     setLabel(template?.label || '');
     setText(template?.text || '');
     setAmount(template?.amount ?? undefined);
@@ -122,6 +127,7 @@ function TemplateEditorDialog({
 
       return;
     }
+
     if (result.template) {
       onSaved(result.template);
       onClose();
@@ -294,6 +300,7 @@ export default function QuickTransactions({
   const handleSaved = (savedTemplate: QuickTransactionTemplate) => {
     setTemplates((current) => {
       const index = current.findIndex(({ id }) => id === savedTemplate.id);
+
       if (index === -1) return [...current, savedTemplate];
 
       return current.map((template) =>
@@ -316,18 +323,23 @@ export default function QuickTransactions({
     ) {
       return;
     }
+
     const result = await deleteQuickTransactionTemplate(template.id);
+
     if (result.error) {
       toast.error(result.error);
 
       return;
     }
+
     setTemplates((current) => current.filter(({ id }) => id !== template.id));
   };
 
   const moveTemplate = async (index: number, direction: -1 | 1) => {
     const targetIndex = index + direction;
+
     if (targetIndex < 0 || targetIndex >= templates.length) return;
+
     const previous = templates;
     const reordered = [...templates];
     [reordered[index], reordered[targetIndex]] = [
@@ -338,6 +350,7 @@ export default function QuickTransactions({
     const result = await reorderQuickTransactionTemplates(
       reordered.map(({ id }) => id),
     );
+
     if (result.error) {
       setTemplates(previous);
       toast.error(result.error);
@@ -345,191 +358,245 @@ export default function QuickTransactions({
   };
 
   return (
-    <Card sx={{ minWidth: 0, width: '100%' }}>
-      <CardContent
-        sx={{
-          p: { xs: 2, sm: 3 },
-          minWidth: 0,
-          '&:last-child': { pb: { xs: 2, sm: 3 } },
-        }}
+    <Box component="section" sx={{ minWidth: 0, width: '100%' }}>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        minWidth={0}
       >
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          minWidth={0}
+        <Typography variant="h6" component="h2" fontWeight={600} minWidth={0}>
+          {formatMessage({
+            id: 'home.quickTransactions',
+            defaultMessage: 'Quick transactions',
+          })}
+        </Typography>
+        <Tooltip
+          title={formatMessage({
+            id: 'home.manageQuickTransactions',
+            defaultMessage: 'Manage quick transactions',
+          })}
         >
-          <Typography variant="h6" minWidth={0}>
-            {formatMessage({
-              id: 'home.quickTransactions',
-              defaultMessage: 'Quick transactions',
-            })}
-          </Typography>
-          <Tooltip
-            title={formatMessage({
+          <IconButton
+            aria-label={formatMessage({
               id: 'home.manageQuickTransactions',
               defaultMessage: 'Manage quick transactions',
             })}
+            onClick={() => setManagerOpen(true)}
           >
-            <IconButton
-              aria-label={formatMessage({
-                id: 'home.manageQuickTransactions',
-                defaultMessage: 'Manage quick transactions',
-              })}
-              onClick={() => setManagerOpen(true)}
+            <Settings size={22} />
+          </IconButton>
+        </Tooltip>
+      </Stack>
+
+      <Stack
+        gap={1}
+        minWidth={0}
+        sx={{ flexDirection: { xs: 'column', sm: 'row' }, flexWrap: 'wrap' }}
+      >
+        {templates.map((template) => (
+          <ButtonBase
+            key={template.id}
+            onClick={() => openTransaction(template)}
+            sx={{
+              ...cardStyles,
+              p: 1.5,
+              minHeight: 64,
+              width: { xs: '100%', sm: 300 },
+              maxWidth: '100%',
+              gap: 1.5,
+              textAlign: 'left',
+              '&.Mui-focusVisible': {
+                outline: '2px solid',
+                outlineColor: 'primary.main',
+                outlineOffset: 2,
+              },
+            }}
+          >
+            <Box
+              component="span"
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 44,
+                height: 44,
+                flexShrink: 0,
+                borderRadius: '10px',
+                bgcolor:
+                  template.type === 'Income'
+                    ? historyColors.incomeBackground
+                    : historyColors.expenseBackground,
+                color:
+                  template.type === 'Income'
+                    ? historyColors.income
+                    : historyColors.expenseIcon,
+              }}
             >
-              <SettingsIcon />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-
-        <Stack direction="row" gap={1} flexWrap="wrap" minWidth={0}>
-          {templates.map((template) => {
-            const Icon = getIconByName(
-              template.category as TransactionCategory,
-            );
-
-            return (
-              <Button
-                key={template.id}
-                variant="outlined"
-                startIcon={<Icon />}
-                onClick={() => openTransaction(template)}
-                sx={{ maxWidth: '100%', whiteSpace: 'normal' }}
+              <CategoryIcon category={template.category} />
+            </Box>
+            <Typography
+              component="span"
+              sx={{ minWidth: 0, flex: 1, overflowWrap: 'anywhere' }}
+            >
+              {template.label}
+            </Typography>
+            {template.amount != null && (
+              <Typography
+                component="span"
+                sx={{
+                  fontVariantNumeric: 'tabular-nums',
+                  whiteSpace: 'nowrap',
+                }}
               >
-                {template.label}
-                {template.amount != null &&
-                  ` · ${formatCurrency(template.amount, template.currency)}`}
-              </Button>
-            );
+                {formatCurrency(template.amount, template.currency)}
+              </Typography>
+            )}
+            <ChevronRight
+              size={18}
+              aria-hidden="true"
+              style={{ flexShrink: 0, color: historyColors.secondary }}
+            />
+          </ButtonBase>
+        ))}
+        <Button
+          startIcon={<AddIcon />}
+          onClick={() => openTransaction()}
+          sx={{
+            maxWidth: '100%',
+            whiteSpace: 'normal',
+            alignSelf: 'flex-start',
+            textTransform: 'none',
+            minHeight: 44,
+          }}
+        >
+          {formatMessage({
+            id: 'home.newTransaction',
+            defaultMessage: 'New transaction',
           })}
+        </Button>
+        {!templates.length && (
           <Button
-            startIcon={<AddIcon />}
-            onClick={() => openTransaction()}
-            sx={{ maxWidth: '100%', whiteSpace: 'normal' }}
+            variant="text"
+            onClick={() => openEditor(null)}
+            sx={{
+              maxWidth: '100%',
+              whiteSpace: 'normal',
+              alignSelf: 'flex-start',
+              textTransform: 'none',
+              minHeight: 44,
+            }}
           >
             {formatMessage({
-              id: 'home.newTransaction',
-              defaultMessage: 'New transaction',
+              id: 'home.createFirstTemplate',
+              defaultMessage: 'Create your first shortcut',
             })}
           </Button>
-          {!templates.length && (
-            <Button
-              variant="text"
-              onClick={() => openEditor(null)}
-              sx={{ maxWidth: '100%', whiteSpace: 'normal' }}
-            >
-              {formatMessage({
-                id: 'home.createFirstTemplate',
-                defaultMessage: 'Create your first shortcut',
-              })}
-            </Button>
-          )}
-        </Stack>
+        )}
+      </Stack>
 
-        <Dialog
-          open={managerOpen}
-          onClose={(_, reason) => {
-            if (reason === 'backdropClick') return;
+      <Dialog
+        open={managerOpen}
+        onClose={(_, reason) => {
+          if (reason === 'backdropClick') return;
 
-            setManagerOpen(false);
-          }}
-          fullWidth
-          maxWidth="sm"
-        >
-          <DialogTitle sx={{ position: 'relative', pr: 6 }}>
-            {formatMessage({
-              id: 'home.manageQuickTransactions',
-              defaultMessage: 'Manage quick transactions',
+          setManagerOpen(false);
+        }}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle sx={{ position: 'relative', pr: 6 }}>
+          {formatMessage({
+            id: 'home.manageQuickTransactions',
+            defaultMessage: 'Manage quick transactions',
+          })}
+          <IconButton
+            aria-label={formatMessage({
+              id: 'common.close',
+              defaultMessage: 'Close',
             })}
-            <IconButton
-              aria-label={formatMessage({
-                id: 'common.close',
-                defaultMessage: 'Close',
-              })}
-              onClick={() => setManagerOpen(false)}
-              sx={{ position: 'absolute', right: 8, top: 8 }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent>
-            {!templates.length ? (
-              <Typography color="text.secondary">
-                {formatMessage({
-                  id: 'home.noQuickTemplates',
-                  defaultMessage: 'No shortcuts yet',
-                })}
-              </Typography>
-            ) : (
-              <List>
-                {templates.map((template, index) => (
-                  <ListItem
-                    key={template.id}
-                    disableGutters
-                    sx={{
-                      alignItems: { xs: 'stretch', sm: 'center' },
-                      flexDirection: { xs: 'column', sm: 'row' },
-                    }}
-                  >
-                    <ListItemText
-                      primary={template.label}
-                      secondary={template.text}
-                      sx={{ minWidth: 0, mr: { sm: 1 } }}
-                    />
-                    <Stack direction="row" alignSelf="flex-end">
-                      <IconButton
-                        aria-label="Move up"
-                        disabled={index === 0}
-                        onClick={() => moveTemplate(index, -1)}
-                      >
-                        <ArrowUpwardIcon />
-                      </IconButton>
-                      <IconButton
-                        aria-label="Move down"
-                        disabled={index === templates.length - 1}
-                        onClick={() => moveTemplate(index, 1)}
-                      >
-                        <ArrowDownwardIcon />
-                      </IconButton>
-                      <IconButton
-                        aria-label="Edit"
-                        onClick={() => openEditor(template)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        aria-label="Delete"
-                        onClick={() => handleDelete(template)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Stack>
-                  </ListItem>
-                ))}
-              </List>
-            )}
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={() => openEditor(null)} startIcon={<AddIcon />}>
+            onClick={() => setManagerOpen(false)}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          {!templates.length ? (
+            <Typography color="text.secondary">
               {formatMessage({
-                id: 'home.addQuickTemplate',
-                defaultMessage: 'Add quick transaction',
+                id: 'home.noQuickTemplates',
+                defaultMessage: 'No shortcuts yet',
               })}
-            </Button>
-            <Button onClick={() => setManagerOpen(false)}>
-              {formatMessage({ id: 'common.close', defaultMessage: 'Close' })}
-            </Button>
-          </DialogActions>
-        </Dialog>
+            </Typography>
+          ) : (
+            <List>
+              {templates.map((template, index) => (
+                <ListItem
+                  key={template.id}
+                  disableGutters
+                  sx={{
+                    alignItems: { xs: 'stretch', sm: 'center' },
+                    flexDirection: { xs: 'column', sm: 'row' },
+                  }}
+                >
+                  <ListItemText
+                    primary={template.label}
+                    secondary={template.text}
+                    sx={{ minWidth: 0, mr: { sm: 1 } }}
+                  />
+                  <Stack direction="row" alignSelf="flex-end">
+                    <IconButton
+                      aria-label="Move up"
+                      disabled={index === 0}
+                      onClick={() => moveTemplate(index, -1)}
+                    >
+                      <ArrowUpwardIcon />
+                    </IconButton>
+                    <IconButton
+                      aria-label="Move down"
+                      disabled={index === templates.length - 1}
+                      onClick={() => moveTemplate(index, 1)}
+                    >
+                      <ArrowDownwardIcon />
+                    </IconButton>
+                    <IconButton
+                      aria-label="Edit"
+                      onClick={() => openEditor(template)}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      aria-label="Delete"
+                      onClick={() => handleDelete(template)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Stack>
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => openEditor(null)} startIcon={<AddIcon />}>
+            {formatMessage({
+              id: 'home.addQuickTemplate',
+              defaultMessage: 'Add quick transaction',
+            })}
+          </Button>
+          <Button onClick={() => setManagerOpen(false)}>
+            {formatMessage({ id: 'common.close', defaultMessage: 'Close' })}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-        <TemplateEditorDialog
-          open={editorOpen}
-          template={editingTemplate}
-          onClose={() => setEditorOpen(false)}
-          onSaved={handleSaved}
-        />
-      </CardContent>
-    </Card>
+      <TemplateEditorDialog
+        open={editorOpen}
+        template={editingTemplate}
+        onClose={() => setEditorOpen(false)}
+        onSaved={handleSaved}
+      />
+    </Box>
   );
 }

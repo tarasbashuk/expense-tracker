@@ -2,7 +2,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { Transaction } from '@prisma/client';
-import { Box, List, Typography, CircularProgress } from '@mui/material';
+import {
+  Box,
+  List,
+  Typography,
+  CircularProgress,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import TableViewIcon from '@mui/icons-material/TableView';
 import SearchIcon from '@mui/icons-material/Search';
@@ -10,7 +17,11 @@ import CloseIcon from '@mui/icons-material/Close';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { filterTransactions } from '@/lib/filterTransactions';
 
-import TransactionItem from './TransactionItem';
+import TransactionRows from './TransactionRows';
+import HistoryFiltersSheet from './history/HistoryFiltersSheet';
+import PeriodBalance from './history/PeriodBalance';
+import HistoryHeaderActions from './history/HistoryHeaderActions';
+import { historyColors, pageStyles, pageHeaderStyles } from './history/tokens';
 import getTransactions from '@/app/actions/getTransactions';
 import deleteTransaction from '@/app/actions/deleteTransaction';
 import { useTransactions } from '@/context/TranasctionsContext';
@@ -18,30 +29,18 @@ import { useSettings } from '@/context/SettingsContexts';
 import DatePeriodFilter from './shared/DatePeriodFilter';
 import TransactionsDataGrid from './TransactionsDataGrid';
 import { TransactionCategory, ViewType } from '@/constants/types';
-import AdditionalBalanceInfo from './AdditionalBalanceInfo';
 import getIncomeExpense from '@/app/actions/getIncomeExpense';
 import { useIntl } from 'react-intl';
 import {
-  INCOME_CATEGORIES,
-  EXPENSE_CATEGORIES,
-  INCOME_CATEGORIES_LIST,
-  EXPENSE_CATEGORIES_LIST,
   CURRENCY_SYMBOL_MAP,
   isCreditCardCategory,
 } from '@/constants/constants';
 import { TransactionType } from '@prisma/client';
-import { getIconByName } from '@/lib/getCategoryIcon';
 import {
   Button,
   IconButton,
   InputAdornment,
   TextField,
-  FormControl,
-  FormControlLabel,
-  Checkbox,
-  InputLabel,
-  Select,
-  MenuItem,
   Stack,
   ToggleButtonGroup,
   ToggleButton,
@@ -54,28 +53,6 @@ import {
   shiftPeriod,
 } from '@/lib/dateRange';
 
-const allCategories = { ...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES };
-const allCategoriesList = Object.entries(allCategories).map(
-  ([value, label]) => ({ value, label }),
-);
-
-const categoriesByType = {
-  all: allCategoriesList,
-  [TransactionType.Income]: INCOME_CATEGORIES_LIST,
-  [TransactionType.Expense]: EXPENSE_CATEGORIES_LIST,
-};
-const categoriesWithoutCreditByType = {
-  all: allCategoriesList.filter(
-    (category) => !isCreditCardCategory(category.value),
-  ),
-  [TransactionType.Income]: INCOME_CATEGORIES_LIST.filter(
-    (category) => !isCreditCardCategory(category.value),
-  ),
-  [TransactionType.Expense]: EXPENSE_CATEGORIES_LIST.filter(
-    (category) => !isCreditCardCategory(category.value),
-  ),
-};
-
 const getDefaultPeriod = () => {
   const anchorDate = dateKeyFromLocalDate(new Date());
   const range = getPeriodRange('month', anchorDate, {
@@ -87,10 +64,14 @@ const getDefaultPeriod = () => {
 };
 
 const TransactionList = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const {
     transactions,
     setTransactions,
     setTransactionId,
+    setTransactionDraft,
     setIsCopyTransactionFlow,
     setIsTransactionModalOpen,
     transactionsRefreshKey,
@@ -203,9 +184,6 @@ const TransactionList = () => {
 
   const creditCardTrackingEnabled =
     settings?.creditCardTrackingEnabled ?? false;
-  const availableCategories = creditCardTrackingEnabled
-    ? categoriesByType[selectedTransactionType]
-    : categoriesWithoutCreditByType[selectedTransactionType];
 
   useEffect(() => {
     if (!creditCardTrackingEnabled && isCreditCardCategory(selectedCategory)) {
@@ -216,9 +194,16 @@ const TransactionList = () => {
   const handleEditTransaction = useCallback(
     (transactionId: string) => {
       setTransactionId(transactionId);
+      setTransactionDraft(null);
+      setIsCopyTransactionFlow(false);
       setIsTransactionModalOpen(true);
     },
-    [setTransactionId, setIsTransactionModalOpen],
+    [
+      setTransactionId,
+      setTransactionDraft,
+      setIsCopyTransactionFlow,
+      setIsTransactionModalOpen,
+    ],
   );
 
   const handleCopyTransaction = useCallback(
@@ -272,20 +257,6 @@ const TransactionList = () => {
     [],
   );
 
-  const handleTransactionTypeChange = useCallback(
-    (
-      _event: React.MouseEvent<HTMLElement>,
-      newType: 'all' | TransactionType,
-    ) => {
-      if (!newType) return;
-
-      setSelectedTransactionType(newType);
-      // Reset category when transaction type changes
-      setSelectedCategory('all');
-    },
-    [],
-  );
-
   useEffect(() => {
     let isCurrentRequest = true;
 
@@ -321,25 +292,32 @@ const TransactionList = () => {
     transactionsRefreshKey,
   ]);
 
-  if (error) {
-    return (
-      <Typography variant="h5" component="p" color="error" my="4">
-        {error}
-      </Typography>
-    );
-  }
-
   return (
-    <>
-      <Typography variant="h4" component="h3" gutterBottom>
-        {formatMessage({ id: 'transactions.title', defaultMessage: 'History' })}
-      </Typography>
-      <Stack
-        direction="column"
-        spacing={2}
-        sx={{ width: { xs: '100%', sm: 400 } }}
-      >
+    <Box sx={pageStyles}>
+      <Box sx={pageHeaderStyles}>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
+            fontWeight: 600,
+            minWidth: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            fontSize: { xs: 24, sm: 34 },
+          }}
+        >
+          {formatMessage({
+            id: 'transactions.title',
+            defaultMessage: 'History',
+          })}
+        </Typography>
+        <HistoryHeaderActions />
+      </Box>
+      <Stack direction="column" spacing={2} sx={{ width: '100%', minWidth: 0 }}>
         <DatePeriodFilter
+          compact
+          horizontal
           mode={periodMode}
           range={selectedRange}
           onModeChange={handlePeriodModeChange}
@@ -348,156 +326,103 @@ const TransactionList = () => {
           onCustomRangeChange={setCustomRange}
         />
 
-        <Button
-          startIcon={<FilterListIcon />}
-          onClick={() => setFiltersOpen((open) => !open)}
-          aria-expanded={filtersOpen}
-          aria-controls="history-filters"
+        <Box
           sx={{
-            display: { xs: 'inline-flex', sm: 'none' },
-            alignSelf: 'flex-start',
+            display: 'flex',
+            justifyContent: 'space-between',
+            gap: 2,
+            alignItems: 'center',
+            flexWrap: 'wrap',
           }}
         >
-          {formatMessage(
-            { id: 'history.filters', defaultMessage: 'Filters ({count})' },
-            { count: activeFilterCount },
+          {!isMobile && (
+            <TextField
+              placeholder={formatMessage({ id: 'history.search' })}
+              inputProps={{
+                'aria-label': formatMessage({ id: 'history.search' }),
+              }}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              size="small"
+              sx={{ flex: '1 1 240px', bgcolor: 'background.paper' }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: search ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={formatMessage({
+                        id: 'history.clearSearch',
+                      })}
+                      onClick={() => setSearch('')}
+                    >
+                      <CloseIcon />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+            />
           )}
-        </Button>
-        <Stack
-          id="history-filters"
-          spacing={2}
-          sx={{ display: { xs: filtersOpen ? 'flex' : 'none', sm: 'flex' } }}
-        >
+          <Button
+            variant="outlined"
+            startIcon={<FilterListIcon />}
+            onClick={() => setFiltersOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={filtersOpen}
+          >
+            {formatMessage(
+              { id: 'history.filters' },
+              { count: activeFilterCount },
+            )}
+          </Button>
           <ToggleButtonGroup
             exclusive
             size="small"
             color="primary"
-            value={selectedTransactionType}
-            onChange={handleTransactionTypeChange}
-            sx={{ width: '100%' }}
+            value={viewType}
+            onChange={handleTypeChange}
           >
-            <ToggleButton value={TransactionType.Expense} sx={{ flex: 1 }}>
-              {formatMessage({
-                id: 'transactionType.expense',
-                defaultMessage: 'Expense',
-              })}
+            <ToggleButton
+              value={ViewType.List}
+              aria-label={formatMessage({ id: 'history.listView' })}
+            >
+              <ViewListIcon />
             </ToggleButton>
-            <ToggleButton value="all" sx={{ flex: 1 }}>
-              {formatMessage({
-                id: 'filters.allTypes',
-                defaultMessage: 'All',
-              })}
-            </ToggleButton>
-            <ToggleButton value={TransactionType.Income} sx={{ flex: 1 }}>
-              {formatMessage({
-                id: 'transactionType.income',
-                defaultMessage: 'Income',
-              })}
+            <ToggleButton
+              value={ViewType.Grid}
+              aria-label={formatMessage({ id: 'history.tableView' })}
+            >
+              <TableViewIcon />
             </ToggleButton>
           </ToggleButtonGroup>
+        </Box>
+        <PeriodBalance income={income} expense={expense} />
+        {filtersOpen && (
+          <HistoryFiltersSheet
+            desktop={!isMobile}
+            value={{
+              type: selectedTransactionType,
+              category: selectedCategory,
+              recurringOnly,
+              search,
+            }}
+            creditCardTrackingEnabled={creditCardTrackingEnabled}
+            onClose={() => setFiltersOpen(false)}
+            onApply={(filters) => {
+              setSelectedTransactionType(filters.type);
+              setSelectedCategory(filters.category);
+              setRecurringOnly(filters.recurringOnly);
 
-          <FormControl variant="standard" size="small" sx={{ minWidth: 200 }}>
-            <InputLabel id="category-select-label">
-              {formatMessage({
-                id: 'filters.category',
-                defaultMessage: 'Category',
-              })}
-            </InputLabel>
-            <Select
-              labelId="category-select-label"
-              id="category-select"
-              value={selectedCategory}
-              onChange={(e) =>
-                setSelectedCategory(
-                  e.target.value as TransactionCategory | 'all',
-                )
-              }
-              label={formatMessage({
-                id: 'filters.category',
-                defaultMessage: 'Category',
-              })}
-            >
-              <MenuItem value="all">
-                {formatMessage({
-                  id: 'filters.allCategories',
-                  defaultMessage: 'All categories',
-                })}
-              </MenuItem>
-              {availableCategories.map((category) => {
-                const Icon = getIconByName(
-                  category.value as TransactionCategory,
-                );
+              if (isMobile) setSearch(filters.search);
 
-                return (
-                  <MenuItem key={category.value} value={category.value}>
-                    <Box
-                      component="span"
-                      sx={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 1,
-                      }}
-                    >
-                      {Icon && <Icon fontSize="small" />}
-                      {formatMessage({
-                        id: `categories.${category.value}`,
-                        defaultMessage: category.label,
-                      })}
-                    </Box>
-                  </MenuItem>
-                );
-              })}
-            </Select>
-          </FormControl>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={recurringOnly}
-                onChange={(event) => setRecurringOnly(event.target.checked)}
-                size="small"
-              />
-            }
-            label={formatMessage({
-              id: 'history.recurringOnly',
-              defaultMessage: 'Recurring only',
-            })}
-          />
-          <TextField
-            label={formatMessage({
-              id: 'history.search',
-              defaultMessage: 'Search descriptions',
-            })}
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            size="small"
-            helperText={formatMessage({
-              id: 'history.searchScope',
-              defaultMessage: 'Search within the selected period',
-            })}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-              endAdornment: search ? (
-                <InputAdornment position="end">
-                  <IconButton
-                    size="small"
-                    aria-label={formatMessage({
-                      id: 'history.clearSearch',
-                      defaultMessage: 'Clear search',
-                    })}
-                    onClick={() => setSearch('')}
-                  >
-                    <CloseIcon />
-                  </IconButton>
-                </InputAdornment>
-              ) : undefined,
+              setFiltersOpen(false);
             }}
           />
-        </Stack>
-        {hasFilters && (
+        )}
+        {hasFilters && !isMobile && (
           <Button onClick={resetFilters} sx={{ alignSelf: 'flex-start' }}>
             {formatMessage({
               id: 'history.resetFilters',
@@ -505,26 +430,36 @@ const TransactionList = () => {
             })}
           </Button>
         )}
-        {hasFilters && viewType === ViewType.List && (
+        {hasFilters && (
           <Box
             sx={{
               mt: 1,
-              p: 2,
-              bgcolor: 'background.paper',
+              p: 0,
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: 1,
+              flexWrap: 'wrap',
+              bgcolor: 'transparent',
               borderRadius: 1,
-              border: 1,
+              border: 0,
               borderColor: 'divider',
             }}
           >
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {formatMessage({
-                id: 'history.filteredSum',
+                id: isMobile
+                  ? 'history.filteredCompact'
+                  : 'history.filteredSum',
                 defaultMessage: 'Net total for matching transactions:',
               })}
             </Typography>
             <Typography
               variant="body1"
-              color={filteredSum >= 0 ? 'success.main' : 'error.main'}
+              color={
+                filteredSum >= 0
+                  ? historyColors.income
+                  : historyColors.negativeBalance
+              }
               sx={{ fontWeight: 'bold' }}
             >
               {filteredSum >= 0 ? '+' : ''}
@@ -535,9 +470,15 @@ const TransactionList = () => {
         )}
       </Stack>
 
+      {error && (
+        <Typography role="alert" color="error" my={4}>
+          {error}
+        </Typography>
+      )}
+
       {isLoading && !transactions.length && <CircularProgress sx={{ my: 5 }} />}
 
-      {!visibleTransactions.length && !isLoading && (
+      {!error && !visibleTransactions.length && !isLoading && (
         <Typography variant="h5" component="p" gutterBottom mt={4}>
           {formatMessage({
             id: hasFilters ? 'history.noMatches' : 'transactions.noRecords',
@@ -548,38 +489,8 @@ const TransactionList = () => {
         </Typography>
       )}
 
-      {!!visibleTransactions.length && (
+      {!error && !!visibleTransactions.length && (
         <>
-          <Box
-            sx={{
-              my: 1,
-              width: '100%',
-              display: 'flex',
-              justifyContent: 'space-between',
-            }}
-          >
-            <AdditionalBalanceInfo
-              income={income}
-              expense={expense}
-              sx={{ marginLeft: { xs: 0, md: 9, lg: 18 } }}
-            />
-            <ToggleButtonGroup
-              exclusive
-              size="small"
-              color="primary"
-              value={viewType}
-              sx={{ ml: 'auto', height: 'fit-content' }}
-              onChange={handleTypeChange}
-            >
-              <ToggleButton value={ViewType.List}>
-                <ViewListIcon />
-              </ToggleButton>
-              <ToggleButton value={ViewType.Grid}>
-                <TableViewIcon />
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
-
           {viewType === ViewType.Grid ? (
             <TransactionsDataGrid
               rows={visibleTransactions}
@@ -590,20 +501,18 @@ const TransactionList = () => {
             />
           ) : (
             <List>
-              {visibleTransactions.map((transaction: Transaction) => (
-                <TransactionItem
-                  key={transaction.id}
-                  transaction={transaction}
-                  handleEdit={handleEditTransaction}
-                  handleCopy={handleCopyTransaction}
-                  handleDelete={handleDeleteTransaction}
-                />
-              ))}
+              <TransactionRows
+                stickyDates
+                transactions={visibleTransactions}
+                handleEdit={handleEditTransaction}
+                handleCopy={handleCopyTransaction}
+                handleDelete={handleDeleteTransaction}
+              />
             </List>
           )}
         </>
       )}
-    </>
+    </Box>
   );
 };
 

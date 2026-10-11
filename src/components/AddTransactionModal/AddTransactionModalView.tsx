@@ -6,11 +6,11 @@ import {
   FormControl,
   InputLabel,
   Stack,
-  Input,
+  OutlinedInput,
   InputAdornment,
   TextField,
   Typography,
-  Modal,
+  Dialog,
   Box,
   Grid,
   IconButton,
@@ -18,6 +18,7 @@ import {
   FormControlLabel,
   Checkbox,
 } from '@mui/material';
+import { cardRadius } from '../history/tokens';
 import CloseIcon from '@mui/icons-material/Close';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
@@ -40,18 +41,8 @@ import { FormattedMessage, useIntl } from 'react-intl';
 import { useCategoryI18n } from '@/lib/useCategoryI18n';
 
 const style = {
-  position: 'absolute',
-  top: { xs: '0', sm: '50%' },
-  left: { xs: '0', sm: '50%' },
-  transform: { xs: 'none', sm: 'translate(-50%, -50%)' },
-  width: { xs: '100%', sm: 550 },
-  height: { xs: '100%', sm: 'auto' },
-  overflowY: 'auto',
-  bgcolor: 'background.paper',
-  border: 'none',
-  borderRadius: 4,
-  boxShadow: 24,
-  p: { xs: '18px', sm: 4 },
+  p: { xs: 2, sm: 3 },
+  borderRadius: cardRadius,
 };
 
 interface Props {
@@ -138,7 +129,9 @@ const AddTransactionModalView: React.FC<Props> = ({
   const { getLabel } = useCategoryI18n();
 
   return (
-    <Modal
+    <Dialog
+      fullWidth
+      maxWidth="sm"
       open
       onClose={(_, reason) => {
         if (reason === 'backdropClick') {
@@ -148,11 +141,15 @@ const AddTransactionModalView: React.FC<Props> = ({
         handleClose();
       }}
       aria-labelledby="modal-modal-title"
-      aria-describedby="modal-modal-description"
     >
       <Box sx={style}>
         <Stack direction="row" alignItems="center" spacing={2} marginBottom={3}>
-          <Typography variant="h4" component="h3" flexGrow={1}>
+          <Typography
+            variant="h6"
+            component="h2"
+            id="modal-modal-title"
+            flexGrow={1}
+          >
             {isCopyMode ? (
               <FormattedMessage
                 id="home.repeatTransaction"
@@ -208,15 +205,16 @@ const AddTransactionModalView: React.FC<Props> = ({
               />
             </Grid>
 
-            <Grid item xs={8}>
-              <FormControl required fullWidth variant="standard">
+            <Grid item xs={12} sm={8}>
+              <FormControl required fullWidth variant="outlined">
                 <InputLabel htmlFor="amount">
                   <FormattedMessage
                     id="addTransaction.amount"
                     defaultMessage="Amount"
                   />
                 </InputLabel>
-                <Input
+                <OutlinedInput
+                  label={formatMessage({ id: 'addTransaction.amount' })}
                   id="amount"
                   name="amount"
                   type="number"
@@ -232,7 +230,7 @@ const AddTransactionModalView: React.FC<Props> = ({
               </FormControl>
             </Grid>
 
-            <Grid item xs={4}>
+            <Grid item xs={12} sm={4}>
               <CurrencySelect
                 value={currency}
                 onChange={handleCurrencyChange}
@@ -241,15 +239,17 @@ const AddTransactionModalView: React.FC<Props> = ({
 
             {isBaseAmountShown && (
               <>
-                <Grid item xs={8}>
-                  <FormControl required fullWidth variant="standard">
+                <Grid item xs={12} sm={8}>
+                  <FormControl required fullWidth variant="outlined">
                     <InputLabel htmlFor="amountDefaultCurrency">
                       <FormattedMessage
                         id="addTransaction.amountBase"
                         defaultMessage="Amount in base currency"
                       />
                     </InputLabel>
-                    <Input
+                    <OutlinedInput
+                      id="amountDefaultCurrency"
+                      label={formatMessage({ id: 'addTransaction.amountBase' })}
                       name="amountDefaultCurrency"
                       type="number"
                       inputProps={{ min: 0, step: '0.01' }}
@@ -264,15 +264,21 @@ const AddTransactionModalView: React.FC<Props> = ({
                   </FormControl>
                 </Grid>
 
-                <Grid item xs={4}>
-                  <FormControl variant="standard" fullWidth>
+                <Grid item xs={12} sm={4}>
+                  <FormControl variant="outlined" fullWidth>
                     <InputLabel>
                       <FormattedMessage
                         id="addTransaction.baseCurrency"
                         defaultMessage="Base currency"
                       />
                     </InputLabel>
-                    <Select disabled value={CURRENCY_SYMBOL_MAP.EUR}>
+                    <Select
+                      label={formatMessage({
+                        id: 'addTransaction.baseCurrency',
+                      })}
+                      disabled
+                      value={CURRENCY_SYMBOL_MAP.EUR}
+                    >
                       <MenuItem value={CURRENCY_SYMBOL_MAP.EUR}>
                         {CURRENCY_SYMBOL_MAP.EUR}
                       </MenuItem>
@@ -283,7 +289,7 @@ const AddTransactionModalView: React.FC<Props> = ({
             )}
 
             <Grid item xs={12}>
-              <FormControl fullWidth variant="standard">
+              <FormControl fullWidth variant="outlined">
                 <InputLabel>
                   <FormattedMessage
                     id="addTransaction.category"
@@ -291,6 +297,7 @@ const AddTransactionModalView: React.FC<Props> = ({
                   />
                 </InputLabel>
                 <Select
+                  label={formatMessage({ id: 'addTransaction.category' })}
                   name="category"
                   value={category as string}
                   onChange={handleCategoryChange}
@@ -323,7 +330,7 @@ const AddTransactionModalView: React.FC<Props> = ({
                 })}
                 name="text"
                 type="text"
-                variant="standard"
+                variant="outlined"
                 value={text ?? ''}
                 onChange={handleTextChange}
               />
@@ -420,7 +427,7 @@ const AddTransactionModalView: React.FC<Props> = ({
           </Grid>
         </form>
       </Box>
-    </Modal>
+    </Dialog>
   );
 };
 

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { createElement, type ComponentProps } from 'react';
+import { createElement, type ReactNode, type ComponentProps } from 'react';
 import type DatePeriodFilter from '@/components/shared/DatePeriodFilter';
 import { dateKeyFromLocalDate, getPeriodRange } from '@/lib/dateRange';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
@@ -11,6 +11,10 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { Transaction } from '@prisma/client';
 import TransactionItem from '@/components/TransactionItem';
 import TransactionList from '@/components/TransactionList';
+import TransactionRows from '@/components/TransactionRows';
+import MobileTransactionItem from '@/components/history/MobileTransactionItem';
+import PeriodBalance from '@/components/history/PeriodBalance';
+import HistoryFiltersSheet from '@/components/history/HistoryFiltersSheet';
 import RecentTransactions from '@/components/home/RecentTransactions';
 
 const mocks = vi.hoisted(() => ({
@@ -93,6 +97,15 @@ vi.mock('@/components/shared/DatePeriodFilter', () => ({
     ),
 }));
 
+vi.mock('@mui/x-date-pickers/LocalizationProvider', () => ({
+  LocalizationProvider: ({ children }: { children: ReactNode }) => children,
+}));
+
+vi.mock('@/components/ImportStatementModal', () => ({
+  default: () =>
+    createElement('div', { role: 'dialog', 'aria-label': 'Import statement' }),
+}));
+
 vi.mock('@/components/AdditionalBalanceInfo', () => ({ default: () => null }));
 
 vi.mock('@/components/TransactionsDataGrid', () => ({ default: () => null }));
@@ -156,6 +169,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
 });
 
 test('list item menu exposes transaction actions with accessible labels and the correct transaction ID', async () => {
@@ -372,19 +386,20 @@ test('shortcut can omit the amount and preserves the dialog on failure', async (
   expect(mocks.refresh).not.toHaveBeenCalled();
 });
 
-test('search is the last expandable filter and counts as an active filter', async () => {
+test('desktop search is directly available while additional filters are closed', async () => {
   const user = userEvent.setup();
   await renderHistory();
-  const filters = document.getElementById('history-filters')!;
   const search = screen.getByRole('textbox', { name: 'Search descriptions' });
 
-  expect(filters.contains(search)).toBe(true);
-  expect(filters.lastElementChild?.contains(search)).toBe(true);
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(screen.queryByRole('combobox')).toBeNull();
   expect(screen.queryByText('Entire selected period')).toBeNull();
 
   await user.type(search, 'Coffee');
 
-  expect(screen.getByRole('button', { name: 'Filters (1)' })).toBeTruthy();
+  expect(
+    screen.getByRole('button', { name: 'Reset search and filters' }),
+  ).toBeTruthy();
 });
 
 test('transaction actions stay hidden until the menu opens and Escape dismisses it', async () => {
@@ -392,7 +407,9 @@ test('transaction actions stay hidden until the menu opens and Escape dismisses 
   renderRecent();
 
   expect(screen.queryByRole('menuitem')).toBeNull();
-  expect(screen.getAllByRole('button')).toHaveLength(1);
+  expect(
+    screen.getByRole('button', { name: 'Edit transaction: Coffee' }),
+  ).toBeTruthy();
 
   await user.click(screen.getByRole('button', { name: 'Transaction actions' }));
 
@@ -409,66 +426,67 @@ test.each([
   'Year period',
   'Previous period',
   'Custom period',
-])(
-  '%s counts as one filter and resets to the current month',
-  async (period) => {
-    const user = userEvent.setup();
-    await renderHistory();
-    const today = dateKeyFromLocalDate(new Date());
-    const expected = getPeriodRange('month', today, {
-      start: today,
-      end: today,
-    });
-
-    await user.click(screen.getByRole('button', { name: period }));
-
-    expect(screen.getByRole('button', { name: 'Filters (1)' })).toBeTruthy();
-
-    await user.type(
-      screen.getByRole('textbox', { name: 'Search descriptions' }),
-      'Coffee',
-    );
-
-    expect(screen.getByRole('button', { name: 'Filters (2)' })).toBeTruthy();
-
-    await user.click(
-      screen.getByRole('button', { name: 'Reset search and filters' }),
-    );
-
-    expect(screen.getByRole('button', { name: 'Filters (0)' })).toBeTruthy();
-    expect(screen.getByTestId('selected-period').textContent).toBe(
-      `month:${expected.start}:${expected.end}`,
-    );
-    expect(
-      screen.getByRole('textbox', { name: 'Search descriptions' }),
-    ).toHaveProperty('value', '');
-    expect(
-      screen.queryByRole('button', { name: 'Reset search and filters' }),
-    ).toBeNull();
-    await waitFor(() =>
-      expect(mocks.getTransactions).toHaveBeenLastCalledWith(
-        expected.start,
-        expected.end,
-        true,
-      ),
-    );
-  },
-);
-
-test('recurring-only filters locally and reset restores the list and checkbox', async () => {
+])('desktop %s resets to the current month', async (period) => {
   const user = userEvent.setup();
-
   await renderHistory();
+  const today = dateKeyFromLocalDate(new Date());
+  const expected = getPeriodRange('month', today, {
+    start: today,
+    end: today,
+  });
 
+  await user.click(screen.getByRole('button', { name: period }));
+
+  expect(
+    screen.getByRole('button', { name: 'Reset search and filters' }),
+  ).toBeTruthy();
+
+  await user.type(
+    screen.getByRole('textbox', { name: 'Search descriptions' }),
+    'Coffee',
+  );
+
+  expect(
+    screen.getByRole('button', { name: 'Reset search and filters' }),
+  ).toBeTruthy();
+
+  await user.click(
+    screen.getByRole('button', { name: 'Reset search and filters' }),
+  );
+
+  expect(screen.getByTestId('selected-period').textContent).toBe(
+    `month:${expected.start}:${expected.end}`,
+  );
+  expect(
+    screen.getByRole('textbox', { name: 'Search descriptions' }),
+  ).toHaveProperty('value', '');
+  expect(
+    screen.queryByRole('button', { name: 'Reset search and filters' }),
+  ).toBeNull();
+  await waitFor(() =>
+    expect(mocks.getTransactions).toHaveBeenLastCalledWith(
+      expected.start,
+      expected.end,
+      true,
+    ),
+  );
+});
+
+test('desktop recurring filter applies a draft, preserves search and resets without refetching', async () => {
+  const user = userEvent.setup();
+  await renderHistory();
   const calls = mocks.getTransactions.mock.calls.length;
-  const checkbox = screen.getByRole('checkbox', {
-    name: 'Recurring only',
-  }) as HTMLInputElement;
+  const search = screen.getByRole('textbox', { name: 'Search descriptions' });
 
-  await user.click(checkbox);
+  await user.type(search, 'Coffee');
+  await user.click(screen.getByRole('button', { name: 'Filters (1)' }));
+  await user.click(screen.getByRole('checkbox', { name: 'Recurring only' }));
 
-  expect(checkbox.checked).toBe(true);
-  expect(screen.queryByText('Coffee')).toBeNull();
+  expect(screen.getByText('Coffee')).toBeTruthy();
+
+  await user.click(screen.getByRole('button', { name: 'Apply' }));
+
+  expect((search as HTMLInputElement).value).toBe('Coffee');
   expect(
     screen.getByText('No matching transactions in this period'),
   ).toBeTruthy();
@@ -477,8 +495,390 @@ test('recurring-only filters locally and reset restores the list and checkbox', 
   await user.click(
     screen.getByRole('button', { name: 'Reset search and filters' }),
   );
+  await user.click(screen.getByRole('button', { name: 'Filters (0)' }));
 
-  expect(checkbox.checked).toBe(false);
+  expect(
+    (
+      screen.getByRole('checkbox', {
+        name: 'Recurring only',
+      }) as HTMLInputElement
+    ).checked,
+  ).toBe(false);
   expect(screen.getByText('Coffee')).toBeTruthy();
   expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
+});
+
+test('date groups share a heading per day and preserve transaction order and amounts', () => {
+  const transactions = [
+    {
+      ...transaction,
+      id: 'first',
+      text: 'First',
+      date: new Date(2026, 9, 11, 18),
+    },
+    {
+      ...transaction,
+      id: 'second',
+      text: 'Second',
+      date: new Date(2026, 9, 11, 8),
+    },
+    {
+      ...transaction,
+      id: 'third',
+      text: 'Third',
+      date: new Date(2026, 9, 10, 12),
+    },
+  ];
+
+  const { container, rerender } = renderWithIntl(
+    createElement(TransactionRows, {
+      transactions,
+      handleEdit: vi.fn(),
+      handleDelete: vi.fn(),
+    }),
+  );
+
+  expect(
+    Array.from(container.querySelectorAll('time')).map((time) => time.dateTime),
+  ).toEqual(['2026-10-11', '2026-10-10']);
+  expect(
+    screen
+      .getAllByText(/^(First|Second|Third)$/)
+      .map((item) => item.textContent),
+  ).toEqual(['First', 'Second', 'Third']);
+  expect(screen.getAllByText('20 zł')).toHaveLength(3);
+  expect(
+    screen.getAllByRole('button', { name: 'Transaction actions' }),
+  ).toHaveLength(3);
+
+  rerender(
+    createElement(
+      IntlProvider,
+      { locale: 'en-US', messages: messages['en-US'] },
+      createElement(TransactionRows, {
+        transactions: [transactions[2]],
+        handleEdit: vi.fn(),
+        handleDelete: vi.fn(),
+      }),
+    ),
+  );
+
+  expect(
+    Array.from(container.querySelectorAll('time')).map((time) => time.dateTime),
+  ).toEqual(['2026-10-10']);
+  expect(screen.queryByText('First')).toBeNull();
+});
+
+const useMobileViewport = (width = 390) => {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn((query: string) => ({
+      matches: query.includes('max-width') && width < 600,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  );
+};
+
+test('mobile filter drafts are discarded on close and apply updates results without refetching', async () => {
+  useMobileViewport();
+  const user = userEvent.setup();
+
+  await renderHistory();
+
+  const calls = mocks.getTransactions.mock.calls.length;
+
+  await user.click(screen.getByRole('button', { name: 'Filters (0)' }));
+  await user.type(
+    screen.getByRole('textbox', { name: 'Search descriptions' }),
+    'missing',
+  );
+
+  expect(screen.getByText('Coffee')).toBeTruthy();
+
+  await user.click(screen.getByRole('button', { name: 'Close' }));
+  await user.click(screen.getByRole('button', { name: 'Filters (0)' }));
+
+  expect(
+    screen.getByRole('textbox', { name: 'Search descriptions' }),
+  ).toHaveProperty('value', '');
+
+  await user.type(
+    screen.getByRole('textbox', { name: 'Search descriptions' }),
+    'missing',
+  );
+  await user.click(screen.getByRole('button', { name: 'Apply' }));
+
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(screen.queryByText('Coffee')).toBeNull();
+  expect(
+    screen.getByText('No matching transactions in this period'),
+  ).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Filters (1)' })).toBeTruthy();
+  expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
+
+  await user.click(screen.getByRole('button', { name: 'Filters (1)' }));
+
+  expect(
+    screen.getByRole('textbox', { name: 'Search descriptions' }),
+  ).toHaveProperty('value', 'missing');
+
+  await user.click(screen.getByRole('button', { name: 'Reset' }));
+
+  expect(screen.queryByText('Coffee')).toBeNull();
+
+  await user.keyboard('{Escape}');
+  await user.click(screen.getByRole('button', { name: 'Filters (1)' }));
+
+  expect(
+    screen.getByRole('textbox', { name: 'Search descriptions' }),
+  ).toHaveProperty('value', 'missing');
+
+  await user.click(screen.getByRole('button', { name: 'Reset' }));
+  await user.click(screen.getByRole('button', { name: 'Apply' }));
+
+  expect(screen.getByText('Coffee')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Filters (0)' })).toBeTruthy();
+});
+
+test('mobile category menu does not edit, while description and amount edit the same record', async () => {
+  const user = userEvent.setup();
+  const handleEdit = vi.fn();
+  const handleCopy = vi.fn();
+  const text = '🛒 ES ESTEPONA MP**CARREFOUR very long description';
+  renderWithIntl(
+    createElement(MobileTransactionItem, {
+      transaction: { ...transaction, text, isRecurring: true },
+      handleEdit,
+      handleCopy,
+      handleDelete: vi.fn(),
+      tags: ['Family', 'Groceries'],
+    }),
+  );
+
+  expect(screen.getByText(text)).toBeTruthy();
+  expect(screen.getByText('Family')).toBeTruthy();
+  expect(screen.getByText('Groceries')).toBeTruthy();
+  expect(screen.getByText('20 zł')).toBeTruthy();
+  expect(screen.getAllByRole('button')).toHaveLength(2);
+
+  await user.click(screen.getByRole('button', { name: 'Transaction actions' }));
+
+  expect(handleEdit).not.toHaveBeenCalled();
+  expect(
+    screen
+      .getByRole('button', { name: 'Transaction actions', hidden: true })
+      .getAttribute('aria-expanded'),
+  ).toBe('true');
+
+  await user.click(
+    screen.getByRole('menuitem', { name: 'Repeat transaction' }),
+  );
+
+  expect(handleCopy).toHaveBeenCalledExactlyOnceWith(transaction.id);
+
+  await user.click(screen.getByText(text));
+  await user.click(screen.getByText('-5 €'));
+
+  expect(handleEdit).toHaveBeenCalledTimes(2);
+  expect(handleEdit).toHaveBeenLastCalledWith(transaction.id);
+});
+
+test.each([390, 393, 402])(
+  'mobile history at %s px selects the mobile layout and opens header actions',
+  async (width) => {
+    useMobileViewport(width);
+    const user = userEvent.setup();
+
+    await renderHistory();
+    await user.click(screen.getByRole('button', { name: 'Add transaction' }));
+
+    expect(mocks.setTransactionId).toHaveBeenCalledWith(null);
+    expect(mocks.setTransactionDraft).toHaveBeenCalledWith(null);
+    expect(mocks.setIsCopyTransactionFlow).toHaveBeenCalledWith(false);
+    expect(mocks.setIsTransactionModalOpen).toHaveBeenCalledWith(true);
+    expect(
+      screen.getByRole('button', { name: 'Edit transaction: Coffee' }),
+    ).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Import' }));
+
+    expect(
+      screen.getByRole('dialog', { name: 'Import statement' }),
+    ).toBeTruthy();
+  },
+);
+
+test('period balance hides all amounts when collapsed and displays base currency when expanded', async () => {
+  const user = userEvent.setup();
+  renderWithIntl(createElement(PeriodBalance, { income: 100, expense: 250 }));
+
+  expect(screen.queryByText('-150 €')).toBeNull();
+
+  await user.click(screen.getByRole('button', { name: 'Show balance info' }));
+
+  expect(screen.getByText('-150 €')).toBeTruthy();
+  expect(screen.getByText('100 €')).toBeTruthy();
+  expect(screen.getByText('250 €')).toBeTruthy();
+
+  await user.click(screen.getByRole('button', { name: /Period balance/ }));
+  await waitFor(() => expect(screen.queryByText('100 €')).toBeNull());
+
+  expect(screen.queryByText('-150 €')).toBeNull();
+});
+
+test('mobile type changes reset the category and applying recurring-only retains the period', async () => {
+  useMobileViewport();
+  const user = userEvent.setup();
+
+  await renderHistory();
+  await user.click(screen.getByRole('button', { name: 'Quarter period' }));
+
+  const selectedPeriod = screen.getByTestId('selected-period').textContent;
+
+  await user.click(screen.getByRole('button', { name: 'Filters (1)' }));
+  await user.click(screen.getByRole('combobox', { name: 'Category' }));
+
+  expect(screen.getAllByRole('option', { name: /Gifts/ })).toHaveLength(1);
+  expect(screen.queryByRole('option', { name: /Credit Received/ })).toBeNull();
+
+  await user.click(screen.getByRole('option', { name: /Groceries/ }));
+  await user.click(screen.getByRole('button', { name: /^income$/i }));
+
+  expect(screen.getByRole('combobox', { name: 'Category' }).textContent).toBe(
+    'All categories',
+  );
+
+  await user.click(screen.getByRole('checkbox', { name: 'Recurring only' }));
+  await user.click(screen.getByRole('button', { name: 'Apply' }));
+
+  expect(screen.getByRole('button', { name: 'Filters (3)' })).toBeTruthy();
+  expect(screen.getByTestId('selected-period').textContent).toBe(
+    selectedPeriod,
+  );
+  expect(
+    screen.getByText('No matching transactions in this period'),
+  ).toBeTruthy();
+});
+
+test('mobile income preserves large amounts and unknown categories have a usable menu', async () => {
+  const user = userEvent.setup();
+  const handleDelete = vi.fn();
+  renderWithIntl(
+    createElement(MobileTransactionItem, {
+      transaction: {
+        ...transaction,
+        type: 'Income',
+        category: '__proto__',
+        amount: 105412.48,
+        amountDefaultCurrency: 105412.48,
+        currency: 'EUR',
+      },
+      handleEdit: vi.fn(),
+      handleDelete,
+    }),
+  );
+
+  expect(screen.getByText('+105 412.48 €')).toBeTruthy();
+  expect(screen.queryByText('20 zł')).toBeNull();
+  expect(
+    screen.getByRole('button', { name: 'Transaction actions' }),
+  ).toBeTruthy();
+
+  await user.click(screen.getByRole('button', { name: 'Transaction actions' }));
+  await user.click(screen.getByRole('menuitem', { name: 'Delete' }));
+
+  expect(handleDelete).toHaveBeenCalledExactlyOnceWith(transaction.id);
+});
+
+test('mobile header actions remain available when loading history fails', async () => {
+  useMobileViewport();
+  mocks.getTransactions.mockResolvedValue({ error: 'Database error' });
+
+  await renderHistory();
+
+  expect(screen.getByRole('alert').textContent).toBe('Database error');
+  expect(screen.getByRole('button', { name: 'Add transaction' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Import' })).toBeTruthy();
+  expect(screen.queryByText('Coffee')).toBeNull();
+});
+
+test('menu supports keyboard navigation and restores focus after Escape', async () => {
+  const user = userEvent.setup();
+  const handleCopy = vi.fn();
+  renderWithIntl(
+    createElement(MobileTransactionItem, {
+      transaction,
+      handleEdit: vi.fn(),
+      handleDelete: vi.fn(),
+      handleCopy,
+    }),
+  );
+  const trigger = screen.getByRole('button', { name: 'Transaction actions' });
+
+  await user.click(trigger);
+  await user.keyboard('{Escape}');
+
+  await waitFor(() => expect(document.activeElement).toBe(trigger));
+
+  await user.click(trigger);
+  await user.keyboard('{ArrowDown}{Enter}');
+
+  expect(handleCopy).toHaveBeenCalledExactlyOnceWith(transaction.id);
+});
+
+test('saving a shortcut transfers focus from the menu into its dialog', async () => {
+  const user = userEvent.setup();
+  renderRecent();
+
+  await user.click(screen.getByRole('button', { name: 'Transaction actions' }));
+  await user.click(screen.getByRole('menuitem', { name: 'Save as shortcut' }));
+
+  const dialog = screen.getByRole('dialog');
+
+  await waitFor(() =>
+    expect(dialog.contains(document.activeElement)).toBe(true),
+  );
+});
+
+test('desktop filter draft preserves a newer applied search', async () => {
+  const user = userEvent.setup();
+  const onApply = vi.fn();
+  const props = {
+    desktop: true,
+    creditCardTrackingEnabled: false,
+    onClose: vi.fn(),
+    onApply,
+    value: {
+      type: 'all' as const,
+      category: 'all' as const,
+      recurringOnly: false,
+      search: 'old search',
+    },
+  };
+  const renderDialog = (search: string) =>
+    createElement(
+      IntlProvider,
+      { locale: 'en-US', messages: messages['en-US'] },
+      createElement(HistoryFiltersSheet, {
+        ...props,
+        value: { ...props.value, search },
+      }),
+    );
+  const view = render(renderDialog('old search'));
+
+  await user.click(screen.getByRole('checkbox', { name: 'Recurring only' }));
+  view.rerender(renderDialog('new search'));
+  await user.click(screen.getByRole('button', { name: 'Apply' }));
+
+  expect(onApply).toHaveBeenCalledExactlyOnceWith({
+    ...props.value,
+    recurringOnly: true,
+    search: 'new search',
+  });
 });

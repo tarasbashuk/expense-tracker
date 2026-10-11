@@ -38,6 +38,8 @@ import {
 } from '@/lib/dateRange';
 
 interface Props {
+  compact?: boolean;
+  horizontal?: boolean;
   mode: PeriodMode;
   range: DateRangeValue;
   onModeChange: (_mode: PeriodMode) => void;
@@ -79,6 +81,8 @@ const formatDateRange = (start: Date, end: Date, locale: 'en-US' | 'uk-UA') => {
 
 const DatePeriodFilter = ({
   mode,
+  compact = false,
+  horizontal = false,
   range,
   onModeChange,
   onPrevious,
@@ -95,8 +99,23 @@ const DatePeriodFilter = ({
     const start = localDateFromKey(range.start);
     const end = localDateFromKey(range.end);
 
+    if (compact && mode === 'month') {
+      return new Intl.DateTimeFormat(locale, {
+        month: 'long',
+        year: 'numeric',
+      }).format(start);
+    }
+
+    if (compact && mode === 'quarter') {
+      return `${locale === 'uk-UA' ? 'Квартал' : 'Quarter'} ${Math.floor(start.getMonth() / 3) + 1} · ${start.getFullYear()}`;
+    }
+
+    if (compact && mode === 'year') {
+      return String(start.getFullYear());
+    }
+
     return formatDateRange(start, end, locale);
-  }, [locale, range.end, range.start]);
+  }, [compact, mode, locale, range.end, range.start]);
 
   const openPicker = () => {
     setDraftStart(localDateFromKey(range.start));
@@ -126,12 +145,17 @@ const DatePeriodFilter = ({
           .MuiLocalizationProvider.defaultProps.localeText
       }
     >
-      <Stack spacing={1.25} sx={{ width: '100%', maxWidth: 620 }}>
+      <Stack
+        spacing={1.25}
+        direction={horizontal ? { xs: 'column', md: 'row' } : 'column'}
+        sx={{ width: '100%', minWidth: 0 }}
+      >
         <ToggleButtonGroup
           exclusive
           fullWidth
           size="small"
           color="primary"
+          sx={{ minWidth: 0, flex: 1 }}
           value={mode}
           onChange={(_event, nextMode: PeriodMode | null) => {
             if (nextMode) onModeChange(nextMode);
@@ -166,6 +190,8 @@ const DatePeriodFilter = ({
             gridTemplateColumns: '44px minmax(0, 1fr) 44px',
             alignItems: 'center',
             width: '100%',
+            minWidth: 0,
+            flex: 1,
           }}
         >
           <IconButton

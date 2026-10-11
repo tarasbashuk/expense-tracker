@@ -1,4 +1,13 @@
 {
+  "home.allTransactions": "Усі",
+  "grid.recurringTooltip": "Регулярна транзакція",
+  "history.editTransaction": "Редагувати транзакцію: {description}",
+  "history.periodBalance": "Баланс періоду",
+  "history.filtersTitle": "Фільтри",
+  "history.resetDraft": "Скинути",
+  "history.listView": "Список",
+  "history.tableView": "Таблиця",
+  "history.filteredCompact": "За фільтрами:",
   "history.recurringOnly": "Лише регулярні",
   "common.save": "Зберегти",
   "common.cancel": "Скасувати",

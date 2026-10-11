@@ -1,4 +1,6 @@
 'use client';
+import { ThemeProvider } from '@mui/material/styles';
+import { appTheme } from '@/theme';
 import { IntlProvider } from 'react-intl';
 import { messages } from '@/locales';
 import { useSettings } from '@/context/SettingsContexts';
@@ -11,12 +13,14 @@ export const ClientProviders = ({
   const { locale } = useSettings();
 
   return (
-    <IntlProvider
-      locale={locale}
-      messages={messages[locale]}
-      defaultLocale="en-US"
-    >
-      {children}
-    </IntlProvider>
+    <ThemeProvider theme={appTheme}>
+      <IntlProvider
+        locale={locale}
+        messages={messages[locale]}
+        defaultLocale="en-US"
+      >
+        {children}
+      </IntlProvider>
+    </ThemeProvider>
   );
 };

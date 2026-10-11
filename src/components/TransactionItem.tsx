@@ -23,9 +23,14 @@ import { formatCurrency } from '@/lib/formatCurrency';
 import { useSettings } from '@/context/SettingsContexts';
 import { getTransactionSign, formatDate } from '@/lib/utils';
 import { Locale } from '@/locales';
+import MobileTransactionItem, {
+  TransactionTagLabels,
+} from './history/MobileTransactionItem';
 
 interface Props {
   transaction: Transaction;
+  mobileGrouped?: boolean;
+  tags?: TransactionTagLabels;
   /* eslint-disable no-unused-vars*/
   handleEdit: (id: string) => void;
   handleDelete: (id: string) => void;
@@ -35,6 +40,8 @@ interface Props {
 
 const TransactionItem: FC<Props> = ({
   transaction,
+  mobileGrouped = false,
+  tags,
   handleEdit,
   handleDelete,
   handleCopy,
@@ -68,6 +75,18 @@ const TransactionItem: FC<Props> = ({
   const recurringTooltip = isRecurring
     ? `Recurring transaction${recurringEndDateFormatted ? ` until ${recurringEndDateFormatted}` : ' (infinite)'}`
     : '';
+
+  if (mobileGrouped) {
+    return (
+      <MobileTransactionItem
+        transaction={transaction}
+        tags={tags}
+        handleEdit={handleEdit}
+        handleCopy={handleCopy}
+        handleDelete={handleDelete}
+      />
+    );
+  }
 
   return (
     <>
