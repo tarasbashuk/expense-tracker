@@ -1,7 +1,8 @@
 'use client';
 
+import TagBadges from '../tags/TagBadges';
 import { Box, ButtonBase, ListItem, Tooltip, Typography } from '@mui/material';
-import { Transaction } from '@prisma/client';
+import { Transaction } from '@/lib/tags';
 import { Repeat2 } from 'lucide-react';
 import { useIntl } from 'react-intl';
 import TransactionActionsMenu from '../TransactionActionsMenu';
@@ -119,7 +120,8 @@ export default function MobileTransactionItem({
               </Tooltip>
             )}
           </Box>
-          {!!tags?.length && (
+          <TagBadges tags={transaction.tags} />
+          {!transaction.tags?.length && !!tags?.length && (
             <Box
               component="span"
               sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}

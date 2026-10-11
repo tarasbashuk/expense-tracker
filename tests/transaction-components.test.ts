@@ -33,6 +33,22 @@ const mocks = vi.hoisted(() => ({
   error: vi.fn(),
 }));
 
+vi.mock('@/app/actions/tags', () => ({
+  getTags: vi
+    .fn()
+    .mockResolvedValue({
+      tags: [
+        {
+          id: 'trip',
+          name: 'Trip',
+          normalizedName: 'trip',
+          color: 'blue',
+          userId: 'owner',
+        },
+      ],
+    }),
+}));
+
 vi.mock('@/context/SettingsContexts', () => ({
   useSettings: () => ({ settings: { defaultCurrency: 'EUR' } }),
 }));
@@ -357,6 +373,7 @@ test('saving a shortcut copies original currency and amount rather than the conv
   expect(mocks.saveTemplate).toHaveBeenCalledExactlyOnceWith({
     label: 'Coffee',
     text: 'Coffee',
+    tagIds: [],
     amount: 20,
     currency: 'PLN',
     category: 'dining',
@@ -881,4 +898,31 @@ test('desktop filter draft preserves a newer applied search', async () => {
     recurringOnly: true,
     search: 'new search',
   });
+});
+
+test('tag filters update the active condition count and net summary only after Apply, then reset', async () => {
+  const user = userEvent.setup();
+  await renderHistory();
+  const calls = mocks.getTransactions.mock.calls.length;
+
+  await user.click(screen.getByRole('button', { name: 'Filters (0)' }));
+  await user.click(await screen.findByRole('checkbox', { name: 'Trip' }));
+
+  expect(screen.getByText('Coffee')).toBeTruthy();
+
+  await user.click(screen.getByRole('button', { name: 'Apply' }));
+
+  expect(screen.getByRole('button', { name: 'Filters (1)' })).toBeTruthy();
+  expect(screen.queryByText('Coffee')).toBeNull();
+  expect(screen.getByText('Net total for matching transactions:')).toBeTruthy();
+  expect(screen.getByText('+0.00 €')).toBeTruthy();
+  expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
+
+  await user.click(
+    screen.getByRole('button', { name: 'Reset search and filters' }),
+  );
+
+  expect(screen.getByText('Coffee')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Filters (0)' })).toBeTruthy();
+  expect(screen.queryByText('Net total for matching transactions:')).toBeNull();
 });

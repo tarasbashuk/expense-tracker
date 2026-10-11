@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
-import { Transaction } from '@prisma/client';
+import { Transaction } from '@/lib/tags';
 import {
   Box,
   List,
@@ -97,6 +97,7 @@ const TransactionList = () => {
     TransactionType | 'all'
   >('all');
   const [search, setSearch] = useState('');
+  const [tagIds, setTagIds] = useState<string[]>([]);
   const [recurringOnly, setRecurringOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const visibleTransactions = useMemo(
@@ -107,6 +108,7 @@ const TransactionList = () => {
         selectedCategory,
         selectedTransactionType,
         recurringOnly,
+        tagIds,
       ),
     [
       transactions,
@@ -114,6 +116,7 @@ const TransactionList = () => {
       selectedCategory,
       selectedTransactionType,
       recurringOnly,
+      tagIds,
     ],
   );
   const filteredSum = visibleTransactions.reduce(
@@ -141,7 +144,8 @@ const TransactionList = () => {
     Number(selectedCategory !== 'all') +
     Number(selectedTransactionType !== 'all') +
     Number(Boolean(search.trim())) +
-    Number(recurringOnly);
+    Number(recurringOnly) +
+    Number(tagIds.length > 0);
   const hasFilters = activeFilterCount > 0;
 
   const resetFilters = () => {
@@ -151,6 +155,7 @@ const TransactionList = () => {
     setAnchorDate(defaults.anchorDate);
     setCustomRange(defaults.customRange);
     setSearch('');
+    setTagIds([]);
     setRecurringOnly(false);
     setSelectedCategory('all');
     setSelectedTransactionType('all');
@@ -407,6 +412,7 @@ const TransactionList = () => {
               type: selectedTransactionType,
               category: selectedCategory,
               recurringOnly,
+              tagIds,
               search,
             }}
             creditCardTrackingEnabled={creditCardTrackingEnabled}
@@ -415,6 +421,7 @@ const TransactionList = () => {
               setSelectedTransactionType(filters.type);
               setSelectedCategory(filters.category);
               setRecurringOnly(filters.recurringOnly);
+              setTagIds(filters.tagIds || []);
 
               if (isMobile) setSearch(filters.search);
 

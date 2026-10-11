@@ -15,7 +15,17 @@ const mocks = vi.hoisted(() => ({
   save: vi.fn(),
   success: vi.fn(),
 }));
-const source = transaction();
+const source = transaction({
+  tags: [
+    {
+      id: 'trip',
+      name: 'Trip',
+      normalizedName: 'trip',
+      color: 'blue',
+      userId: 'test-user',
+    },
+  ],
+});
 
 vi.mock('@/context/SettingsContexts', () => ({
   useSettings: () => ({
@@ -91,6 +101,7 @@ test.each([true, false])(
 
     await user.click(submit);
 
+    expect(mocks.save.mock.calls[0][0].tagIds).toEqual(['trip']);
     expect(mocks.save.mock.calls[0][2]).toBe(copy ? undefined : source.id);
     expect(mocks.success).toHaveBeenCalledWith(
       copy ? 'A transaction was added' : 'Changes were saved',

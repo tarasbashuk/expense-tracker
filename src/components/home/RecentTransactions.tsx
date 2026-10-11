@@ -1,6 +1,6 @@
 'use client';
 
-import { Transaction } from '@prisma/client';
+import { Transaction } from '@/lib/tags';
 import { Box, Button, List, Typography } from '@mui/material';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';

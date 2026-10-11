@@ -1,7 +1,8 @@
 'use server';
 
 import { currentUser } from '@clerk/nextjs/server';
-import { Transaction, TransactionType } from '@prisma/client';
+import { TransactionType } from '@prisma/client';
+import { Transaction } from '@/lib/tags';
 import Decimal from 'decimal.js';
 import * as Sentry from '@sentry/nextjs';
 
@@ -84,6 +85,7 @@ export default async function getHomeDashboard(): Promise<{
               ],
             },
           },
+          include: { tags: { where: { userId } } },
           orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
           take: 5,
         }),

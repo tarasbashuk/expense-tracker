@@ -17,6 +17,7 @@ model User {
   imageUrl                  String?
   createdAt                 DateTime                   @default(now())
   updatedAt                 DateTime                   @updatedAt
+  tags                      Tag[]
   settings                  Settings?
   transactions              Transaction[]
   merchantRules             MerchantCategoryRule[]
@@ -24,6 +25,7 @@ model User {
 }
 
 model Transaction {
+  tags                   Tag[]
   id                     String          @id @default(uuid())
   text                   String
   amount                 Float
@@ -77,6 +79,7 @@ model MerchantCategoryRule {
 }
 
 model QuickTransactionTemplate {
+  tags      Tag[]
   id        String          @id @default(uuid())
   userId    String
   label     String
@@ -113,4 +116,17 @@ enum Theme {
 enum TransactionType {
   Expense
   Income
+}
+
+model Tag {
+  id             String                     @id @default(uuid())
+  name           String                     @db.VarChar(40)
+  normalizedName String                     @db.VarChar(80)
+  color          String
+  userId         String
+  user           User                       @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
+  transactions   Transaction[]
+  templates      QuickTransactionTemplate[]
+
+  @@unique([userId, normalizedName])
 }

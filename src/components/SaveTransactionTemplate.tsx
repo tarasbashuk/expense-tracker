@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Transaction } from '@prisma/client';
+import { Transaction } from '@/lib/tags';
 import {
   Alert,
   Button,
@@ -49,6 +49,7 @@ export default function SaveTransactionTemplate({
       const result = await saveQuickTransactionTemplate({
         label,
         text,
+        tagIds: transaction.tags?.map(({ id }) => id) || [],
         amount: includeAmount ? transaction.amount : undefined,
         category: transaction.category,
         currency: transaction.currency,
@@ -57,7 +58,9 @@ export default function SaveTransactionTemplate({
 
       if (result.error || !result.template) {
         setError(
-          result.error ||
+          (result.error?.startsWith('tags.')
+            ? formatMessage({ id: result.error })
+            : result.error) ||
             formatMessage({
               id: 'template.saveError',
               defaultMessage: 'Unable to save shortcut. Please try again.',

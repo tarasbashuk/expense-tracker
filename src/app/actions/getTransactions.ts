@@ -1,7 +1,7 @@
 'use server';
 import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
-import { Transaction } from '@prisma/client';
+import { Transaction } from '@/lib/tags';
 import { decrypt, decryptFloat } from '@/lib/crypto';
 import { IncomeCategory, ExpenseCategory } from '@/constants/types';
 import * as Sentry from '@sentry/nextjs';
@@ -36,6 +36,7 @@ async function getTransactions(
 
   try {
     const transactions = await db.transaction.findMany({
+      include: { tags: { where: { userId } } },
       where: {
         userId,
         date: {

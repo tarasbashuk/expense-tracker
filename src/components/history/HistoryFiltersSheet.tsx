@@ -1,5 +1,6 @@
 'use client';
 
+import TagPicker from '../tags/TagPicker';
 import { useEffect, useState } from 'react';
 import {
   Box,
@@ -35,6 +36,7 @@ import CategoryIcon from './CategoryIcon';
 import { cardRadius } from './tokens';
 
 export interface HistoryFilters {
+  tagIds?: string[];
   type: TransactionType | 'all';
   category: TransactionCategory | 'all';
   recurringOnly: boolean;
@@ -55,6 +57,7 @@ const emptyFilters: HistoryFilters = {
   category: 'all',
   recurringOnly: false,
   search: '',
+  tagIds: [],
 };
 
 interface Props {
@@ -231,6 +234,11 @@ export default function HistoryFiltersSheet({
               ))}
             </Select>
           </FormControl>
+          <TagPicker
+            filter
+            value={draft.tagIds || []}
+            onChange={(tagIds) => setDraft({ ...draft, tagIds })}
+          />
           <FormControlLabel
             control={
               <Switch

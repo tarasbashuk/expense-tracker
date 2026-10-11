@@ -7,6 +7,7 @@
  * WARNING: This will DELETE all existing data and restore from backup!
  */
 
+import { restoreBackupData } from './backup-data.js';
 import { PrismaClient } from '@prisma/client';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -66,122 +67,8 @@ async function restoreBackup() {
       `   Quick transaction templates: ${backup.data.quickTransactionTemplates?.length || 0}`,
     );
 
-    // Delete all existing data (in correct order due to foreign keys)
-    console.log('\n🗑️  Deleting existing data...');
-    await prisma.quickTransactionTemplate.deleteMany();
-    await prisma.merchantCategoryRule.deleteMany();
-    await prisma.transaction.deleteMany();
-    await prisma.settings.deleteMany();
-    await prisma.user.deleteMany();
-
-    // Restore users first
-    if (backup.data.users && backup.data.users.length > 0) {
-      console.log(`\n👤 Restoring ${backup.data.users.length} users...`);
-      for (const user of backup.data.users) {
-        await prisma.user.create({
-          data: {
-            ...user,
-            id: user.id, // Keep original ID
-            createdAt: user.createdAt ? new Date(user.createdAt) : new Date(),
-            updatedAt: user.updatedAt ? new Date(user.updatedAt) : new Date(),
-          },
-        });
-      }
-      console.log('✅ Users restored');
-    }
-
-    // Restore settings
-    if (backup.data.settings && backup.data.settings.length > 0) {
-      console.log(`\n⚙️  Restoring ${backup.data.settings.length} settings...`);
-      for (const setting of backup.data.settings) {
-        await prisma.settings.create({
-          data: {
-            ...setting,
-            id: setting.id, // Keep original ID
-            createdAt: setting.createdAt
-              ? new Date(setting.createdAt)
-              : new Date(),
-            updatedAt: setting.updatedAt
-              ? new Date(setting.updatedAt)
-              : new Date(),
-          },
-        });
-      }
-      console.log('✅ Settings restored');
-    }
-
-    // Restore transactions
-    if (backup.data.transactions && backup.data.transactions.length > 0) {
-      console.log(
-        `\n💰 Restoring ${backup.data.transactions.length} transactions...`,
-      );
-      // Restore in batches to avoid memory issues
-      const batchSize = 100;
-      for (let i = 0; i < backup.data.transactions.length; i += batchSize) {
-        const batch = backup.data.transactions.slice(i, i + batchSize);
-        await prisma.transaction.createMany({
-          data: batch.map((transaction) => ({
-            ...transaction,
-            id: transaction.id, // Keep original ID
-            date: transaction.date ? new Date(transaction.date) : new Date(),
-            createdAt: transaction.createdAt
-              ? new Date(transaction.createdAt)
-              : new Date(),
-            updatedAt: transaction.updatedAt
-              ? new Date(transaction.updatedAt)
-              : new Date(),
-            recurringEndDate: transaction.recurringEndDate
-              ? new Date(transaction.recurringEndDate)
-              : null,
-          })),
-        });
-        process.stdout.write(
-          `   ${Math.min(i + batchSize, backup.data.transactions.length)}/${backup.data.transactions.length}\r`,
-        );
-      }
-      console.log('\n✅ Transactions restored');
-    }
-
-    // Restore learned merchant-to-category mappings
-    if (
-      backup.data.merchantCategoryRules &&
-      backup.data.merchantCategoryRules.length > 0
-    ) {
-      console.log(
-        `\n🏷️  Restoring ${backup.data.merchantCategoryRules.length} merchant category rules...`,
-      );
-      await prisma.merchantCategoryRule.createMany({
-        data: backup.data.merchantCategoryRules.map((rule) => ({
-          ...rule,
-          id: rule.id,
-          createdAt: rule.createdAt ? new Date(rule.createdAt) : new Date(),
-          updatedAt: rule.updatedAt ? new Date(rule.updatedAt) : new Date(),
-        })),
-      });
-      console.log('✅ Merchant category rules restored');
-    }
-
-    if (
-      backup.data.quickTransactionTemplates &&
-      backup.data.quickTransactionTemplates.length > 0
-    ) {
-      console.log(
-        `\n⚡ Restoring ${backup.data.quickTransactionTemplates.length} quick transaction templates...`,
-      );
-      await prisma.quickTransactionTemplate.createMany({
-        data: backup.data.quickTransactionTemplates.map((template) => ({
-          ...template,
-          id: template.id,
-          createdAt: template.createdAt
-            ? new Date(template.createdAt)
-            : new Date(),
-          updatedAt: template.updatedAt
-            ? new Date(template.updatedAt)
-            : new Date(),
-        })),
-      });
-      console.log('✅ Quick transaction templates restored');
-    }
+    // Validate before deleting; restore all rows and relations atomically.
+    await restoreBackupData(prisma, backup.data);
 
     console.log('\n✅ Restore completed successfully!');
   } catch (error) {

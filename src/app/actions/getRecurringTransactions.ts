@@ -1,7 +1,8 @@
 'use server';
 import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
-import { Transaction, TransactionType } from '@prisma/client';
+import { TransactionType } from '@prisma/client';
+import { Transaction } from '@/lib/tags';
 import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { decrypt, decryptFloat } from '@/lib/crypto';
 import { IncomeCategory } from '@/constants/types';
@@ -38,6 +39,7 @@ async function getRecurringTransactions(): Promise<{
     // Credit income rows are generated from credit expense rows and must never
     // become recurring sources themselves, including legacy unlinked rows.
     const transactions = await db.transaction.findMany({
+      include: { tags: { where: { userId } } },
       where: {
         userId,
         isRecurring: true,

@@ -2,7 +2,7 @@
 
 import { type ComponentProps } from 'react';
 import { Box, List, Typography } from '@mui/material';
-import { Transaction } from '@prisma/client';
+import { Transaction } from '@/lib/tags';
 import { useIntl } from 'react-intl';
 import TransactionItem from './TransactionItem';
 import { dateKeyFromLocalDate } from '@/lib/dateRange';

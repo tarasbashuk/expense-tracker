@@ -1,8 +1,10 @@
 'use client';
+import TagBadges from './tags/TagBadges';
 import { FC } from 'react';
 import TransactionActionsMenu from './TransactionActionsMenu';
 import { format } from 'date-fns';
-import { Transaction, TransactionType } from '@prisma/client';
+import { TransactionType } from '@prisma/client';
+import { Transaction } from '@/lib/tags';
 import { useIntl } from 'react-intl';
 import {
   Avatar,
@@ -143,7 +145,12 @@ const TransactionItem: FC<Props> = ({
               )}
             </Box>
           }
-          secondary={formattedDate}
+          secondary={
+            <>
+              {formattedDate}
+              <TagBadges tags={transaction.tags} />
+            </>
+          }
         />
         <Box sx={{ textAlign: 'right', minWidth: 0 }}>
           <Typography

@@ -1,11 +1,9 @@
 'use client';
 
+import TagPicker from '../tags/TagPicker';
 import { useEffect, useState } from 'react';
-import {
-  Currency,
-  QuickTransactionTemplate,
-  TransactionType,
-} from '@prisma/client';
+import { Currency, TransactionType } from '@prisma/client';
+import { QuickTransactionTemplate } from '@/lib/tags';
 import {
   Button,
   Box,
@@ -79,6 +77,7 @@ function TemplateEditorDialog({
   const {
     settings: { defaultCurrency, creditCardTrackingEnabled },
   } = useSettings();
+  const [tagIds, setTagIds] = useState<string[]>([]);
   const [label, setLabel] = useState('');
   const [text, setText] = useState('');
   const [amount, setAmount] = useState<number | undefined>();
@@ -90,6 +89,7 @@ function TemplateEditorDialog({
   useEffect(() => {
     if (!open) return;
 
+    setTagIds(template?.tags?.map(({ id }) => id) || []);
     setLabel(template?.label || '');
     setText(template?.text || '');
     setAmount(template?.amount ?? undefined);
@@ -112,6 +112,7 @@ function TemplateEditorDialog({
     setIsSaving(true);
     const input: QuickTransactionTemplateInput = {
       id: template?.id,
+      tagIds,
       label,
       text,
       amount,
@@ -123,7 +124,11 @@ function TemplateEditorDialog({
     setIsSaving(false);
 
     if (result.error) {
-      toast.error(result.error);
+      toast.error(
+        result.error.startsWith('tags.')
+          ? formatMessage({ id: result.error })
+          : result.error,
+      );
 
       return;
     }
@@ -219,6 +224,7 @@ function TemplateEditorDialog({
             inputProps={{ maxLength: 160 }}
             required
           />
+          <TagPicker value={tagIds} onChange={setTagIds} disabled={isSaving} />
           <TextField
             label={formatMessage({
               id: 'home.optionalAmount',
@@ -286,6 +292,7 @@ export default function QuickTransactions({
             category: template.category,
             currency: template.currency,
             type: template.type,
+            tagIds: template.tags?.map(({ id }) => id) || [],
           }
         : null,
     );
@@ -327,7 +334,11 @@ export default function QuickTransactions({
     const result = await deleteQuickTransactionTemplate(template.id);
 
     if (result.error) {
-      toast.error(result.error);
+      toast.error(
+        result.error.startsWith('tags.')
+          ? formatMessage({ id: result.error })
+          : result.error,
+      );
 
       return;
     }
@@ -353,7 +364,11 @@ export default function QuickTransactions({
 
     if (result.error) {
       setTemplates(previous);
-      toast.error(result.error);
+      toast.error(
+        result.error.startsWith('tags.')
+          ? formatMessage({ id: result.error })
+          : result.error,
+      );
     }
   };
 

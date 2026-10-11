@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, useState } from 'react';
-import { Transaction } from '@prisma/client';
+import { Transaction } from '@/lib/tags';
 import {
   Divider,
   IconButton,

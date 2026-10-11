@@ -142,6 +142,12 @@ const AddTransactionModal: React.FC = () => {
       : amountDefaultCurrency;
   }
 
+  const [tagIds, setTagIds] = useState<string[]>(
+    selectedTransaction?.tags?.map(({ id }) => id) ||
+      transactionDraft?.tagIds ||
+      [],
+  );
+
   const [text, setText] = useState<string | undefined>(initialText);
   const [amount, setAmount] = useState<number | undefined>(initialAmount);
   const [amountDefaultCurrency, setAmountDefaultCurrency] = useState<
@@ -252,6 +258,7 @@ const AddTransactionModal: React.FC = () => {
   const clientAction = async () => {
     setIsSaving(true);
     const formData: TransactionFormData = {
+      tagIds,
       date,
       currency,
       category,
@@ -274,7 +281,9 @@ const AddTransactionModal: React.FC = () => {
     );
 
     if (error) {
-      toast.error(error);
+      toast.error(
+        error.startsWith('tags.') ? formatMessage({ id: error }) : error,
+      );
     } else if (data) {
       toast.success(
         formatMessage({
@@ -338,6 +347,8 @@ const AddTransactionModal: React.FC = () => {
 
   return (
     <AddTransactionModalView
+      tagIds={tagIds}
+      onTagsChange={setTagIds}
       text={text}
       date={date}
       amount={amount}

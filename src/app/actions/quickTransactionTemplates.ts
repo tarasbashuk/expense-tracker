@@ -1,11 +1,9 @@
 'use server';
 
+import { ownedTagConnections } from '@/lib/tagOwnership';
 import { currentUser } from '@clerk/nextjs/server';
-import {
-  Currency,
-  QuickTransactionTemplate,
-  TransactionType,
-} from '@prisma/client';
+import { Currency, TransactionType } from '@prisma/client';
+import { QuickTransactionTemplate } from '@/lib/tags';
 import { revalidatePath } from 'next/cache';
 import * as Sentry from '@sentry/nextjs';
 
@@ -19,6 +17,7 @@ import {
 
 export type QuickTransactionTemplateInput = {
   id?: string;
+  tagIds?: string[];
   label: string;
   text: string;
   amount?: number;
@@ -70,6 +69,7 @@ export async function getQuickTransactionTemplates(): Promise<{
       getTemplateSettings(userId),
       db.quickTransactionTemplate.findMany({
         where: { userId },
+        include: { tags: { where: { userId } } },
         orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
       }),
     ]);
@@ -101,12 +101,15 @@ export async function saveQuickTransactionTemplate(
 
   const label = input.label.trim();
   const text = input.text.trim();
+
   if (!label || !text || label.length > 40 || text.length > 160) {
     return { error: 'Template name or transaction text is invalid' };
   }
+
   if (input.amount != null && input.amount <= 0) {
     return { error: 'Amount must be greater than zero' };
   }
+
   if (
     !Object.values(Currency).includes(input.currency) ||
     !Object.values(TransactionType).includes(input.type) ||
@@ -117,7 +120,9 @@ export async function saveQuickTransactionTemplate(
 
   try {
     const settings = await getTemplateSettings(userId);
+
     if (!settings) return { error: 'User settings not found' };
+
     if (
       !settings.creditCardTrackingEnabled &&
       isCreditCardCategory(input.category)
@@ -133,47 +138,63 @@ export async function saveQuickTransactionTemplate(
         ? encryptFloat(input.amount, encryptKey!)
         : input.amount;
 
-    let template: QuickTransactionTemplate;
-    if (input.id) {
-      const existing = await db.quickTransactionTemplate.findFirst({
-        where: { id: input.id, userId },
-      });
-      if (!existing) return { error: 'Template not found' };
+    const saved = await db.$transaction(async (tx) => {
+      const tags = await ownedTagConnections(tx, userId, input.tagIds);
+      let template: QuickTransactionTemplate;
 
-      template = await db.quickTransactionTemplate.update({
-        where: { id: input.id },
-        data: {
-          label: storedLabel,
-          text: storedText,
-          amount: storedAmount ?? null,
-          category: input.category,
-          currency: input.currency,
-          type: input.type,
-        },
-      });
-    } else {
-      const templateStats = await db.quickTransactionTemplate.aggregate({
-        where: { userId },
-        _count: true,
-        _max: { position: true },
-      });
-      if (templateStats._count >= MAX_TEMPLATES) {
-        return { error: `You can create up to ${MAX_TEMPLATES} templates` };
+      if (input.id) {
+        const existing = await tx.quickTransactionTemplate.findFirst({
+          where: { id: input.id, userId },
+        });
+
+        if (!existing) return { error: 'Template not found' };
+
+        template = await tx.quickTransactionTemplate.update({
+          include: { tags: true },
+          where: { id: input.id, userId },
+          data: {
+            tags: { set: tags },
+            label: storedLabel,
+            text: storedText,
+            amount: storedAmount ?? null,
+            category: input.category,
+            currency: input.currency,
+            type: input.type,
+          },
+        });
+      } else {
+        const templateStats = await tx.quickTransactionTemplate.aggregate({
+          where: { userId },
+          _count: true,
+          _max: { position: true },
+        });
+
+        if (templateStats._count >= MAX_TEMPLATES) {
+          return { error: `You can create up to ${MAX_TEMPLATES} templates` };
+        }
+
+        template = await tx.quickTransactionTemplate.create({
+          include: { tags: true },
+          data: {
+            userId,
+            tags: { connect: tags },
+            label: storedLabel,
+            text: storedText,
+            amount: storedAmount ?? null,
+            category: input.category,
+            currency: input.currency,
+            type: input.type,
+            position: (templateStats._max.position ?? -1) + 1,
+          },
+        });
       }
 
-      template = await db.quickTransactionTemplate.create({
-        data: {
-          userId,
-          label: storedLabel,
-          text: storedText,
-          amount: storedAmount ?? null,
-          category: input.category,
-          currency: input.currency,
-          type: input.type,
-          position: (templateStats._max.position ?? -1) + 1,
-        },
-      });
-    }
+      return { template };
+    });
+
+    if (saved.error || !saved.template) return { error: saved.error };
+
+    const template = saved.template;
 
     revalidatePath('/');
 
@@ -186,7 +207,12 @@ export async function saveQuickTransactionTemplate(
   } catch (error) {
     Sentry.captureException(error);
 
-    return { error: 'Unable to save quick transaction' };
+    return {
+      error:
+        error instanceof Error && error.message.startsWith('tags.')
+          ? error.message
+          : 'Unable to save quick transaction',
+    };
   }
 }
 
@@ -195,12 +221,14 @@ export async function deleteQuickTransactionTemplate(
 ): Promise<{ success?: boolean; error?: string }> {
   const user = await currentUser();
   const userId = user?.id;
+
   if (!userId) return { error: 'User not found' };
 
   try {
     const result = await db.quickTransactionTemplate.deleteMany({
       where: { id, userId },
     });
+
     if (!result.count) return { error: 'Template not found' };
 
     revalidatePath('/');
@@ -218,6 +246,7 @@ export async function reorderQuickTransactionTemplates(
 ): Promise<{ success?: boolean; error?: string }> {
   const user = await currentUser();
   const userId = user?.id;
+
   if (!userId) return { error: 'User not found' };
 
   try {
@@ -226,6 +255,7 @@ export async function reorderQuickTransactionTemplates(
       select: { id: true },
     });
     const ownedIds = new Set(ownedTemplates.map(({ id }) => id));
+
     if (ids.length !== ownedIds.size || ids.some((id) => !ownedIds.has(id))) {
       return { error: 'Template order is invalid' };
     }

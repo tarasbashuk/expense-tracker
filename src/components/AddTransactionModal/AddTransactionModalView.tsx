@@ -1,4 +1,5 @@
 'use client';
+import TagPicker from '../tags/TagPicker';
 import {
   Button,
   Select,
@@ -46,6 +47,8 @@ const style = {
 };
 
 interface Props {
+  tagIds?: string[];
+  onTagsChange?: (_ids: string[]) => void;
   date: Date;
   text?: string;
   amount?: number;
@@ -80,6 +83,8 @@ interface Props {
 }
 
 const AddTransactionModalView: React.FC<Props> = ({
+  tagIds = [],
+  onTagsChange,
   date,
   text,
   amount,
@@ -335,6 +340,16 @@ const AddTransactionModalView: React.FC<Props> = ({
                 onChange={handleTextChange}
               />
             </Grid>
+
+            {onTagsChange && (
+              <Grid item xs={12}>
+                <TagPicker
+                  value={tagIds}
+                  onChange={onTagsChange}
+                  disabled={isSubmitDisabled}
+                />
+              </Grid>
+            )}
 
             <Grid item xs={12}>
               {creditCardTrackingEnabled && (

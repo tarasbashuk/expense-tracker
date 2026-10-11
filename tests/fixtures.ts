@@ -1,4 +1,4 @@
-import type { Transaction } from '@prisma/client';
+import type { Transaction } from '@/lib/tags';
 
 export const transaction = (
   overrides: Partial<Transaction> = {},
