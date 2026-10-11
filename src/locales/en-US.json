@@ -1,4 +1,11 @@
 {
+  "history.editTransaction": "Edit transaction: {description}",
+  "history.periodBalance": "Period balance",
+  "history.filtersTitle": "Filters",
+  "history.resetDraft": "Reset",
+  "history.listView": "List view",
+  "history.tableView": "Table view",
+  "history.filteredCompact": "Filtered total:",
   "history.recurringOnly": "Recurring only",
   "common.save": "Save",
   "common.cancel": "Cancel",

@@ -214,7 +214,15 @@ const MobileAppBar = () => {
           </Toolbar>
         </AppBar>
         <SignedIn>
-          <Box sx={fabContainerStyles}>
+          <Box
+            sx={{
+              ...fabContainerStyles,
+              display: {
+                xs: pathname === NavigationPath.Transactions ? 'none' : 'flex',
+                sm: 'flex',
+              },
+            }}
+          >
             <Fab
               color="secondary"
               aria-label={formatMessage({

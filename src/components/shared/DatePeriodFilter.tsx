@@ -38,6 +38,7 @@ import {
 } from '@/lib/dateRange';
 
 interface Props {
+  compact?: boolean;
   mode: PeriodMode;
   range: DateRangeValue;
   onModeChange: (_mode: PeriodMode) => void;
@@ -79,6 +80,7 @@ const formatDateRange = (start: Date, end: Date, locale: 'en-US' | 'uk-UA') => {
 
 const DatePeriodFilter = ({
   mode,
+  compact = false,
   range,
   onModeChange,
   onPrevious,
@@ -95,8 +97,23 @@ const DatePeriodFilter = ({
     const start = localDateFromKey(range.start);
     const end = localDateFromKey(range.end);
 
+    if (compact && mode === 'month') {
+      return new Intl.DateTimeFormat(locale, {
+        month: 'long',
+        year: 'numeric',
+      }).format(start);
+    }
+
+    if (compact && mode === 'quarter') {
+      return `${locale === 'uk-UA' ? 'Квартал' : 'Quarter'} ${Math.floor(start.getMonth() / 3) + 1} · ${start.getFullYear()}`;
+    }
+
+    if (compact && mode === 'year') {
+      return String(start.getFullYear());
+    }
+
     return formatDateRange(start, end, locale);
-  }, [locale, range.end, range.start]);
+  }, [compact, mode, locale, range.end, range.start]);
 
   const openPicker = () => {
     setDraftStart(localDateFromKey(range.start));

@@ -3,6 +3,7 @@
 import { useId, useState } from 'react';
 import { Transaction } from '@prisma/client';
 import {
+  Divider,
   IconButton,
   ListItemIcon,
   ListItemText,
@@ -10,6 +11,9 @@ import {
   MenuItem,
   Tooltip,
 } from '@mui/material';
+import { ChevronDown } from 'lucide-react';
+import CategoryIcon from './history/CategoryIcon';
+import { historyColors } from './history/tokens';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import EditIcon from '@mui/icons-material/Edit';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -21,6 +25,7 @@ import SaveTransactionTemplate from './SaveTransactionTemplate';
 
 interface Props {
   transaction: Transaction;
+  categoryButton?: boolean;
   onEdit: () => void;
   onCopy?: () => void;
   onDelete: () => void;
@@ -28,6 +33,7 @@ interface Props {
 
 export default function TransactionActionsMenu({
   transaction,
+  categoryButton = false,
   onEdit,
   onCopy,
   onDelete,
@@ -56,9 +62,37 @@ export default function TransactionActionsMenu({
           aria-expanded={Boolean(anchor)}
           aria-controls={anchor ? `${id}-menu` : undefined}
           onClick={(event) => setAnchor(event.currentTarget)}
-          sx={{ width: 44, height: 44 }}
+          sx={{
+            width: categoryButton ? 52 : 44,
+            height: 48,
+            flexShrink: 0,
+            borderRadius: categoryButton ? '10px' : '50%',
+            ...(categoryButton && {
+              bgcolor:
+                transaction.type === 'Expense'
+                  ? historyColors.expenseBackground
+                  : historyColors.incomeBackground,
+              color:
+                transaction.type === 'Expense'
+                  ? historyColors.expenseIcon
+                  : historyColors.income,
+            }),
+            '&.Mui-focusVisible': {
+              outline: '2px solid',
+              outlineColor: 'primary.main',
+            },
+          }}
         >
-          <MoreHorizIcon />
+          <>
+            {categoryButton ? (
+              <>
+                <CategoryIcon category={transaction.category} />
+                <ChevronDown size={12} aria-hidden="true" />
+              </>
+            ) : (
+              <MoreHorizIcon />
+            )}
+          </>
         </IconButton>
       </Tooltip>
       <Menu
@@ -100,6 +134,7 @@ export default function TransactionActionsMenu({
             })}
           </ListItemText>
         </MenuItem>
+        <Divider />
         <MenuItem
           onClick={() => runAction(onDelete)}
           sx={{ color: 'error.main' }}

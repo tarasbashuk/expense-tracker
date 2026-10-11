@@ -2,7 +2,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { Transaction } from '@prisma/client';
-import { Box, List, Typography, CircularProgress } from '@mui/material';
+import {
+  Box,
+  List,
+  Typography,
+  CircularProgress,
+  useTheme,
+  useMediaQuery,
+  GlobalStyles,
+} from '@mui/material';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import TableViewIcon from '@mui/icons-material/TableView';
 import SearchIcon from '@mui/icons-material/Search';
@@ -11,6 +19,10 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import { filterTransactions } from '@/lib/filterTransactions';
 
 import TransactionRows from './TransactionRows';
+import HistoryFiltersSheet from './history/HistoryFiltersSheet';
+import PeriodBalance from './history/PeriodBalance';
+import HistoryHeaderActions from './history/HistoryHeaderActions';
+import { historyColors } from './history/tokens';
 import getTransactions from '@/app/actions/getTransactions';
 import deleteTransaction from '@/app/actions/deleteTransaction';
 import { useTransactions } from '@/context/TranasctionsContext';
@@ -87,6 +99,9 @@ const getDefaultPeriod = () => {
 };
 
 const TransactionList = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const {
     transactions,
     setTransactions,
@@ -330,16 +345,47 @@ const TransactionList = () => {
   }
 
   return (
-    <>
-      <Typography variant="h4" component="h3" gutterBottom>
-        {formatMessage({ id: 'transactions.title', defaultMessage: 'History' })}
-      </Typography>
+    <Box sx={{ width: '100%', minWidth: 0 }}>
+      <GlobalStyles
+        styles={{
+          '@media (max-width: 599px)': {
+            body: { backgroundColor: historyColors.background },
+            '.container': {
+              paddingBottom: 'calc(88px + env(safe-area-inset-bottom))',
+            },
+          },
+        }}
+      />
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: { xs: 'space-between', sm: 'center' },
+          mb: 2,
+        }}
+      >
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
+            fontWeight: { xs: 600, sm: 400 },
+            fontSize: { xs: 28, sm: 34 },
+          }}
+        >
+          {formatMessage({
+            id: 'transactions.title',
+            defaultMessage: 'History',
+          })}
+        </Typography>
+        {isMobile && <HistoryHeaderActions />}
+      </Box>
       <Stack
         direction="column"
         spacing={2}
         sx={{ width: { xs: '100%', sm: 400 } }}
       >
         <DatePeriodFilter
+          compact={isMobile}
           mode={periodMode}
           range={selectedRange}
           onModeChange={handlePeriodModeChange}
@@ -348,156 +394,199 @@ const TransactionList = () => {
           onCustomRangeChange={setCustomRange}
         />
 
-        <Button
-          startIcon={<FilterListIcon />}
-          onClick={() => setFiltersOpen((open) => !open)}
-          aria-expanded={filtersOpen}
-          aria-controls="history-filters"
-          sx={{
-            display: { xs: 'inline-flex', sm: 'none' },
-            alignSelf: 'flex-start',
-          }}
-        >
-          {formatMessage(
-            { id: 'history.filters', defaultMessage: 'Filters ({count})' },
-            { count: activeFilterCount },
-          )}
-        </Button>
-        <Stack
-          id="history-filters"
-          spacing={2}
-          sx={{ display: { xs: filtersOpen ? 'flex' : 'none', sm: 'flex' } }}
-        >
-          <ToggleButtonGroup
-            exclusive
-            size="small"
-            color="primary"
-            value={selectedTransactionType}
-            onChange={handleTransactionTypeChange}
-            sx={{ width: '100%' }}
-          >
-            <ToggleButton value={TransactionType.Expense} sx={{ flex: 1 }}>
-              {formatMessage({
-                id: 'transactionType.expense',
-                defaultMessage: 'Expense',
-              })}
-            </ToggleButton>
-            <ToggleButton value="all" sx={{ flex: 1 }}>
-              {formatMessage({
-                id: 'filters.allTypes',
-                defaultMessage: 'All',
-              })}
-            </ToggleButton>
-            <ToggleButton value={TransactionType.Income} sx={{ flex: 1 }}>
-              {formatMessage({
-                id: 'transactionType.income',
-                defaultMessage: 'Income',
-              })}
-            </ToggleButton>
-          </ToggleButtonGroup>
+        {isMobile && (
+          <>
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}
+            >
+              <Button
+                variant="outlined"
+                startIcon={<FilterListIcon />}
+                onClick={() => setFiltersOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={filtersOpen}
+              >
+                {formatMessage(
+                  { id: 'history.filters' },
+                  { count: activeFilterCount },
+                )}
+              </Button>
+              <ToggleButtonGroup
+                exclusive
+                size="small"
+                color="primary"
+                value={viewType}
+                onChange={handleTypeChange}
+              >
+                <ToggleButton
+                  value={ViewType.List}
+                  aria-label={formatMessage({ id: 'history.listView' })}
+                >
+                  <ViewListIcon />
+                </ToggleButton>
+                <ToggleButton
+                  value={ViewType.Grid}
+                  aria-label={formatMessage({ id: 'history.tableView' })}
+                >
+                  <TableViewIcon />
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+            <PeriodBalance income={income} expense={expense} />
+            {filtersOpen && (
+              <HistoryFiltersSheet
+                value={{
+                  type: selectedTransactionType,
+                  category: selectedCategory,
+                  recurringOnly,
+                  search,
+                }}
+                creditCardTrackingEnabled={creditCardTrackingEnabled}
+                onClose={() => setFiltersOpen(false)}
+                onApply={(filters) => {
+                  setSelectedTransactionType(filters.type);
+                  setSelectedCategory(filters.category);
+                  setRecurringOnly(filters.recurringOnly);
+                  setSearch(filters.search);
+                  setFiltersOpen(false);
+                }}
+              />
+            )}
+          </>
+        )}
+        {!isMobile && (
+          <Stack id="history-filters" spacing={2} sx={{ display: 'flex' }}>
+            <ToggleButtonGroup
+              exclusive
+              size="small"
+              color="primary"
+              value={selectedTransactionType}
+              onChange={handleTransactionTypeChange}
+              sx={{ width: '100%' }}
+            >
+              <ToggleButton value={TransactionType.Expense} sx={{ flex: 1 }}>
+                {formatMessage({
+                  id: 'transactionType.expense',
+                  defaultMessage: 'Expense',
+                })}
+              </ToggleButton>
+              <ToggleButton value="all" sx={{ flex: 1 }}>
+                {formatMessage({
+                  id: 'filters.allTypes',
+                  defaultMessage: 'All',
+                })}
+              </ToggleButton>
+              <ToggleButton value={TransactionType.Income} sx={{ flex: 1 }}>
+                {formatMessage({
+                  id: 'transactionType.income',
+                  defaultMessage: 'Income',
+                })}
+              </ToggleButton>
+            </ToggleButtonGroup>
 
-          <FormControl variant="standard" size="small" sx={{ minWidth: 200 }}>
-            <InputLabel id="category-select-label">
-              {formatMessage({
-                id: 'filters.category',
-                defaultMessage: 'Category',
-              })}
-            </InputLabel>
-            <Select
-              labelId="category-select-label"
-              id="category-select"
-              value={selectedCategory}
-              onChange={(e) =>
-                setSelectedCategory(
-                  e.target.value as TransactionCategory | 'all',
-                )
+            <FormControl variant="standard" size="small" sx={{ minWidth: 200 }}>
+              <InputLabel id="category-select-label">
+                {formatMessage({
+                  id: 'filters.category',
+                  defaultMessage: 'Category',
+                })}
+              </InputLabel>
+              <Select
+                labelId="category-select-label"
+                id="category-select"
+                value={selectedCategory}
+                onChange={(e) =>
+                  setSelectedCategory(
+                    e.target.value as TransactionCategory | 'all',
+                  )
+                }
+                label={formatMessage({
+                  id: 'filters.category',
+                  defaultMessage: 'Category',
+                })}
+              >
+                <MenuItem value="all">
+                  {formatMessage({
+                    id: 'filters.allCategories',
+                    defaultMessage: 'All categories',
+                  })}
+                </MenuItem>
+                {availableCategories.map((category) => {
+                  const Icon = getIconByName(
+                    category.value as TransactionCategory,
+                  );
+
+                  return (
+                    <MenuItem key={category.value} value={category.value}>
+                      <Box
+                        component="span"
+                        sx={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 1,
+                        }}
+                      >
+                        {Icon && <Icon fontSize="small" />}
+                        {formatMessage({
+                          id: `categories.${category.value}`,
+                          defaultMessage: category.label,
+                        })}
+                      </Box>
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+            </FormControl>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={recurringOnly}
+                  onChange={(event) => setRecurringOnly(event.target.checked)}
+                  size="small"
+                />
               }
               label={formatMessage({
-                id: 'filters.category',
-                defaultMessage: 'Category',
+                id: 'history.recurringOnly',
+                defaultMessage: 'Recurring only',
               })}
-            >
-              <MenuItem value="all">
-                {formatMessage({
-                  id: 'filters.allCategories',
-                  defaultMessage: 'All categories',
-                })}
-              </MenuItem>
-              {availableCategories.map((category) => {
-                const Icon = getIconByName(
-                  category.value as TransactionCategory,
-                );
-
-                return (
-                  <MenuItem key={category.value} value={category.value}>
-                    <Box
-                      component="span"
-                      sx={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 1,
-                      }}
-                    >
-                      {Icon && <Icon fontSize="small" />}
-                      {formatMessage({
-                        id: `categories.${category.value}`,
-                        defaultMessage: category.label,
+            />
+            <TextField
+              label={formatMessage({
+                id: 'history.search',
+                defaultMessage: 'Search descriptions',
+              })}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              size="small"
+              helperText={formatMessage({
+                id: 'history.searchScope',
+                defaultMessage: 'Search within the selected period',
+              })}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: search ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      aria-label={formatMessage({
+                        id: 'history.clearSearch',
+                        defaultMessage: 'Clear search',
                       })}
-                    </Box>
-                  </MenuItem>
-                );
-              })}
-            </Select>
-          </FormControl>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={recurringOnly}
-                onChange={(event) => setRecurringOnly(event.target.checked)}
-                size="small"
-              />
-            }
-            label={formatMessage({
-              id: 'history.recurringOnly',
-              defaultMessage: 'Recurring only',
-            })}
-          />
-          <TextField
-            label={formatMessage({
-              id: 'history.search',
-              defaultMessage: 'Search descriptions',
-            })}
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            size="small"
-            helperText={formatMessage({
-              id: 'history.searchScope',
-              defaultMessage: 'Search within the selected period',
-            })}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-              endAdornment: search ? (
-                <InputAdornment position="end">
-                  <IconButton
-                    size="small"
-                    aria-label={formatMessage({
-                      id: 'history.clearSearch',
-                      defaultMessage: 'Clear search',
-                    })}
-                    onClick={() => setSearch('')}
-                  >
-                    <CloseIcon />
-                  </IconButton>
-                </InputAdornment>
-              ) : undefined,
-            }}
-          />
-        </Stack>
-        {hasFilters && (
+                      onClick={() => setSearch('')}
+                    >
+                      <CloseIcon />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              }}
+            />
+          </Stack>
+        )}
+        {hasFilters && !isMobile && (
           <Button onClick={resetFilters} sx={{ alignSelf: 'flex-start' }}>
             {formatMessage({
               id: 'history.resetFilters',
@@ -505,26 +594,36 @@ const TransactionList = () => {
             })}
           </Button>
         )}
-        {hasFilters && viewType === ViewType.List && (
+        {hasFilters && (
           <Box
             sx={{
               mt: 1,
-              p: 2,
-              bgcolor: 'background.paper',
+              p: { xs: 0, sm: 2 },
+              display: { xs: 'flex', sm: 'block' },
+              alignItems: 'baseline',
+              gap: 1,
+              flexWrap: 'wrap',
+              bgcolor: { xs: 'transparent', sm: 'background.paper' },
               borderRadius: 1,
-              border: 1,
+              border: { xs: 0, sm: 1 },
               borderColor: 'divider',
             }}
           >
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {formatMessage({
-                id: 'history.filteredSum',
+                id: isMobile
+                  ? 'history.filteredCompact'
+                  : 'history.filteredSum',
                 defaultMessage: 'Net total for matching transactions:',
               })}
             </Typography>
             <Typography
               variant="body1"
-              color={filteredSum >= 0 ? 'success.main' : 'error.main'}
+              color={
+                filteredSum >= 0
+                  ? historyColors.income
+                  : historyColors.negativeBalance
+              }
               sx={{ fontWeight: 'bold' }}
             >
               {filteredSum >= 0 ? '+' : ''}
@@ -550,35 +649,37 @@ const TransactionList = () => {
 
       {!!visibleTransactions.length && (
         <>
-          <Box
-            sx={{
-              my: 1,
-              width: '100%',
-              display: 'flex',
-              justifyContent: 'space-between',
-            }}
-          >
-            <AdditionalBalanceInfo
-              income={income}
-              expense={expense}
-              sx={{ marginLeft: { xs: 0, md: 9, lg: 18 } }}
-            />
-            <ToggleButtonGroup
-              exclusive
-              size="small"
-              color="primary"
-              value={viewType}
-              sx={{ ml: 'auto', height: 'fit-content' }}
-              onChange={handleTypeChange}
+          {!isMobile && (
+            <Box
+              sx={{
+                my: 1,
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'space-between',
+              }}
             >
-              <ToggleButton value={ViewType.List}>
-                <ViewListIcon />
-              </ToggleButton>
-              <ToggleButton value={ViewType.Grid}>
-                <TableViewIcon />
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
+              <AdditionalBalanceInfo
+                income={income}
+                expense={expense}
+                sx={{ marginLeft: { xs: 0, md: 9, lg: 18 } }}
+              />
+              <ToggleButtonGroup
+                exclusive
+                size="small"
+                color="primary"
+                value={viewType}
+                sx={{ ml: 'auto', height: 'fit-content' }}
+                onChange={handleTypeChange}
+              >
+                <ToggleButton value={ViewType.List}>
+                  <ViewListIcon />
+                </ToggleButton>
+                <ToggleButton value={ViewType.Grid}>
+                  <TableViewIcon />
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+          )}
 
           {viewType === ViewType.Grid ? (
             <TransactionsDataGrid
@@ -591,6 +692,7 @@ const TransactionList = () => {
           ) : (
             <List>
               <TransactionRows
+                stickyDates
                 transactions={visibleTransactions}
                 handleEdit={handleEditTransaction}
                 handleCopy={handleCopyTransaction}
@@ -600,7 +702,7 @@ const TransactionList = () => {
           )}
         </>
       )}
-    </>
+    </Box>
   );
 };
 
