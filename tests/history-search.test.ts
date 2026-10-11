@@ -34,3 +34,35 @@ test('empty query returns all records allowed by the other filters', () => {
 
   expect(result).toEqual([rows[1]]);
 });
+
+test('recurring-only intersects other filters and retains ended recurring history', () => {
+  const rows = [
+    transaction({
+      text: 'School',
+      isRecurring: true,
+      recurringEndDate: new Date('2025-01-01'),
+    }),
+    transaction({ text: 'School', isRecurring: false }),
+    transaction({ text: 'School', isRecurring: null }),
+    transaction({ text: 'School refund', isRecurring: true, type: 'Income' }),
+    transaction({ text: 'Books', isRecurring: true }),
+  ];
+
+  const filtered = filterTransactions(
+    rows,
+    'school',
+    'groceries',
+    'Expense',
+    true,
+  );
+  const unfiltered = filterTransactions(
+    rows,
+    'school',
+    'groceries',
+    'Expense',
+    false,
+  );
+
+  expect(filtered).toEqual([rows[0]]);
+  expect(unfiltered).toEqual(rows.slice(0, 3));
+});
