@@ -1,11 +1,16 @@
 // @vitest-environment jsdom
 
 import { createElement, useState, type ReactNode } from 'react';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { IntlProvider } from 'react-intl';
 import { afterEach, expect, test, vi } from 'vitest';
 import TransactionsDataGrid from '@/components/TransactionsDataGrid';
+import { Button, DialogActions, DialogContent, TextField } from '@mui/material';
+import ResponsiveDialog, {
+  FormTitle,
+} from '@/components/shared/ResponsiveDialog';
+import { fitTagPreview } from '@/components/tags/TagPreview';
 import TagPicker from '@/components/tags/TagPicker';
 import TagManager from '@/components/tags/TagManager';
 import TagBadges from '@/components/tags/TagBadges';
@@ -108,6 +113,7 @@ function Picker() {
 afterEach(() => {
   cleanup();
   mocks.empty = false;
+  vi.unstubAllGlobals();
 });
 
 test('picker allows zero, one, two and removal; a third selection is disabled', async () => {
@@ -123,18 +129,18 @@ test('picker allows zero, one, two and removal; a third selection is disabled', 
     name: 'Family',
   }) as HTMLInputElement;
 
-  expect(first.checked).toBe(false);
+  expect(first.getAttribute('aria-checked')).toBe('false');
 
   await user.click(first);
   await user.click(second);
 
-  expect(first.checked).toBe(true);
-  expect(second.checked).toBe(true);
+  expect(first.getAttribute('aria-checked')).toBe('true');
+  expect(second.getAttribute('aria-checked')).toBe('true');
   expect(third.disabled).toBe(true);
 
   await user.click(first);
 
-  expect(first.checked).toBe(false);
+  expect(first.getAttribute('aria-checked')).toBe('false');
   expect(third.disabled).toBe(false);
 });
 
@@ -174,9 +180,10 @@ test.each([false, true])(
     render(element());
 
     expect(
-      (screen.getByRole('checkbox', { name: 'Trip 🏖️' }) as HTMLInputElement)
-        .checked,
-    ).toBe(false);
+      screen
+        .getByRole('checkbox', { name: 'Trip 🏖️' })
+        .getAttribute('aria-checked'),
+    ).toBe('false');
 
     await user.click(screen.getByRole('checkbox', { name: 'Trip 🏖️' }));
     await user.click(screen.getByRole('checkbox', { name: 'Work' }));
@@ -237,6 +244,7 @@ test('deletion requires confirmation and refreshes transactions and templates af
   const user = userEvent.setup();
   render(translated(createElement(TagManager)));
 
+  await user.click(screen.getByRole('button', { name: 'Manage' }));
   await user.click(screen.getByRole('button', { name: 'Delete “Trip 🏖️”?' }));
 
   expect(mocks.remove).not.toHaveBeenCalled();
@@ -288,9 +296,7 @@ test('empty tag manager explains how to start and exposes creation', () => {
   render(translated(createElement(TagManager)));
 
   expect(
-    screen.getByText(
-      'Create tags to organize transactions by trip, project or purpose.',
-    ),
+    screen.getByText('Organize transactions with your own tags.'),
   ).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Create tag' })).toBeTruthy();
 });
@@ -300,6 +306,7 @@ test('editing a tag sends its name and palette color and keeps duplicate errors 
   const user = userEvent.setup();
   render(translated(createElement(TagManager)));
 
+  await user.click(screen.getByRole('button', { name: 'Manage' }));
   await user.click(screen.getByRole('button', { name: 'Edit “Trip 🏖️”' }));
   await user.clear(screen.getByRole('textbox', { name: 'Name' }));
   await user.type(screen.getByRole('textbox', { name: 'Name' }), ' Holiday ');
@@ -332,3 +339,150 @@ test('history table renders real tags under descriptions', async () => {
   expect(await screen.findByText('Trip 🏖️')).toBeTruthy();
   expect(screen.getByText('Work')).toBeTruthy();
 });
+
+function TransactionDraftForm({ initial = [] }: { initial?: string[] }) {
+  const [ids, setIds] = useState(initial);
+  const [text, setText] = useState('Rent 💙');
+  const [open, setOpen] = useState(true);
+
+  return createElement(
+    ResponsiveDialog,
+    { open, desktop: false, onClose: () => setOpen(false) },
+    createElement(
+      FormTitle,
+      { onClose: () => setOpen(false) },
+      'Transaction draft',
+    ),
+    createElement(
+      DialogContent,
+      null,
+      createElement(TextField, {
+        label: 'Description',
+        value: text,
+        onChange: (event) => setText(event.target.value),
+      }),
+      createElement(TagPicker, { value: ids, onChange: setIds }),
+    ),
+    createElement(
+      DialogActions,
+      null,
+      createElement(Button, { onClick: () => setOpen(false) }, 'Done'),
+    ),
+  );
+}
+
+test('inline tag creation is a single panel step; cancellation retains draft and selection', async () => {
+  const user = userEvent.setup();
+  render(translated(createElement(TransactionDraftForm, { initial: ['0'] })));
+  await user.type(
+    screen.getByRole('textbox', { name: 'Description' }),
+    ' apartment',
+  );
+  await user.click(screen.getByRole('button', { name: 'Create tag' }));
+
+  expect(screen.getAllByRole('dialog')).toHaveLength(1);
+  expect(screen.queryByRole('textbox', { name: 'Description' })).toBeNull();
+
+  await user.type(screen.getByRole('textbox', { name: 'Name' }), 'Unfinished');
+  await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+  expect(screen.getByRole('textbox', { name: 'Description' })).toHaveProperty(
+    'value',
+    'Rent 💙 apartment',
+  );
+  expect(
+    screen
+      .getByRole('checkbox', { name: 'Trip 🏖️' })
+      .getAttribute('aria-checked'),
+  ).toBe('true');
+  expect(screen.getAllByRole('dialog')).toHaveLength(1);
+});
+
+test.each([0, 1, 2])(
+  'created tag is immediately available, auto-selected only below the limit: %s',
+  async (count) => {
+    const user = userEvent.setup();
+    const initial = ['0', '1'].slice(0, count);
+    mocks.save.mockResolvedValue({
+      tag: {
+        id: 'new',
+        name: 'New tag',
+        normalizedName: 'new tag',
+        color: 'blue',
+        userId: 'owner',
+      },
+    });
+    render(translated(createElement(TransactionDraftForm, { initial })));
+
+    await user.click(screen.getByRole('button', { name: 'Create tag' }));
+    await user.type(screen.getByRole('textbox', { name: 'Name' }), 'New tag');
+
+    expect(screen.getByText('New tag')).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Create tag' }));
+    const created = await screen.findByRole('checkbox', { name: 'New tag' });
+
+    expect(created.getAttribute('aria-checked')).toBe(String(count < 2));
+    expect(screen.getByRole('textbox', { name: 'Description' })).toHaveProperty(
+      'value',
+      'Rent 💙',
+    );
+
+    for (const id of initial) {
+      expect(
+        screen
+          .getByRole('checkbox', { name: tags[Number(id)].name })
+          .getAttribute('aria-checked'),
+      ).toBe('true');
+    }
+
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+  },
+);
+
+test('mobile panel follows the visual viewport and restores the previous body overflow', async () => {
+  const user = userEvent.setup();
+  const viewport = Object.assign(new EventTarget(), {
+    height: 500,
+    offsetTop: 0,
+  });
+  vi.stubGlobal('visualViewport', viewport);
+  const previous = document.body.style.overflow;
+  document.body.style.overflow = 'auto';
+  render(translated(createElement(TransactionDraftForm)));
+
+  expect(document.body.style.overflow).toBe('hidden');
+  const dialog = screen.getByRole('dialog');
+
+  act(() => {
+    viewport.height = 350;
+    viewport.dispatchEvent(new Event('resize'));
+  });
+
+  await waitFor(() =>
+    expect(getComputedStyle(dialog).bottom).toBe(
+      `${window.innerHeight - 350}px`,
+    ),
+  );
+  expect(getComputedStyle(dialog).margin).toBe('0px');
+
+  await user.click(screen.getByRole('button', { name: 'Done' }));
+  await waitFor(() => expect(document.body.style.overflow).toBe('auto'));
+  document.body.style.overflow = previous;
+});
+
+test.each([390, 393, 402])(
+  'home preview reserves room for create and More within two rows at %s px',
+  (viewport) => {
+    const available = viewport - 32;
+    const count = fitTagPreview(
+      available,
+      [160, 160, 160, 160, 160, 160],
+      64,
+      80,
+    );
+
+    expect(count).toBe(3);
+    expect(fitTagPreview(available, [600, 600, 600], 64, 80)).toBe(1);
+  },
+);

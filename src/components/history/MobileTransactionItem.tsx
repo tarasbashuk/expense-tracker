@@ -73,7 +73,8 @@ export default function MobileTransactionItem({
           minWidth: 0,
           minHeight: 44,
           display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr) minmax(0, auto)',
+          gridTemplateColumns: 'minmax(0, 1fr) auto',
+          alignItems: 'start',
           gap: 1,
           textAlign: 'left',
           borderRadius: 1,
@@ -87,7 +88,12 @@ export default function MobileTransactionItem({
         <Box component="span" sx={{ minWidth: 0 }}>
           <Box
             component="span"
-            sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}
+            sx={{
+              display: 'flex',
+              gap: 0.5,
+              alignItems: 'center',
+              minWidth: 0,
+            }}
           >
             <Typography
               component="span"
@@ -96,10 +102,10 @@ export default function MobileTransactionItem({
                 fontSize: 16,
                 lineHeight: 1.4,
                 overflow: 'hidden',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflowWrap: 'anywhere',
+                display: 'block',
+                minWidth: 0,
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
               }}
             >
               {text}
@@ -122,37 +128,21 @@ export default function MobileTransactionItem({
           </Box>
           <TagBadges tags={transaction.tags} />
           {!transaction.tags?.length && !!tags?.length && (
-            <Box
-              component="span"
-              sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}
-            >
-              {tags.map((tag, index) => (
-                <Box
-                  component="span"
-                  key={index}
-                  sx={{
-                    px: 0.75,
-                    py: 0.125,
-                    borderRadius: 1,
-                    bgcolor: colors.expenseBackground,
-                    color: colors.secondary,
-                    fontSize: 12,
-                    overflowWrap: 'anywhere',
-                    maxWidth: '100%',
-                  }}
-                >
-                  {tag}
-                </Box>
-              ))}
-            </Box>
+            <TagBadges
+              tags={tags.map((name, index) => ({
+                id: String(index),
+                name,
+                color: 'slate',
+              }))}
+            />
           )}
         </Box>
         <Box
           component="span"
           sx={{
             textAlign: 'right',
-            minWidth: 0,
-            overflowWrap: 'anywhere',
+            whiteSpace: 'nowrap',
+            alignSelf: 'start',
             fontVariantNumeric: 'tabular-nums',
           }}
         >
@@ -163,6 +153,7 @@ export default function MobileTransactionItem({
               color: amountColor,
               fontSize: 16,
               fontWeight: 600,
+              lineHeight: 1.4,
             }}
           >
             {getTransactionSign(type)}

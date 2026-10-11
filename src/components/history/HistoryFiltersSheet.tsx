@@ -1,12 +1,13 @@
 'use client';
 
+import ResponsiveDialog, { FormTitle } from '../shared/ResponsiveDialog';
 import TagPicker from '../tags/TagPicker';
 import { useEffect, useState } from 'react';
 import {
   Box,
   Button,
-  Drawer,
-  Dialog,
+  DialogContent,
+  DialogActions,
   FormControl,
   FormControlLabel,
   IconButton,
@@ -19,7 +20,6 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
-  Typography,
 } from '@mui/material';
 import { Search, X } from 'lucide-react';
 import { TransactionType } from '@prisma/client';
@@ -33,7 +33,6 @@ import {
   isCreditCardCategory,
 } from '@/constants/constants';
 import CategoryIcon from './CategoryIcon';
-import { cardRadius } from './tokens';
 
 export interface HistoryFilters {
   tagIds?: string[];
@@ -83,93 +82,35 @@ export default function HistoryFiltersSheet({
     setDraft((current) => ({ ...current, search: value.search }));
   }, [value.search]);
 
-  const [viewport, setViewport] = useState<{
-    height: number;
-    bottom: number;
-  } | null>(null);
-
-  useEffect(() => {
-    const visualViewport = window.visualViewport;
-
-    if (!visualViewport) return;
-
-    const updateViewport = () => {
-      setViewport({
-        height: visualViewport.height,
-        bottom: Math.max(
-          0,
-          window.innerHeight - visualViewport.height - visualViewport.offsetTop,
-        ),
-      });
-    };
-
-    updateViewport();
-    visualViewport.addEventListener('resize', updateViewport);
-    visualViewport.addEventListener('scroll', updateViewport);
-
-    return () => {
-      visualViewport.removeEventListener('resize', updateViewport);
-      visualViewport.removeEventListener('scroll', updateViewport);
-    };
-  }, []);
-
   const { formatMessage } = useIntl();
   const categories = categoriesByType[draft.type].filter(
     (category) =>
       creditCardTrackingEnabled || !isCreditCardCategory(category.value),
   );
 
-  const Surface = desktop ? Dialog : Drawer;
-
   return (
-    <Surface
-      open
-      {...(desktop
-        ? { fullWidth: true, maxWidth: 'sm' as const }
-        : { anchor: 'bottom' as const })}
-      onClose={onClose}
-      PaperProps={{
-        role: 'dialog',
-        'aria-modal': true,
-        'aria-labelledby': 'history-filters-title',
-        sx: {
-          maxHeight: `calc(${viewport ? `${viewport.height}px` : '100dvh'} - env(safe-area-inset-top, 0px) - 16px)`,
-          bottom: desktop ? undefined : (viewport?.bottom ?? 0),
-          borderRadius: desktop ? cardRadius : '20px 20px 0 0',
-          pb: 'env(safe-area-inset-bottom, 0px)',
-        },
-      }}
-    >
-      <Box sx={{ p: 2, overflowY: 'auto' }}>
+    <ResponsiveDialog open desktop={desktop} onClose={onClose} maxWidth="sm">
+      <FormTitle onClose={onClose}>
         <Box
+          component="span"
           sx={{
-            display: desktop ? 'none' : 'block',
-            width: 40,
-            height: 5,
-            borderRadius: 3,
-            bgcolor: 'divider',
-            mx: 'auto',
-            mb: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1,
           }}
-        />
-        <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-          <Typography id="history-filters-title" variant="h6" sx={{ flex: 1 }}>
-            {formatMessage({ id: 'history.filtersTitle' })}
-          </Typography>
+        >
+          {formatMessage({ id: 'history.filtersTitle' })}
           <Button onClick={() => setDraft(emptyFilters)}>
             {formatMessage({ id: 'history.resetDraft' })}
           </Button>
-          <IconButton
-            onClick={onClose}
-            aria-label={formatMessage({ id: 'common.close' })}
-            sx={{ width: 44, height: 44 }}
-          >
-            <X size={22} />
-          </IconButton>
-        </Stack>
+        </Box>
+      </FormTitle>
+      <DialogContent>
         <Stack
           spacing={2.5}
           component="form"
+          id="history-filters-form"
           onSubmit={(event) => {
             event.preventDefault();
             onApply({
@@ -277,16 +218,19 @@ export default function HistoryFiltersSheet({
               }}
             />
           )}
-          <Button
-            type="submit"
-            variant="contained"
-            size="large"
-            sx={{ minHeight: 48 }}
-          >
-            {formatMessage({ id: 'common.apply' })}
-          </Button>
         </Stack>
-      </Box>
-    </Surface>
+      </DialogContent>
+      <DialogActions>
+        <Button
+          type="submit"
+          form="history-filters-form"
+          variant="contained"
+          fullWidth
+          size="large"
+        >
+          {formatMessage({ id: 'common.apply' })}
+        </Button>
+      </DialogActions>
+    </ResponsiveDialog>
   );
 }

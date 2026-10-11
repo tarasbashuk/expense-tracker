@@ -1,5 +1,9 @@
 'use client';
 
+import ResponsiveDialog, {
+  FormTitle,
+} from '@/components/shared/ResponsiveDialog';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Transaction } from '@/lib/tags';
@@ -7,10 +11,8 @@ import {
   Alert,
   Button,
   Checkbox,
-  Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   FormControlLabel,
   Stack,
   TextField,
@@ -91,7 +93,7 @@ export default function SaveTransactionTemplate({
   };
 
   return (
-    <Dialog
+    <ResponsiveDialog
       open
       onClose={() => {
         if (!saving) onClose();
@@ -99,7 +101,9 @@ export default function SaveTransactionTemplate({
       fullWidth
       maxWidth="xs"
     >
-      <DialogTitle>{title}</DialogTitle>
+      <FormTitle onClose={onClose} disabled={saving}>
+        {title}
+      </FormTitle>
       <DialogContent>
         <Stack spacing={2} mt={1}>
           <Typography variant="body2" color="text.secondary">
@@ -180,6 +184,6 @@ export default function SaveTransactionTemplate({
           {formatMessage({ id: 'common.save', defaultMessage: 'Save' })}
         </Button>
       </DialogActions>
-    </Dialog>
+    </ResponsiveDialog>
   );
 }

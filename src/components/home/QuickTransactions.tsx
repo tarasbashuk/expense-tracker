@@ -1,5 +1,9 @@
 'use client';
 
+import ResponsiveDialog, {
+  FormTitle,
+} from '@/components/shared/ResponsiveDialog';
+
 import TagPicker from '../tags/TagPicker';
 import { useEffect, useState } from 'react';
 import { Currency, TransactionType } from '@prisma/client';
@@ -8,10 +12,8 @@ import {
   Button,
   Box,
   ButtonBase,
-  Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   FormControl,
   IconButton,
   InputLabel,
@@ -49,7 +51,6 @@ import {
   ChevronRight,
   Settings,
   Plus as AddIcon,
-  X as CloseIcon,
   ArrowDown as ArrowDownwardIcon,
   ArrowUp as ArrowUpwardIcon,
   Trash2 as DeleteIcon,
@@ -140,7 +141,7 @@ function TemplateEditorDialog({
   };
 
   return (
-    <Dialog
+    <ResponsiveDialog
       open={open}
       onClose={(_, reason) => {
         if (reason === 'backdropClick') return;
@@ -150,25 +151,14 @@ function TemplateEditorDialog({
       fullWidth
       maxWidth="sm"
     >
-      <DialogTitle sx={{ position: 'relative', pr: 6 }}>
+      <FormTitle onClose={onClose} disabled={isSaving}>
         {formatMessage({
           id: template ? 'home.editQuickTemplate' : 'home.addQuickTemplate',
           defaultMessage: template
             ? 'Edit quick transaction'
             : 'Add quick transaction',
         })}
-        <IconButton
-          aria-label={formatMessage({
-            id: 'common.close',
-            defaultMessage: 'Close',
-          })}
-          onClick={onClose}
-          disabled={isSaving}
-          sx={{ position: 'absolute', right: 8, top: 8 }}
-        >
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
+      </FormTitle>
       <DialogContent>
         <Stack spacing={2.5} mt={1}>
           <TextField
@@ -255,7 +245,7 @@ function TemplateEditorDialog({
           {formatMessage({ id: 'common.save', defaultMessage: 'Save' })}
         </Button>
       </DialogActions>
-    </Dialog>
+    </ResponsiveDialog>
   );
 }
 
@@ -510,8 +500,8 @@ export default function QuickTransactions({
         )}
       </Stack>
 
-      <Dialog
-        open={managerOpen}
+      <ResponsiveDialog
+        open={managerOpen && !editorOpen}
         onClose={(_, reason) => {
           if (reason === 'backdropClick') return;
 
@@ -520,22 +510,12 @@ export default function QuickTransactions({
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle sx={{ position: 'relative', pr: 6 }}>
+        <FormTitle onClose={() => setManagerOpen(false)}>
           {formatMessage({
             id: 'home.manageQuickTransactions',
             defaultMessage: 'Manage quick transactions',
           })}
-          <IconButton
-            aria-label={formatMessage({
-              id: 'common.close',
-              defaultMessage: 'Close',
-            })}
-            onClick={() => setManagerOpen(false)}
-            sx={{ position: 'absolute', right: 8, top: 8 }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
+        </FormTitle>
         <DialogContent>
           {!templates.length ? (
             <Typography color="text.secondary">
@@ -604,7 +584,7 @@ export default function QuickTransactions({
             {formatMessage({ id: 'common.close', defaultMessage: 'Close' })}
           </Button>
         </DialogActions>
-      </Dialog>
+      </ResponsiveDialog>
 
       <TemplateEditorDialog
         open={editorOpen}

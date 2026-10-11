@@ -26,13 +26,17 @@ export default function TagBadges({
             key={tag.id}
             sx={{
               px: 0.75,
-              py: 0.125,
-              borderRadius: 1,
+              height: 24,
+              display: 'inline-block',
+              flexShrink: 0,
+              borderRadius: '8px',
               bgcolor: palette.background,
               color: palette.text,
               fontSize: 12,
-              lineHeight: 1.5,
-              overflowWrap: 'anywhere',
+              lineHeight: '24px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
               maxWidth: '100%',
             }}
           >

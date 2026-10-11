@@ -242,9 +242,9 @@
   "tags.editName": "Edit “{name}”",
   "tags.deleteName": "Delete “{name}”?",
   "tags.deleteConfirm": "Only the tag and its links will be removed. Transactions and shortcuts will remain.",
-  "tags.empty": "Create tags to organize transactions by trip, project or purpose.",
-  "tags.pickerEmpty": "No tags yet. Create them on the home screen.",
-  "tags.selectHint": "Optional · up to two tags. Uncheck to remove.",
+  "tags.empty": "Organize transactions with your own tags.",
+  "tags.pickerEmpty": "No tags yet.",
+  "tags.selectHint": "Up to two tags",
   "tags.filterHint": "No selection: all transactions. Multiple tags: matches any selected tag.",
   "tags.invalid": "Enter a name of 1–40 characters and choose a color.",
   "tags.duplicate": "A tag with this name already exists.",
@@ -259,5 +259,10 @@
   "tags.color.purple": "Purple",
   "tags.color.amber": "Amber",
   "tags.color.rose": "Rose",
-  "tags.color.slate": "Slate"
+  "tags.color.slate": "Slate",
+  "tags.manage": "Manage",
+  "tags.short": "Tag",
+  "tags.more": "More {count}",
+  "tags.preview": "Preview",
+  "tags.limitHint": "To select another tag, deselect one of the selected tags."
 }

@@ -1,4 +1,5 @@
 'use client';
+import ResponsiveDialog, { FormTitle } from '../shared/ResponsiveDialog';
 import TagPicker from '../tags/TagPicker';
 import {
   Button,
@@ -10,17 +11,14 @@ import {
   OutlinedInput,
   InputAdornment,
   TextField,
-  Typography,
-  Dialog,
+  DialogContent,
+  DialogActions,
   Box,
   Grid,
-  IconButton,
   SelectChangeEvent,
   FormControlLabel,
   Checkbox,
 } from '@mui/material';
-import { cardRadius } from '../history/tokens';
-import CloseIcon from '@mui/icons-material/Close';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 
@@ -40,11 +38,6 @@ import CurrencySelect from '../CurrencySelect';
 import TransactionTypeButtonGroup from '../shared/TransactionTypeButtonGroup';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { useCategoryI18n } from '@/lib/useCategoryI18n';
-
-const style = {
-  p: { xs: 2, sm: 3 },
-  borderRadius: cardRadius,
-};
 
 interface Props {
   tagIds?: string[];
@@ -134,53 +127,31 @@ const AddTransactionModalView: React.FC<Props> = ({
   const { getLabel } = useCategoryI18n();
 
   return (
-    <Dialog
-      fullWidth
-      maxWidth="sm"
+    <ResponsiveDialog
       open
+      maxWidth="sm"
       onClose={(_, reason) => {
-        if (reason === 'backdropClick') {
-          return;
-        }
-
-        handleClose();
+        if (reason !== 'backdropClick' && !isSubmitDisabled) handleClose();
       }}
-      aria-labelledby="modal-modal-title"
     >
-      <Box sx={style}>
-        <Stack direction="row" alignItems="center" spacing={2} marginBottom={3}>
-          <Typography
-            variant="h6"
-            component="h2"
-            id="modal-modal-title"
-            flexGrow={1}
-          >
-            {isCopyMode ? (
-              <FormattedMessage
-                id="home.repeatTransaction"
-                defaultMessage="Repeat transaction"
-              />
-            ) : isEditMode ? (
-              <FormattedMessage
-                id="addTransaction.editTitle"
-                defaultMessage="Edit transaction"
-              />
-            ) : (
-              <FormattedMessage
-                id="addTransaction.title"
-                defaultMessage="Add transaction"
-              />
-            )}
-          </Typography>
-          <IconButton
-            aria-label="close"
-            onClick={handleClose}
-            sx={{ position: 'absolute', top: 8, right: 8 }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </Stack>
-        <form>
+      <FormTitle onClose={handleClose} disabled={isSubmitDisabled}>
+        {formatMessage({
+          id: isCopyMode
+            ? 'home.repeatTransaction'
+            : isEditMode
+              ? 'addTransaction.editTitle'
+              : 'addTransaction.title',
+        })}
+      </FormTitle>
+      <DialogContent>
+        <form
+          id="transaction-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+
+            if (!isSubmitDisabled) onSubmit();
+          }}
+        >
           <Grid container spacing={2} justifyContent="space-between">
             <Grid item xs={12} sm={8}>
               <TransactionTypeButtonGroup
@@ -210,7 +181,7 @@ const AddTransactionModalView: React.FC<Props> = ({
               />
             </Grid>
 
-            <Grid item xs={12} sm={8}>
+            <Grid item xs={8}>
               <FormControl required fullWidth variant="outlined">
                 <InputLabel htmlFor="amount">
                   <FormattedMessage
@@ -235,7 +206,7 @@ const AddTransactionModalView: React.FC<Props> = ({
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={4}>
               <CurrencySelect
                 value={currency}
                 onChange={handleCurrencyChange}
@@ -244,7 +215,7 @@ const AddTransactionModalView: React.FC<Props> = ({
 
             {isBaseAmountShown && (
               <>
-                <Grid item xs={12} sm={8}>
+                <Grid item xs={8}>
                   <FormControl required fullWidth variant="outlined">
                     <InputLabel htmlFor="amountDefaultCurrency">
                       <FormattedMessage
@@ -269,7 +240,7 @@ const AddTransactionModalView: React.FC<Props> = ({
                   </FormControl>
                 </Grid>
 
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={4}>
                   <FormControl variant="outlined" fullWidth>
                     <InputLabel>
                       <FormattedMessage
@@ -417,32 +388,23 @@ const AddTransactionModalView: React.FC<Props> = ({
                 />
               </Grid>
             )}
-
-            <Grid item xs={12} sm={6} marginTop={2} sx={{ marginLeft: 'auto' }}>
-              <Button
-                fullWidth
-                type="submit"
-                variant="contained"
-                onClick={onSubmit}
-                disabled={isSubmitDisabled}
-              >
-                {isEditMode ? (
-                  <FormattedMessage
-                    id="addTransaction.save"
-                    defaultMessage="Save"
-                  />
-                ) : (
-                  <FormattedMessage
-                    id="addTransaction.add"
-                    defaultMessage="Add transaction"
-                  />
-                )}
-              </Button>
-            </Grid>
           </Grid>
         </form>
-      </Box>
-    </Dialog>
+      </DialogContent>
+      <DialogActions>
+        <Button
+          fullWidth
+          type="submit"
+          form="transaction-form"
+          variant="contained"
+          disabled={isSubmitDisabled}
+        >
+          {formatMessage({
+            id: isEditMode ? 'addTransaction.save' : 'addTransaction.add',
+          })}
+        </Button>
+      </DialogActions>
+    </ResponsiveDialog>
   );
 };
 
