@@ -61,6 +61,7 @@ export default function MobileTransactionItem({
     >
       <TransactionActionsMenu
         categoryButton
+        stretchCategoryButton={hasTags}
         transaction={transaction}
         onEdit={() => handleEdit(id)}
         onCopy={handleCopy ? () => handleCopy(id) : undefined}

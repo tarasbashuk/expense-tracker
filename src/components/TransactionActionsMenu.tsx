@@ -22,6 +22,7 @@ import SaveTransactionTemplate from './SaveTransactionTemplate';
 interface Props {
   transaction: Transaction;
   categoryButton?: boolean;
+  stretchCategoryButton?: boolean;
   onEdit: () => void;
   onCopy?: () => void;
   onDelete: () => void;
@@ -30,6 +31,7 @@ interface Props {
 export default function TransactionActionsMenu({
   transaction,
   categoryButton = false,
+  stretchCategoryButton = false,
   onEdit,
   onCopy,
   onDelete,
@@ -67,7 +69,11 @@ export default function TransactionActionsMenu({
           onClick={(event) => setAnchor(event.currentTarget)}
           sx={{
             width: categoryButton ? 52 : 44,
-            height: categoryButton ? 48 : 44,
+            height: categoryButton ? (stretchCategoryButton ? 'auto' : 48) : 44,
+            ...(categoryButton && stretchCategoryButton && {
+              alignSelf: 'stretch',
+              minHeight: 48,
+            }),
             flexShrink: 0,
             borderRadius: categoryButton ? '10px' : '50%',
             ...(categoryButton && {
