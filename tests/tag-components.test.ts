@@ -496,6 +496,7 @@ test.each([false, true])(
       expect(getComputedStyle(dialog).top).toBe('0px');
       expect(getComputedStyle(dialog).bottom).toBe('0px');
       expect(getComputedStyle(content).height).toBe('350px');
+      expect(getComputedStyle(content).transform).toBe('translateY(120px)');
 
       act(() => {
         viewport.offsetTop = 0;
@@ -504,6 +505,7 @@ test.each([false, true])(
       });
 
       expect(getComputedStyle(content).height).toBe('500px');
+      expect(getComputedStyle(content).transform).toBe('translateY(0px)');
       expect(getComputedStyle(dialog).borderRadius).toBe('0px');
     }
 
@@ -568,3 +570,40 @@ test.each([393, 402, 900])(
     expect(fitTagPreview(available, [], 0, 80)).toBe(0);
   },
 );
+
+test('full-height form reveals a lower focused input by scrolling only its content', async () => {
+  render(
+    translated(createElement(TransactionDraftForm, { mobileFullHeight: true })),
+  );
+  const input = screen.getByRole('textbox', { name: 'Description' });
+  const content = input.closest<HTMLElement>('.MuiDialogContent-root')!;
+  vi.spyOn(content, 'getBoundingClientRect').mockReturnValue({
+    top: 60,
+    bottom: 300,
+    height: 240,
+    left: 0,
+    right: 393,
+    width: 393,
+    x: 0,
+    y: 60,
+    toJSON: () => ({}),
+  });
+  vi.spyOn(input, 'getBoundingClientRect').mockReturnValue({
+    top: 420,
+    bottom: 460,
+    height: 40,
+    left: 0,
+    right: 393,
+    width: 393,
+    x: 0,
+    y: 420,
+    toJSON: () => ({}),
+  });
+  const pageScroll = window.scrollY;
+
+  act(() => input.focus());
+
+  await waitFor(() => expect(content.scrollTop).toBe(172));
+  expect(window.scrollY).toBe(pageScroll);
+  expect(getComputedStyle(screen.getByRole('dialog')).top).toBe('0px');
+});

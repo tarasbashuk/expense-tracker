@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useId,
+  useLayoutEffect,
   useState,
   type ReactNode,
 } from 'react';
@@ -99,11 +100,13 @@ export default function ResponsiveDialog({
   const small = useMediaQuery(theme.breakpoints.down('sm'));
   const mobile = desktop === undefined ? small : !desktop;
   const titleId = useId();
+  const [surface, setSurface] = useState<HTMLDivElement | null>(null);
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState<ReactNode | null>(null);
   const [viewport, setViewport] = useState<{
     height: number;
     bottom: number;
+    top: number;
   } | null>(null);
 
   useEffect(() => {
@@ -118,6 +121,7 @@ export default function ResponsiveDialog({
     const update = () =>
       setViewport({
         height: visualViewport.height,
+        top: visualViewport.offsetTop,
         bottom: mobileFullHeight
           ? 0
           : Math.max(
@@ -129,13 +133,54 @@ export default function ResponsiveDialog({
       });
     update();
     visualViewport.addEventListener('resize', update);
-    if (!mobileFullHeight) visualViewport.addEventListener('scroll', update);
+    visualViewport.addEventListener('scroll', update);
 
     return () => {
       visualViewport.removeEventListener('resize', update);
       visualViewport.removeEventListener('scroll', update);
     };
   }, [open, mobile, mobileFullHeight]);
+
+  useLayoutEffect(() => {
+    if (!open || !mobile || !mobileFullHeight) return;
+
+    if (!surface) return;
+
+    let frame = 0;
+    const revealInput = () => {
+      const input = document.activeElement;
+
+      if (!(input instanceof HTMLElement) || !surface.contains(input)) return;
+      if (!input.matches('input, textarea, [contenteditable="true"]')) return;
+
+      const content = input.closest<HTMLElement>('.MuiDialogContent-root');
+
+      if (!content) return;
+
+      const fieldBounds = input.getBoundingClientRect();
+      const contentBounds = content.getBoundingClientRect();
+      const inset = 12;
+      const bottomOverflow =
+        fieldBounds.bottom - (contentBounds.bottom - inset);
+      const topOverflow = fieldBounds.top - (contentBounds.top + inset);
+
+      // Scroll only the form fields, never the page or the dialog header/footer.
+      if (bottomOverflow > 0) content.scrollTop += bottomOverflow;
+      else if (topOverflow < 0) content.scrollTop += topOverflow;
+    };
+    const scheduleReveal = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(revealInput);
+    };
+
+    scheduleReveal();
+    surface.addEventListener('focusin', scheduleReveal);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      surface.removeEventListener('focusin', scheduleReveal);
+    };
+  }, [open, mobile, mobileFullHeight, viewport, step, surface]);
 
   const close: DialogProps['onClose'] = (event, reason) => {
     if (busy) return;
@@ -162,6 +207,7 @@ export default function ResponsiveDialog({
             ? { anchor: 'bottom' as const }
             : { fullWidth: true, maxWidth })}
           PaperProps={{
+            ref: setSurface,
             role: 'dialog',
             'aria-modal': true,
             'aria-labelledby': props['aria-labelledby'] || titleId,
@@ -236,6 +282,8 @@ export default function ResponsiveDialog({
                 display: step ? 'none' : 'flex',
                 ...(mobile &&
                   mobileFullHeight && {
+                    // Counter Safari's visual viewport pan without moving the page.
+                    transform: `translateY(${viewport?.top ?? 0}px)`,
                     flex: '0 1 auto',
                     height: viewport ? `${viewport.height}px` : '100%',
                     maxHeight: '100%',
@@ -257,6 +305,8 @@ export default function ResponsiveDialog({
                   display: 'flex',
                   ...(mobile &&
                     mobileFullHeight && {
+                      // Counter Safari's visual viewport pan without moving the page.
+                      transform: `translateY(${viewport?.top ?? 0}px)`,
                       flex: '0 1 auto',
                       height: viewport ? `${viewport.height}px` : '100%',
                       maxHeight: '100%',
