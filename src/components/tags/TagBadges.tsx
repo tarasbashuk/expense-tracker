@@ -26,14 +26,14 @@ export default function TagBadges({
             key={tag.id}
             sx={{
               px: 0.75,
-              height: 24,
+              height: 20,
               display: 'inline-block',
               flexShrink: 0,
               borderRadius: '8px',
               bgcolor: palette.background,
               color: palette.text,
               fontSize: 12,
-              lineHeight: '24px',
+              lineHeight: '20px',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',

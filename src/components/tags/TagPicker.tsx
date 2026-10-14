@@ -161,7 +161,7 @@ export default function TagPicker({
               }
               sx={{
                 flexShrink: 0,
-                minHeight: 44,
+                minHeight: 32,
                 maxWidth: { xs: 'none', sm: '100%' },
                 px: 1.5,
                 gap: 0.75,

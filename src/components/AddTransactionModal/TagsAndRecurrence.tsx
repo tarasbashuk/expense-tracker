@@ -8,13 +8,17 @@ import { useIntl } from 'react-intl';
 export default function TagsAndRecurrence({
   tagCount,
   recurring,
+  isEditMode = false,
   children,
 }: {
   tagCount: number;
   recurring: boolean;
+  isEditMode?: boolean;
   children?: ReactNode;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(
+    () => isEditMode && (tagCount > 0 || recurring),
+  );
   const id = useId();
   const { formatMessage } = useIntl();
   const summary = [

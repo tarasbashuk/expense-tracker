@@ -181,3 +181,35 @@ test('collapsing preserves inputs and updates the Ukrainian summary', async () =
     false,
   );
 });
+
+test.each([
+  [true, 0, false, false],
+  [true, 1, false, true],
+  [true, 0, true, true],
+  [true, 2, true, true],
+  [false, 1, true, false],
+] as const)(
+  'initial expansion for edit=%s, tags=%s, recurring=%s is %s',
+  async (isEditMode, tagCount, recurring, expanded) => {
+    const user = userEvent.setup();
+    const tree = (count: number) =>
+      createElement(
+        IntlProvider,
+        { locale: 'en-US', messages: messages['en-US'] },
+        createElement(TagsAndRecurrence, {
+          isEditMode,
+          tagCount: count,
+          recurring,
+        }),
+      );
+    const view = render(tree(tagCount));
+    const heading = screen.getByRole('button', { name: /Tags and recurrence/ });
+
+    expect(heading.getAttribute('aria-expanded')).toBe(String(expanded));
+
+    await user.click(heading);
+    view.rerender(tree(tagCount + 1));
+
+    expect(heading.getAttribute('aria-expanded')).toBe(String(!expanded));
+  },
+);

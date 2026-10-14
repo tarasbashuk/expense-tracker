@@ -339,6 +339,7 @@ const AddTransactionModalView: React.FC<Props> = ({
             )}
             <Grid item xs={12}>
               <TagsAndRecurrence
+                isEditMode={isEditMode}
                 tagCount={tagIds.length}
                 recurring={Boolean(isRecurring)}
               >
