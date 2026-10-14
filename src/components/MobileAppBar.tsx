@@ -219,7 +219,8 @@ const MobileAppBar = () => {
               ...fabContainerStyles,
               display:
                 pathname === NavigationPath.Transactions ||
-                pathname === NavigationPath.Home
+                pathname === NavigationPath.Home ||
+                pathname === NavigationPath.Settings
                   ? 'none'
                   : 'flex',
             }}

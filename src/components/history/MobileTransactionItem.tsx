@@ -104,11 +104,9 @@ export default function MobileTransactionItem({
                 fontSize: 16,
                 lineHeight: 1.4,
                 overflow: 'hidden',
-                display: hasTags ? 'block' : '-webkit-box',
+                display: 'block',
                 minWidth: 0,
-                whiteSpace: hasTags ? 'nowrap' : 'normal',
-                WebkitLineClamp: hasTags ? undefined : 2,
-                WebkitBoxOrient: hasTags ? undefined : 'vertical',
+                whiteSpace: 'nowrap',
                 overflowWrap: 'anywhere',
                 textOverflow: 'ellipsis',
               }}

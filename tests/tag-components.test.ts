@@ -530,7 +530,7 @@ test.each([390, 393, 402])(
 );
 
 test.each([0, 1, 2])(
-  'transaction descriptions allow two lines only without tags; tags=%s',
+  'transaction descriptions stay on one line with or without tags; tags=%s',
   (count) => {
     render(
       translated(
@@ -548,11 +548,23 @@ test.each([0, 1, 2])(
     const style = getComputedStyle(description);
     const editButton = description.closest('button')!;
 
-    expect(style.whiteSpace).toBe(count ? 'nowrap' : 'normal');
-    expect(style.display).toBe(count ? 'block' : '-webkit-box');
+    expect(style.whiteSpace).toBe('nowrap');
+    expect(style.display).toBe('block');
     expect(getComputedStyle(editButton).alignItems).toBe('center');
     expect(getComputedStyle(editButton.lastElementChild!).alignSelf).toBe(
       'center',
     );
+  },
+);
+
+test.each([393, 402, 900])(
+  'settings preview reserves More within two rows for long tags at %s px',
+  (viewport) => {
+    const available = viewport - 64;
+    const count = fitTagPreview(available, [900, 900, 900, 900], 0, 80);
+
+    expect(count).toBe(1);
+    expect(fitTagPreview(available, [100, 100], 0, 80)).toBe(2);
+    expect(fitTagPreview(available, [], 0, 80)).toBe(0);
   },
 );

@@ -5,7 +5,6 @@ import { pageStyles } from '@/components/history/tokens';
 import Guest from '@/components/Guest';
 import Balance from '@/components/Balance';
 import WelcomeMessage from '@/components/WelcomeMessage';
-import TagManager from '@/components/tags/TagManager';
 import QuickTransactions from '@/components/home/QuickTransactions';
 import HomeMonthlySummary from '@/components/home/HomeMonthlySummary';
 import RecentTransactions from '@/components/home/RecentTransactions';
@@ -55,19 +54,7 @@ const HomePage = async () => {
             gridArea: { md: '2 / 1 / 3 / 3' },
           }}
         >
-          <Box
-            sx={{
-              display: 'grid',
-              gap: 3,
-              gridTemplateColumns: {
-                xs: 'minmax(0, 1fr)',
-                md: 'minmax(0, 1fr) minmax(0, 1fr)',
-              },
-            }}
-          >
-            <QuickTransactions initialTemplates={templates || []} />
-            <TagManager />
-          </Box>
+          <QuickTransactions initialTemplates={templates || []} />
         </Box>
         <Box
           sx={{

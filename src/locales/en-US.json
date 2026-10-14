@@ -269,5 +269,11 @@
   "tags.count": "{count, plural, =0 {No tags} one {# tag} other {# tags}}",
   "tags.monthly": "Monthly",
   "tags.noRepeat": "No recurrence",
-  "tags.loading": "Loading tags…"
+  "tags.loading": "Loading tags…",
+  "settings.currencyHint": "Changing the currency does not recalculate previous transactions",
+  "settings.accountingAndData": "Accounting and data",
+  "settings.encryptionSetupHint": "Determined during initial setup",
+  "settings.enabled": "Enabled",
+  "settings.disabled": "Disabled",
+  "tags.emptySettings": "No tags yet"
 }

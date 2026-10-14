@@ -35,7 +35,7 @@ export function fitTagPreview(
     if (
       fits([
         ...sizes.slice(0, count),
-        addWidth,
+        ...(addWidth ? [addWidth] : []),
         ...(count < sizes.length ? [moreWidth] : []),
       ])
     )
@@ -51,7 +51,7 @@ export default function TagPreview({
   onManage,
 }: {
   tags: Tag[];
-  onCreate: () => void;
+  onCreate?: () => void;
   onManage: () => void;
 }) {
   const { formatMessage } = useIntl();
@@ -67,10 +67,15 @@ export default function TagPreview({
         (element) => element.getBoundingClientRect().width,
       );
 
-      if (!width || sizes.length !== tags.length + 2) return;
+      if (!width || sizes.length !== tags.length + (onCreate ? 2 : 1)) return;
 
       setCount(
-        fitTagPreview(width, sizes.slice(0, -2), sizes.at(-2)!, sizes.at(-1)!),
+        fitTagPreview(
+          width,
+          sizes.slice(0, tags.length),
+          onCreate ? sizes.at(-2)! : 0,
+          sizes.at(-1)!,
+        ),
       );
     };
 
@@ -83,10 +88,10 @@ export default function TagPreview({
     document.fonts?.ready.then(update);
 
     return () => observer?.disconnect();
-  }, [tags, formatMessage]);
+  }, [tags, formatMessage, onCreate]);
 
   const shown = Math.min(count, tags.length);
-  const add = (
+  const add = onCreate && (
     <Button
       startIcon={<Plus size={16} />}
       onClick={onCreate}

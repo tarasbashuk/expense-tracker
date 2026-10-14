@@ -397,7 +397,14 @@ export default function QuickTransactions({
       <Stack
         gap={1}
         minWidth={0}
-        sx={{ flexDirection: { xs: 'column', sm: 'row' }, flexWrap: 'wrap' }}
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: 'minmax(0, 1fr)',
+            sm: 'repeat(2, minmax(0, 1fr))',
+            md: 'repeat(3, minmax(0, 1fr))',
+          },
+        }}
       >
         {templates.map((template) => (
           <ButtonBase
@@ -407,7 +414,7 @@ export default function QuickTransactions({
               ...cardStyles,
               p: 1.5,
               minHeight: 64,
-              width: { xs: '100%', sm: 300 },
+              width: '100%',
               maxWidth: '100%',
               gap: 1.5,
               textAlign: 'left',

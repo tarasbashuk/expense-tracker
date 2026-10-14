@@ -28,7 +28,11 @@ type Page =
   | { type: 'edit'; tag?: Tag }
   | { type: 'delete'; tag: Tag };
 
-export default function TagManager() {
+export default function TagManager({
+  settingsPreview = false,
+}: {
+  settingsPreview?: boolean;
+}) {
   const { tags, error: loadError, loading } = useTagCatalog();
   const { formatMessage } = useIntl();
   const router = useRouter();
@@ -78,6 +82,7 @@ export default function TagManager() {
       <Stack direction="row" alignItems="center" justifyContent="space-between">
         <Typography variant="h6" component="h2" fontWeight={600}>
           {formatMessage({ id: 'tags.title' })}
+          {settingsPreview && !loading ? ` (${tags.length})` : ''}
         </Typography>
         <Button onClick={() => show({ type: 'list' })} sx={{ minHeight: 44 }}>
           {formatMessage({ id: 'tags.manage' })}
@@ -89,7 +94,9 @@ export default function TagManager() {
       {!loading && !loadError && !tags.length ? (
         <>
           <Typography color="text.secondary" variant="body2">
-            {formatMessage({ id: 'tags.empty' })}
+            {formatMessage({
+              id: settingsPreview ? 'tags.emptySettings' : 'tags.empty',
+            })}
           </Typography>
           <Button
             startIcon={<Plus size={18} />}
@@ -101,7 +108,7 @@ export default function TagManager() {
       ) : (
         <TagPreview
           tags={tags}
-          onCreate={() => show({ type: 'edit' })}
+          onCreate={settingsPreview ? undefined : () => show({ type: 'edit' })}
           onManage={() => show({ type: 'list' })}
         />
       )}

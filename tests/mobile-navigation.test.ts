@@ -128,7 +128,7 @@ test('home is active at the root route and always navigates to the absolute home
   expect(mocks.push).toHaveBeenCalledExactlyOnceWith('/');
 });
 
-test.each(['/', '/transactions'])(
+test.each(['/', '/transactions', '/settings'])(
   'redesigned page %s has no duplicate floating actions',
   (pathname) => {
     mocks.pathname = pathname;

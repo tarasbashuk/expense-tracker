@@ -270,5 +270,11 @@
   "tags.count": "{count, plural, =0 {Без тегів} one {# тег} few {# теги} many {# тегів} other {# тега}}",
   "tags.monthly": "Щомісяця",
   "tags.noRepeat": "Без повторення",
-  "tags.loading": "Завантаження тегів…"
+  "tags.loading": "Завантаження тегів…",
+  "settings.currencyHint": "Зміна валюти не перераховує попередні транзакції",
+  "settings.accountingAndData": "Облік і дані",
+  "settings.encryptionSetupHint": "Визначається під час початкового налаштування",
+  "settings.enabled": "Увімкнено",
+  "settings.disabled": "Вимкнено",
+  "tags.emptySettings": "Тегів ще немає"
 }
