@@ -475,13 +475,35 @@ test.each([false, true])(
 
     await waitFor(() =>
       expect(getComputedStyle(dialog).bottom).toBe(
-        `${window.innerHeight - 350}px`,
+        mobileFullHeight ? '0px' : `${window.innerHeight - 350}px`,
       ),
     );
     expect(getComputedStyle(dialog).margin).toBe('0px');
 
     if (mobileFullHeight) {
-      expect(getComputedStyle(dialog).height).toBe('350px');
+      expect(getComputedStyle(dialog).top).toBe('0px');
+      expect(getComputedStyle(dialog).height).toBe('100dvh');
+      const content = screen
+        .getByText('Transaction draft')
+        .closest('.MuiDialogTitle-root')!.parentElement!;
+      expect(getComputedStyle(content).height).toBe('350px');
+
+      act(() => {
+        viewport.offsetTop = 120;
+        viewport.dispatchEvent(new Event('scroll'));
+      });
+
+      expect(getComputedStyle(dialog).top).toBe('0px');
+      expect(getComputedStyle(dialog).bottom).toBe('0px');
+      expect(getComputedStyle(content).height).toBe('350px');
+
+      act(() => {
+        viewport.offsetTop = 0;
+        viewport.height = 500;
+        viewport.dispatchEvent(new Event('resize'));
+      });
+
+      expect(getComputedStyle(content).height).toBe('500px');
       expect(getComputedStyle(dialog).borderRadius).toBe('0px');
     }
 

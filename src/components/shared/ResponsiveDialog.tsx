@@ -113,25 +113,29 @@ export default function ResponsiveDialog({
   useEffect(() => {
     const visualViewport = window.visualViewport;
 
-    if (!visualViewport || !open) return;
+    if (!visualViewport || !open || !mobile) return;
 
     const update = () =>
       setViewport({
         height: visualViewport.height,
-        bottom: Math.max(
-          0,
-          window.innerHeight - visualViewport.height - visualViewport.offsetTop,
-        ),
+        bottom: mobileFullHeight
+          ? 0
+          : Math.max(
+              0,
+              window.innerHeight -
+                visualViewport.height -
+                visualViewport.offsetTop,
+            ),
       });
     update();
     visualViewport.addEventListener('resize', update);
-    visualViewport.addEventListener('scroll', update);
+    if (!mobileFullHeight) visualViewport.addEventListener('scroll', update);
 
     return () => {
       visualViewport.removeEventListener('resize', update);
       visualViewport.removeEventListener('scroll', update);
     };
-  }, [open]);
+  }, [open, mobile, mobileFullHeight]);
 
   const close: DialogProps['onClose'] = (event, reason) => {
     if (busy) return;
@@ -171,17 +175,15 @@ export default function ResponsiveDialog({
                     m: 0,
                     left: 0,
                     right: 0,
-                    bottom: viewport?.bottom ?? 0,
+                    bottom: mobileFullHeight ? 0 : (viewport?.bottom ?? 0),
                     borderRadius: mobileFullHeight ? 0 : '20px 20px 0 0',
                     ...(mobileFullHeight && {
-                      height: viewport ? `${viewport.height}px` : '100dvh',
-                      pt: 'env(safe-area-inset-top, 0px)',
+                      top: 0,
+                      height: '100dvh',
                       boxSizing: 'border-box',
                     }),
                     maxHeight: mobileFullHeight
-                      ? viewport
-                        ? `${viewport.height}px`
-                        : '100dvh'
+                      ? '100dvh'
                       : `calc(${viewport ? `${viewport.height}px` : '100dvh'} - env(safe-area-inset-top, 0px) - 12px)`,
                   }
                 : {
@@ -232,7 +234,14 @@ export default function ResponsiveDialog({
             <Box
               sx={{
                 display: step ? 'none' : 'flex',
-                flex: mobile && mobileFullHeight ? 1 : undefined,
+                ...(mobile &&
+                  mobileFullHeight && {
+                    flex: '0 1 auto',
+                    height: viewport ? `${viewport.height}px` : '100%',
+                    maxHeight: '100%',
+                    pt: 'env(safe-area-inset-top, 0px)',
+                    boxSizing: 'border-box',
+                  }),
                 flexDirection: 'column',
                 minHeight: 0,
                 overflow: 'hidden',
@@ -246,7 +255,14 @@ export default function ResponsiveDialog({
               <Box
                 sx={{
                   display: 'flex',
-                  flex: mobile && mobileFullHeight ? 1 : undefined,
+                  ...(mobile &&
+                    mobileFullHeight && {
+                      flex: '0 1 auto',
+                      height: viewport ? `${viewport.height}px` : '100%',
+                      maxHeight: '100%',
+                      pt: 'env(safe-area-inset-top, 0px)',
+                      boxSizing: 'border-box',
+                    }),
                   flexDirection: 'column',
                   minHeight: 0,
                   overflow: 'hidden',
