@@ -10,7 +10,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { Check, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useIntl } from 'react-intl';
 import { MAX_TAGS, TAG_COLORS } from '@/lib/tags';
 import { useDialogStep } from '../shared/ResponsiveDialog';
@@ -56,6 +56,16 @@ export default function TagPicker({
     };
   }, [tags, created]);
 
+  useEffect(() => {
+    setCreated((current) => {
+      const remaining = current.filter(
+        (tag) => !tags.some(({ id }) => id === tag.id),
+      );
+
+      return remaining.length === current.length ? current : remaining;
+    });
+  }, [tags]);
+
   const latest = useRef({ value, onChange });
   latest.current = { value, onChange };
   const available = [
@@ -100,6 +110,11 @@ export default function TagPicker({
         {formatMessage({ id: filter ? 'tags.filterHint' : 'tags.selectHint' })}
       </Typography>
       {error && <Alert severity="error">{formatMessage({ id: error })}</Alert>}
+      {loading && (
+        <Typography variant="body2" color="text.secondary" role="status">
+          {formatMessage({ id: 'tags.loading' })}
+        </Typography>
+      )}
       {!loading && !error && !available.length && (
         <Typography variant="body2" color="text.secondary">
           {formatMessage({ id: 'tags.pickerEmpty' })}
@@ -150,10 +165,10 @@ export default function TagPicker({
                 maxWidth: { xs: 'none', sm: '100%' },
                 px: 1.5,
                 gap: 0.75,
-                borderRadius: '22px',
+                borderRadius: '10px',
                 border: '1px solid',
                 borderColor: selected ? palette.text : 'divider',
-                bgcolor: palette.background,
+                bgcolor: selected ? palette.background : 'background.paper',
                 color: palette.text,
                 '&.Mui-disabled': { opacity: 0.45 },
                 '&.Mui-focusVisible': {
@@ -163,24 +178,34 @@ export default function TagPicker({
                 },
               }}
             >
-              <Check
-                size={16}
-                aria-hidden
-                style={{
-                  visibility: selected ? 'visible' : 'hidden',
-                  flexShrink: 0,
-                }}
-              />
               <Box
                 component="span"
+                data-label={tag.name}
                 sx={{
+                  display: 'grid',
+                  '&::after': {
+                    content: 'attr(data-label)',
+                    fontWeight: 600,
+                    visibility: 'hidden',
+                    gridArea: '1 / 1',
+                  },
                   overflow: 'hidden',
                   whiteSpace: 'nowrap',
                   textOverflow: 'ellipsis',
                   fontSize: 14,
+                  fontWeight: selected ? 600 : 400,
                 }}
               >
-                {tag.name}
+                <Box
+                  component="span"
+                  sx={{
+                    gridArea: '1 / 1',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {tag.name}
+                </Box>
               </Box>
             </ButtonBase>
           );

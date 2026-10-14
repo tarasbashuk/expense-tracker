@@ -45,8 +45,8 @@ export default function TagManager() {
     setPage(next);
   };
 
-  const refresh = () => {
-    window.dispatchEvent(new Event('tags-updated'));
+  const refresh = (reloadTags = true) => {
+    if (reloadTags) window.dispatchEvent(new Event('tags-updated'));
     requestTransactionsRefresh();
     router.refresh();
   };
@@ -113,7 +113,7 @@ export default function TagManager() {
             onClose={() => show({ type: 'list' })}
             onSaved={() => {
               show({ type: 'list' });
-              refresh();
+              refresh(false);
             }}
           />
         ) : page?.type === 'delete' ? (

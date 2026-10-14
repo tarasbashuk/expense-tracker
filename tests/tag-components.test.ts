@@ -130,13 +130,15 @@ test('picker allows zero, one, two and removal; a third selection is disabled', 
   }) as HTMLInputElement;
 
   expect(first.getAttribute('aria-checked')).toBe('false');
-  expect(getComputedStyle(first).backgroundColor).toBe('rgb(219, 234, 254)');
+  expect(getComputedStyle(first).backgroundColor).toBe('rgb(255, 255, 255)');
   expect(getComputedStyle(first).color).toBe('rgb(30, 58, 138)');
 
   await user.click(first);
   await user.click(second);
 
   expect(first.getAttribute('aria-checked')).toBe('true');
+  expect(getComputedStyle(first).backgroundColor).toBe('rgb(219, 234, 254)');
+  expect(first.querySelector('svg')).toBeNull();
   expect(second.getAttribute('aria-checked')).toBe('true');
   expect(third.disabled).toBe(true);
 
@@ -511,6 +513,8 @@ test.each([0, 1, 2])(
     expect(style.whiteSpace).toBe(count ? 'nowrap' : 'normal');
     expect(style.display).toBe(count ? 'block' : '-webkit-box');
     expect(getComputedStyle(editButton).alignItems).toBe('center');
-    expect(getComputedStyle(editButton.lastElementChild!).alignSelf).toBe('center');
+    expect(getComputedStyle(editButton.lastElementChild!).alignSelf).toBe(
+      'center',
+    );
   },
 );

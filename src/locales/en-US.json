@@ -264,5 +264,10 @@
   "tags.short": "Tag",
   "tags.more": "More {count}",
   "tags.preview": "Preview",
-  "tags.limitHint": "To select another tag, deselect one of the selected tags."
+  "tags.limitHint": "To select another tag, deselect one of the selected tags.",
+  "tags.andRecurrence": "Tags and recurrence",
+  "tags.count": "{count, plural, =0 {No tags} one {# tag} other {# tags}}",
+  "tags.monthly": "Monthly",
+  "tags.noRepeat": "No recurrence",
+  "tags.loading": "Loading tags…"
 }

@@ -265,5 +265,10 @@
   "tags.short": "Тег",
   "tags.more": "Ще {count}",
   "tags.preview": "Попередній вигляд",
-  "tags.limitHint": "Щоб вибрати інший тег, зніміть один із вибраних"
+  "tags.limitHint": "Щоб вибрати інший тег, зніміть один із вибраних",
+  "tags.andRecurrence": "Теги та повторення",
+  "tags.count": "{count, plural, =0 {Без тегів} one {# тег} few {# теги} many {# тегів} other {# тега}}",
+  "tags.monthly": "Щомісяця",
+  "tags.noRepeat": "Без повторення",
+  "tags.loading": "Завантаження тегів…"
 }

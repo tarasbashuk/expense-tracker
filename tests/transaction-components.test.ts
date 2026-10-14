@@ -3,9 +3,15 @@
 import { createElement, type ReactNode, type ComponentProps } from 'react';
 import type DatePeriodFilter from '@/components/shared/DatePeriodFilter';
 import { dateKeyFromLocalDate, getPeriodRange } from '@/lib/dateRange';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import {
+  cleanup,
+  render as rtlRender,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { IntlProvider } from 'react-intl';
+import { TagCatalogProvider } from '@/components/tags/useTagCatalog';
 import { messages } from '@/locales';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { Transaction } from '@prisma/client';
@@ -16,6 +22,9 @@ import MobileTransactionItem from '@/components/history/MobileTransactionItem';
 import PeriodBalance from '@/components/history/PeriodBalance';
 import HistoryFiltersSheet from '@/components/history/HistoryFiltersSheet';
 import RecentTransactions from '@/components/home/RecentTransactions';
+
+const render = (element: ReactNode) =>
+  rtlRender(element, { wrapper: TagCatalogProvider });
 
 const mocks = vi.hoisted(() => ({
   saveTemplate: vi.fn(),
@@ -34,19 +43,17 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/app/actions/tags', () => ({
-  getTags: vi
-    .fn()
-    .mockResolvedValue({
-      tags: [
-        {
-          id: 'trip',
-          name: 'Trip',
-          normalizedName: 'trip',
-          color: 'blue',
-          userId: 'owner',
-        },
-      ],
-    }),
+  getTags: vi.fn().mockResolvedValue({
+    tags: [
+      {
+        id: 'trip',
+        name: 'Trip',
+        normalizedName: 'trip',
+        color: 'blue',
+        userId: 'owner',
+      },
+    ],
+  }),
 }));
 
 vi.mock('@/context/SettingsContexts', () => ({

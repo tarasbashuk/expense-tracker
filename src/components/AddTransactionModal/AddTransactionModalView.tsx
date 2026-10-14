@@ -1,5 +1,6 @@
 'use client';
 import ResponsiveDialog, { FormTitle } from '../shared/ResponsiveDialog';
+import TagsAndRecurrence from './TagsAndRecurrence';
 import TagPicker from '../tags/TagPicker';
 import {
   Button,
@@ -12,6 +13,7 @@ import {
   InputAdornment,
   TextField,
   DialogContent,
+  Divider,
   DialogActions,
   Box,
   Grid,
@@ -312,18 +314,8 @@ const AddTransactionModalView: React.FC<Props> = ({
               />
             </Grid>
 
-            {onTagsChange && (
+            {creditCardTrackingEnabled && (
               <Grid item xs={12}>
-                <TagPicker
-                  value={tagIds}
-                  onChange={onTagsChange}
-                  disabled={isSubmitDisabled}
-                />
-              </Grid>
-            )}
-
-            <Grid item xs={12}>
-              {creditCardTrackingEnabled && (
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -343,49 +335,75 @@ const AddTransactionModalView: React.FC<Props> = ({
                     </Box>
                   }
                 />
-              )}
-              <FormControlLabel
-                labelPlacement="start"
-                sx={{ width: '100%', mx: 0, justifyContent: 'space-between' }}
-                control={
-                  <Switch
-                    checked={isRecurring || false}
-                    onChange={handleIsRecurringChange}
-                    inputProps={{ role: 'switch' }}
-                  />
-                }
-                label={
-                  <FormattedMessage
-                    id="addTransaction.recurring"
-                    defaultMessage="Recurring (monthly)"
-                  />
-                }
-              />
-            </Grid>
-
-            {isRecurring && (
-              <Grid item xs={12}>
-                <DatePicker
-                  label={formatMessage({
-                    id: 'addTransaction.endDate',
-                    defaultMessage: 'End date',
-                  })}
-                  name="recurringEndDate"
-                  value={recurringEndDate || null}
-                  onChange={handleRecurringEndDateChange}
-                  format={DATE_FORMATS.YYYY_MM_DD}
-                  slotProps={{
-                    textField: {
-                      helperText: formatMessage({
-                        id: 'addTransaction.recurringHint',
-                        defaultMessage:
-                          'Leave empty if you want the transaction to repeat indefinitely',
-                      }),
-                    },
-                  }}
-                />
               </Grid>
             )}
+            <Grid item xs={12}>
+              <TagsAndRecurrence
+                tagCount={tagIds.length}
+                recurring={Boolean(isRecurring)}
+              >
+                <Grid container spacing={2}>
+                  {onTagsChange && (
+                    <Grid item xs={12}>
+                      <TagPicker
+                        value={tagIds}
+                        onChange={onTagsChange}
+                        disabled={isSubmitDisabled}
+                      />
+                    </Grid>
+                  )}
+
+                  <Grid item xs={12}>
+                    {onTagsChange && <Divider sx={{ mb: 1 }} />}
+                    <FormControlLabel
+                      labelPlacement="start"
+                      sx={{
+                        width: '100%',
+                        mx: 0,
+                        justifyContent: 'space-between',
+                      }}
+                      control={
+                        <Switch
+                          checked={isRecurring || false}
+                          onChange={handleIsRecurringChange}
+                          inputProps={{ role: 'switch' }}
+                        />
+                      }
+                      label={
+                        <FormattedMessage
+                          id="addTransaction.recurring"
+                          defaultMessage="Recurring (monthly)"
+                        />
+                      }
+                    />
+                  </Grid>
+
+                  {isRecurring && (
+                    <Grid item xs={12}>
+                      <DatePicker
+                        label={formatMessage({
+                          id: 'addTransaction.endDate',
+                          defaultMessage: 'End date',
+                        })}
+                        name="recurringEndDate"
+                        value={recurringEndDate || null}
+                        onChange={handleRecurringEndDateChange}
+                        format={DATE_FORMATS.YYYY_MM_DD}
+                        slotProps={{
+                          textField: {
+                            helperText: formatMessage({
+                              id: 'addTransaction.recurringHint',
+                              defaultMessage:
+                                'Leave empty if you want the transaction to repeat indefinitely',
+                            }),
+                          },
+                        }}
+                      />
+                    </Grid>
+                  )}
+                </Grid>
+              </TagsAndRecurrence>
+            </Grid>
           </Grid>
         </form>
       </DialogContent>
