@@ -344,14 +344,20 @@ test('history table renders real tags under descriptions', async () => {
   expect(screen.getByText('Work')).toBeTruthy();
 });
 
-function TransactionDraftForm({ initial = [] }: { initial?: string[] }) {
+function TransactionDraftForm({
+  initial = [],
+  mobileFullHeight = false,
+}: {
+  initial?: string[];
+  mobileFullHeight?: boolean;
+}) {
   const [ids, setIds] = useState(initial);
   const [text, setText] = useState('Rent 💙');
   const [open, setOpen] = useState(true);
 
   return createElement(
     ResponsiveDialog,
-    { open, desktop: false, onClose: () => setOpen(false) },
+    { open, desktop: false, mobileFullHeight, onClose: () => setOpen(false) },
     createElement(
       FormTitle,
       { onClose: () => setOpen(false) },
@@ -444,36 +450,46 @@ test.each([0, 1, 2])(
   },
 );
 
-test('mobile panel follows the visual viewport and restores the previous body overflow', async () => {
-  const user = userEvent.setup();
-  const viewport = Object.assign(new EventTarget(), {
-    height: 500,
-    offsetTop: 0,
-  });
-  vi.stubGlobal('visualViewport', viewport);
-  const previous = document.body.style.overflow;
-  document.body.style.overflow = 'auto';
-  render(translated(createElement(TransactionDraftForm)));
+test.each([false, true])(
+  'mobile panel follows the visual viewport and restores body overflow; full height=%s',
+  async (mobileFullHeight) => {
+    const user = userEvent.setup();
+    const viewport = Object.assign(new EventTarget(), {
+      height: 500,
+      offsetTop: 0,
+    });
+    vi.stubGlobal('visualViewport', viewport);
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'auto';
+    render(
+      translated(createElement(TransactionDraftForm, { mobileFullHeight })),
+    );
 
-  expect(document.body.style.overflow).toBe('hidden');
-  const dialog = screen.getByRole('dialog');
+    expect(document.body.style.overflow).toBe('hidden');
+    const dialog = screen.getByRole('dialog');
 
-  act(() => {
-    viewport.height = 350;
-    viewport.dispatchEvent(new Event('resize'));
-  });
+    act(() => {
+      viewport.height = 350;
+      viewport.dispatchEvent(new Event('resize'));
+    });
 
-  await waitFor(() =>
-    expect(getComputedStyle(dialog).bottom).toBe(
-      `${window.innerHeight - 350}px`,
-    ),
-  );
-  expect(getComputedStyle(dialog).margin).toBe('0px');
+    await waitFor(() =>
+      expect(getComputedStyle(dialog).bottom).toBe(
+        `${window.innerHeight - 350}px`,
+      ),
+    );
+    expect(getComputedStyle(dialog).margin).toBe('0px');
 
-  await user.click(screen.getByRole('button', { name: 'Done' }));
-  await waitFor(() => expect(document.body.style.overflow).toBe('auto'));
-  document.body.style.overflow = previous;
-});
+    if (mobileFullHeight) {
+      expect(getComputedStyle(dialog).height).toBe('350px');
+      expect(getComputedStyle(dialog).borderRadius).toBe('0px');
+    }
+
+    await user.click(screen.getByRole('button', { name: 'Done' }));
+    await waitFor(() => expect(document.body.style.overflow).toBe('auto'));
+    document.body.style.overflow = previous;
+  },
+);
 
 test.each([390, 393, 402])(
   'home preview reserves room for create and More within two rows at %s px',

@@ -130,6 +130,7 @@ const AddTransactionModalView: React.FC<Props> = ({
 
   return (
     <ResponsiveDialog
+      mobileFullHeight
       open
       maxWidth="sm"
       onClose={(_, reason) => {

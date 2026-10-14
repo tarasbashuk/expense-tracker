@@ -88,9 +88,13 @@ export default function ResponsiveDialog({
   onClose,
   maxWidth = 'sm',
   desktop,
+  mobileFullHeight = false,
   fullWidth: _fullWidth,
   ...props
-}: Omit<DialogProps, 'PaperProps'> & { desktop?: boolean }) {
+}: Omit<DialogProps, 'PaperProps'> & {
+  desktop?: boolean;
+  mobileFullHeight?: boolean;
+}) {
   const theme = useTheme();
   const small = useMediaQuery(theme.breakpoints.down('sm'));
   const mobile = desktop === undefined ? small : !desktop;
@@ -168,8 +172,17 @@ export default function ResponsiveDialog({
                     left: 0,
                     right: 0,
                     bottom: viewport?.bottom ?? 0,
-                    borderRadius: '20px 20px 0 0',
-                    maxHeight: `calc(${viewport ? `${viewport.height}px` : '100dvh'} - env(safe-area-inset-top, 0px) - 12px)`,
+                    borderRadius: mobileFullHeight ? 0 : '20px 20px 0 0',
+                    ...(mobileFullHeight && {
+                      height: viewport ? `${viewport.height}px` : '100dvh',
+                      pt: 'env(safe-area-inset-top, 0px)',
+                      boxSizing: 'border-box',
+                    }),
+                    maxHeight: mobileFullHeight
+                      ? viewport
+                        ? `${viewport.height}px`
+                        : '100dvh'
+                      : `calc(${viewport ? `${viewport.height}px` : '100dvh'} - env(safe-area-inset-top, 0px) - 12px)`,
                   }
                 : {
                     maxWidth: step || maxWidth === 'xs' ? 440 : 600,
@@ -201,7 +214,7 @@ export default function ResponsiveDialog({
             },
           }}
         >
-          {mobile && (
+          {mobile && !mobileFullHeight && (
             <Box
               aria-hidden
               sx={{
@@ -219,6 +232,7 @@ export default function ResponsiveDialog({
             <Box
               sx={{
                 display: step ? 'none' : 'flex',
+                flex: mobile && mobileFullHeight ? 1 : undefined,
                 flexDirection: 'column',
                 minHeight: 0,
                 overflow: 'hidden',
@@ -232,6 +246,7 @@ export default function ResponsiveDialog({
               <Box
                 sx={{
                   display: 'flex',
+                  flex: mobile && mobileFullHeight ? 1 : undefined,
                   flexDirection: 'column',
                   minHeight: 0,
                   overflow: 'hidden',
