@@ -24,7 +24,7 @@ const MobileWarning: React.FC = () => {
             position: 'absolute',
             top: 0,
             left: 0,
-            zIndex: 1000,
+            zIndex: 10000,
           }}
         >
           <Alert
