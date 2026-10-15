@@ -26,6 +26,7 @@ export const appTheme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: cardRadius,
+          borderColor: 'rgba(0, 0, 0, 0.23)',
           '&.Mui-selected, &.Mui-selected:hover': {
             backgroundColor: historyColors.card,
           },
