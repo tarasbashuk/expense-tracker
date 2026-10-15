@@ -332,7 +332,12 @@ const TransactionList = () => {
   ]);
 
   return (
-    <Box sx={pageStyles}>
+    <Box
+      sx={{
+        ...pageStyles,
+        maxWidth: { xs: pageStyles.maxWidth, sm: '1034px' },
+      }}
+    >
       <Box sx={pageHeaderStyles}>
         <Typography
           variant="h4"
@@ -354,113 +359,147 @@ const TransactionList = () => {
         <HistoryHeaderActions />
       </Box>
       <Stack direction="column" spacing={2} sx={{ width: '100%', minWidth: 0 }}>
-        <DatePeriodFilter
-          compact
-          horizontal
-          mode={periodMode}
-          range={selectedRange}
-          onModeChange={handlePeriodModeChange}
-          onPrevious={() => shiftSelectedPeriod(-1)}
-          onNext={() => shiftSelectedPeriod(1)}
-          onCustomRangeChange={setCustomRange}
-        />
-
         <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            gap: 2,
-            alignItems: 'center',
-            flexWrap: 'wrap',
-          }}
+          sx={
+            isMobile
+              ? { display: 'flex', flexDirection: 'column', gap: 2 }
+              : {
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(300px, 40%) minmax(0, 1fr)',
+                  gap: 2,
+                  alignItems: 'center',
+                  minWidth: 0,
+                }
+          }
         >
-          {!isMobile && (
-            <TextField
-              placeholder={formatMessage({ id: 'history.search' })}
-              inputProps={{
-                'aria-label': formatMessage({ id: 'history.search' }),
-              }}
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
+          <DatePeriodFilter
+            toolbarGrid={!isMobile}
+            compact
+            horizontal
+            mode={periodMode}
+            range={selectedRange}
+            onModeChange={handlePeriodModeChange}
+            onPrevious={() => shiftSelectedPeriod(-1)}
+            onNext={() => shiftSelectedPeriod(1)}
+            onCustomRangeChange={setCustomRange}
+          />
+
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: 2,
+              alignItems: 'center',
+              flexWrap: isMobile ? 'wrap' : 'nowrap',
+              minWidth: 0,
+              ...(!isMobile && { gridColumn: 2, gridRow: 2 }),
+            }}
+          >
+            {!isMobile && (
+              <TextField
+                placeholder={formatMessage({ id: 'history.search' })}
+                inputProps={{
+                  'aria-label': formatMessage({ id: 'history.search' }),
+                }}
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                size="small"
+                sx={{
+                  flex: '1 1 0',
+                  minWidth: 0,
+                  bgcolor: 'background.paper',
+                  borderRadius: '16px',
+                  '& .MuiInputBase-root': { height: 44 },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchInput ? (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label={formatMessage({
+                          id: 'history.clearSearch',
+                        })}
+                        onClick={() => {
+                          setSearchInput('');
+                          setSearch('');
+                        }}
+                      >
+                        <CloseIcon />
+                      </IconButton>
+                    </InputAdornment>
+                  ) : undefined,
+                }}
+              />
+            )}
+            {isMobile && (
+              <Button
+                variant="outlined"
+                startIcon={<FilterListIcon />}
+                onClick={() => setFiltersOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={filtersOpen}
+              >
+                {formatMessage(
+                  { id: 'history.filters' },
+                  { count: activeFilterCount },
+                )}
+              </Button>
+            )}
+            <ToggleButtonGroup
+              exclusive
               size="small"
-              sx={{ flex: '1 1 240px', bgcolor: 'background.paper', borderRadius: '16px' }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-                endAdornment: searchInput ? (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label={formatMessage({
-                        id: 'history.clearSearch',
-                      })}
-                      onClick={() => {
-                        setSearchInput('');
-                        setSearch('');
-                      }}
-                    >
-                      <CloseIcon />
-                    </IconButton>
-                  </InputAdornment>
-                ) : undefined,
+              color="primary"
+              sx={
+                !isMobile
+                  ? {
+                      flexShrink: 0,
+                      height: 44,
+                      width: 88,
+                      '& > button': { width: 44 },
+                    }
+                  : undefined
+              }
+              value={viewType}
+              onChange={handleTypeChange}
+            >
+              <ToggleButton
+                value={ViewType.List}
+                aria-label={formatMessage({ id: 'history.listView' })}
+              >
+                <ViewListIcon />
+              </ToggleButton>
+              <ToggleButton
+                value={ViewType.Grid}
+                aria-label={formatMessage({ id: 'history.tableView' })}
+              >
+                <TableViewIcon />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+          {!isMobile && (
+            <DesktopHistoryFilters
+              toolbarGrid
+              value={{
+                type: selectedTransactionType,
+                category: selectedCategory,
+                tagIds,
+                recurringOnly,
+                search,
+              }}
+              creditCardTrackingEnabled={creditCardTrackingEnabled}
+              onChange={(filters) => {
+                setSelectedTransactionType(filters.type);
+                setSelectedCategory(filters.category);
+                setTagIds(filters.tagIds || []);
+                setRecurringOnly(filters.recurringOnly);
               }}
             />
           )}
-          {isMobile && (
-            <Button
-              variant="outlined"
-              startIcon={<FilterListIcon />}
-              onClick={() => setFiltersOpen(true)}
-              aria-haspopup="dialog"
-              aria-expanded={filtersOpen}
-            >
-              {formatMessage(
-                { id: 'history.filters' },
-                { count: activeFilterCount },
-              )}
-            </Button>
-          )}
-          <ToggleButtonGroup
-            exclusive
-            size="small"
-            color="primary"
-            value={viewType}
-            onChange={handleTypeChange}
-          >
-            <ToggleButton
-              value={ViewType.List}
-              aria-label={formatMessage({ id: 'history.listView' })}
-            >
-              <ViewListIcon />
-            </ToggleButton>
-            <ToggleButton
-              value={ViewType.Grid}
-              aria-label={formatMessage({ id: 'history.tableView' })}
-            >
-              <TableViewIcon />
-            </ToggleButton>
-          </ToggleButtonGroup>
         </Box>
-        {!isMobile && (
-          <DesktopHistoryFilters
-            value={{
-              type: selectedTransactionType,
-              category: selectedCategory,
-              tagIds,
-              recurringOnly,
-              search,
-            }}
-            creditCardTrackingEnabled={creditCardTrackingEnabled}
-            onChange={(filters) => {
-              setSelectedTransactionType(filters.type);
-              setSelectedCategory(filters.category);
-              setTagIds(filters.tagIds || []);
-              setRecurringOnly(filters.recurringOnly);
-            }}
-          />
-        )}
         {!isMobile &&
           (searchInput.trim() ||
             selectedCategory !== 'all' ||

@@ -22,7 +22,16 @@ export const appTheme = createTheme({
       styleOverrides: { root: { borderRadius: cardRadius } },
     },
     MuiMenu: { styleOverrides: { paper: { borderRadius: cardRadius } } },
-    MuiToggleButton: { styleOverrides: { root: { borderRadius: cardRadius } } },
+    MuiToggleButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: cardRadius,
+          '&.Mui-selected, &.Mui-selected:hover': {
+            backgroundColor: historyColors.card,
+          },
+        },
+      },
+    },
     // MUI retains the straight inner edges and overlapping borders of grouped buttons.
     MuiToggleButtonGroup: {
       styleOverrides: { root: { borderRadius: cardRadius } },

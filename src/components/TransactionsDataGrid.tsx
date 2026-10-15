@@ -1,5 +1,6 @@
 'use client';
 import TagBadges from './tags/TagBadges';
+import { cardRadius } from './history/tokens';
 import { FC, useMemo } from 'react';
 import { Box, Typography, Tooltip } from '@mui/material';
 import {
@@ -253,9 +254,25 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
           width: '100%',
           backgroundColor: 'background.paper',
           marginTop: 2,
+          borderRadius: cardRadius,
+          overflow: 'hidden',
         }}
       >
         <DataGrid
+          sx={{
+            borderRadius: cardRadius,
+            overflow: 'hidden',
+            '& .MuiDataGrid-main': {
+              borderTopLeftRadius: 'inherit',
+              borderTopRightRadius: 'inherit',
+              overflow: 'hidden',
+            },
+            '& .MuiDataGrid-columnHeaders': {
+              borderTopLeftRadius: 'inherit',
+              borderTopRightRadius: 'inherit',
+              overflow: 'hidden',
+            },
+          }}
           rows={rows}
           getRowHeight={() => 'auto'}
           columns={columns}
@@ -271,7 +288,15 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
           disableRowSelectionOnClick
           slots={{
             footer: () => (
-              <Box position="relative">
+              <Box
+                position="relative"
+                sx={{
+                  borderBottomLeftRadius: cardRadius,
+                  borderBottomRightRadius: cardRadius,
+                  overflow: 'hidden',
+                  bgcolor: 'background.paper',
+                }}
+              >
                 <CurrentSum />
                 <GridFooter />
               </Box>

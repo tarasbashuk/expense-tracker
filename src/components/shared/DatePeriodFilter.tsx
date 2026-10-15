@@ -40,6 +40,7 @@ import {
 interface Props {
   compact?: boolean;
   horizontal?: boolean;
+  toolbarGrid?: boolean;
   mode: PeriodMode;
   range: DateRangeValue;
   onModeChange: (_mode: PeriodMode) => void;
@@ -47,6 +48,14 @@ interface Props {
   onNext: () => void;
   onCustomRangeChange: (_range: DateRangeValue) => void;
 }
+
+const periodCellStyles = {
+  border: '1px solid',
+  borderColor: 'divider',
+  borderRadius: '12px',
+  bgcolor: 'background.paper',
+  color: 'text.primary',
+};
 
 const modes: PeriodMode[] = ['month', 'quarter', 'year', 'custom'];
 
@@ -83,6 +92,7 @@ const DatePeriodFilter = ({
   mode,
   compact = false,
   horizontal = false,
+  toolbarGrid = false,
   range,
   onModeChange,
   onPrevious,
@@ -146,16 +156,29 @@ const DatePeriodFilter = ({
       }
     >
       <Stack
-        spacing={1.25}
+        spacing={toolbarGrid ? 0 : 1.25}
         direction={horizontal ? { xs: 'column', sm: 'row' } : 'column'}
-        sx={{ width: '100%', minWidth: 0 }}
+        sx={{
+          width: '100%',
+          minWidth: 0,
+          ...(toolbarGrid && { display: 'contents' }),
+        }}
       >
         <ToggleButtonGroup
           exclusive
           fullWidth
           size="small"
           color="primary"
-          sx={{ minWidth: 0, flex: 1 }}
+          sx={{
+            minWidth: 0,
+            flex: 1,
+            ...(toolbarGrid && {
+              gridColumn: 1,
+              gridRow: 1,
+              width: '100%',
+              '& > button': { flex: '1 1 0', width: 0, px: 1 },
+            }),
+          }}
           value={mode}
           onChange={(_event, nextMode: PeriodMode | null) => {
             if (nextMode) onModeChange(nextMode);
@@ -192,6 +215,13 @@ const DatePeriodFilter = ({
             width: '100%',
             minWidth: 0,
             flex: 1,
+            ...(toolbarGrid && {
+              gridColumn: 2,
+              gridRow: 1,
+              justifySelf: 'end',
+              maxWidth: 360,
+              gap: 1,
+            }),
           }}
         >
           <IconButton
@@ -200,7 +230,7 @@ const DatePeriodFilter = ({
               defaultMessage: 'Previous period',
             })}
             onClick={onPrevious}
-            sx={{ width: 44, height: 44 }}
+            sx={{ width: 44, height: 44, ...(toolbarGrid && periodCellStyles) }}
           >
             <ArrowBackIosNew fontSize="small" />
           </IconButton>
@@ -222,6 +252,7 @@ const DatePeriodFilter = ({
                 minHeight: 44,
                 px: 0.5,
                 textTransform: 'none',
+                ...(toolbarGrid && periodCellStyles),
               }}
             >
               <Typography
@@ -238,7 +269,16 @@ const DatePeriodFilter = ({
               variant="body1"
               align="center"
               noWrap
-              sx={{ px: 0.5, fontWeight: 500 }}
+              sx={{
+                px: 0.5,
+                fontWeight: 500,
+                ...(toolbarGrid && {
+                  ...periodCellStyles,
+                  minWidth: 0,
+                  height: 44,
+                  lineHeight: '42px',
+                }),
+              }}
             >
               {formattedRange}
             </Typography>
@@ -250,7 +290,7 @@ const DatePeriodFilter = ({
               defaultMessage: 'Next period',
             })}
             onClick={onNext}
-            sx={{ width: 44, height: 44 }}
+            sx={{ width: 44, height: 44, ...(toolbarGrid && periodCellStyles) }}
           >
             <ArrowForwardIos fontSize="small" />
           </IconButton>
