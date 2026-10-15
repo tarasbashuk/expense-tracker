@@ -1,19 +1,20 @@
 'use client';
 
+import ResponsiveDialog, {
+  FormTitle,
+} from '@/components/shared/ResponsiveDialog';
+
+import TagPicker from '../tags/TagPicker';
 import { useEffect, useState } from 'react';
+import { Currency, TransactionType } from '@prisma/client';
+import { QuickTransactionTemplate } from '@/lib/tags';
 import {
-  Currency,
-  QuickTransactionTemplate,
-  TransactionType,
-} from '@prisma/client';
-import {
+  Alert,
   Button,
   Box,
   ButtonBase,
-  Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   FormControl,
   IconButton,
   InputLabel,
@@ -28,7 +29,6 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { toast } from 'react-toastify';
 import { useIntl } from 'react-intl';
 
 import {
@@ -51,7 +51,6 @@ import {
   ChevronRight,
   Settings,
   Plus as AddIcon,
-  X as CloseIcon,
   ArrowDown as ArrowDownwardIcon,
   ArrowUp as ArrowUpwardIcon,
   Trash2 as DeleteIcon,
@@ -79,6 +78,8 @@ function TemplateEditorDialog({
   const {
     settings: { defaultCurrency, creditCardTrackingEnabled },
   } = useSettings();
+  const [error, setError] = useState('');
+  const [tagIds, setTagIds] = useState<string[]>([]);
   const [label, setLabel] = useState('');
   const [text, setText] = useState('');
   const [amount, setAmount] = useState<number | undefined>();
@@ -90,6 +91,8 @@ function TemplateEditorDialog({
   useEffect(() => {
     if (!open) return;
 
+    setError('');
+    setTagIds(template?.tags?.map(({ id }) => id) || []);
     setLabel(template?.label || '');
     setText(template?.text || '');
     setAmount(template?.amount ?? undefined);
@@ -109,9 +112,11 @@ function TemplateEditorDialog({
   };
 
   const handleSave = async () => {
+    setError('');
     setIsSaving(true);
     const input: QuickTransactionTemplateInput = {
       id: template?.id,
+      tagIds,
       label,
       text,
       amount,
@@ -123,7 +128,11 @@ function TemplateEditorDialog({
     setIsSaving(false);
 
     if (result.error) {
-      toast.error(result.error);
+      setError(
+        result.error.startsWith('tags.')
+          ? formatMessage({ id: result.error })
+          : result.error,
+      );
 
       return;
     }
@@ -135,7 +144,7 @@ function TemplateEditorDialog({
   };
 
   return (
-    <Dialog
+    <ResponsiveDialog
       open={open}
       onClose={(_, reason) => {
         if (reason === 'backdropClick') return;
@@ -145,26 +154,20 @@ function TemplateEditorDialog({
       fullWidth
       maxWidth="sm"
     >
-      <DialogTitle sx={{ position: 'relative', pr: 6 }}>
+      <FormTitle onClose={onClose} disabled={isSaving}>
         {formatMessage({
           id: template ? 'home.editQuickTemplate' : 'home.addQuickTemplate',
           defaultMessage: template
             ? 'Edit quick transaction'
             : 'Add quick transaction',
         })}
-        <IconButton
-          aria-label={formatMessage({
-            id: 'common.close',
-            defaultMessage: 'Close',
-          })}
-          onClick={onClose}
-          disabled={isSaving}
-          sx={{ position: 'absolute', right: 8, top: 8 }}
-        >
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
+      </FormTitle>
       <DialogContent>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
         <Stack spacing={2.5} mt={1}>
           <TextField
             label={formatMessage({
@@ -219,6 +222,7 @@ function TemplateEditorDialog({
             inputProps={{ maxLength: 160 }}
             required
           />
+          <TagPicker value={tagIds} onChange={setTagIds} disabled={isSaving} />
           <TextField
             label={formatMessage({
               id: 'home.optionalAmount',
@@ -249,7 +253,7 @@ function TemplateEditorDialog({
           {formatMessage({ id: 'common.save', defaultMessage: 'Save' })}
         </Button>
       </DialogActions>
-    </Dialog>
+    </ResponsiveDialog>
   );
 }
 
@@ -258,6 +262,7 @@ export default function QuickTransactions({
 }: {
   initialTemplates: QuickTransactionTemplate[];
 }) {
+  const [error, setError] = useState('');
   const { formatMessage } = useIntl();
   const [templates, setTemplates] = useState(initialTemplates);
   const [managerOpen, setManagerOpen] = useState(false);
@@ -286,6 +291,7 @@ export default function QuickTransactions({
             category: template.category,
             currency: template.currency,
             type: template.type,
+            tagIds: template.tags?.map(({ id }) => id) || [],
           }
         : null,
     );
@@ -327,7 +333,11 @@ export default function QuickTransactions({
     const result = await deleteQuickTransactionTemplate(template.id);
 
     if (result.error) {
-      toast.error(result.error);
+      setError(
+        result.error.startsWith('tags.')
+          ? formatMessage({ id: result.error })
+          : result.error,
+      );
 
       return;
     }
@@ -353,7 +363,11 @@ export default function QuickTransactions({
 
     if (result.error) {
       setTemplates(previous);
-      toast.error(result.error);
+      setError(
+        result.error.startsWith('tags.')
+          ? formatMessage({ id: result.error })
+          : result.error,
+      );
     }
   };
 
@@ -392,7 +406,14 @@ export default function QuickTransactions({
       <Stack
         gap={1}
         minWidth={0}
-        sx={{ flexDirection: { xs: 'column', sm: 'row' }, flexWrap: 'wrap' }}
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: 'minmax(0, 1fr)',
+            sm: 'repeat(2, minmax(0, 1fr))',
+            md: 'repeat(3, minmax(0, 1fr))',
+          },
+        }}
       >
         {templates.map((template) => (
           <ButtonBase
@@ -402,7 +423,7 @@ export default function QuickTransactions({
               ...cardStyles,
               p: 1.5,
               minHeight: 64,
-              width: { xs: '100%', sm: 300 },
+              width: '100%',
               maxWidth: '100%',
               gap: 1.5,
               textAlign: 'left',
@@ -495,8 +516,8 @@ export default function QuickTransactions({
         )}
       </Stack>
 
-      <Dialog
-        open={managerOpen}
+      <ResponsiveDialog
+        open={managerOpen && !editorOpen}
         onClose={(_, reason) => {
           if (reason === 'backdropClick') return;
 
@@ -505,23 +526,18 @@ export default function QuickTransactions({
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle sx={{ position: 'relative', pr: 6 }}>
+        <FormTitle onClose={() => setManagerOpen(false)}>
           {formatMessage({
             id: 'home.manageQuickTransactions',
             defaultMessage: 'Manage quick transactions',
           })}
-          <IconButton
-            aria-label={formatMessage({
-              id: 'common.close',
-              defaultMessage: 'Close',
-            })}
-            onClick={() => setManagerOpen(false)}
-            sx={{ position: 'absolute', right: 8, top: 8 }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
+        </FormTitle>
         <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
           {!templates.length ? (
             <Typography color="text.secondary">
               {formatMessage({
@@ -589,7 +605,7 @@ export default function QuickTransactions({
             {formatMessage({ id: 'common.close', defaultMessage: 'Close' })}
           </Button>
         </DialogActions>
-      </Dialog>
+      </ResponsiveDialog>
 
       <TemplateEditorDialog
         open={editorOpen}

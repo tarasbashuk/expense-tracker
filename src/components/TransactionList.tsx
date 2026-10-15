@@ -1,12 +1,12 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { toast } from 'react-toastify';
-import { Transaction } from '@prisma/client';
+import { toast } from '@/lib/toast';
+import { Transaction } from '@/lib/tags';
 import {
   Box,
   List,
   Typography,
-  CircularProgress,
+  Alert,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -17,8 +17,13 @@ import CloseIcon from '@mui/icons-material/Close';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { filterTransactions } from '@/lib/filterTransactions';
 
+import TransactionSkeleton, {
+  LoadingPlaceholder,
+} from './history/TransactionSkeleton';
+import { visuallyHidden } from '@mui/utils';
 import TransactionRows from './TransactionRows';
 import HistoryFiltersSheet from './history/HistoryFiltersSheet';
+import DesktopHistoryFilters from './history/DesktopHistoryFilters';
 import PeriodBalance from './history/PeriodBalance';
 import HistoryHeaderActions from './history/HistoryHeaderActions';
 import { historyColors, pageStyles, pageHeaderStyles } from './history/tokens';
@@ -78,7 +83,11 @@ const TransactionList = () => {
     requestTransactionsRefresh,
   } = useTransactions();
 
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<{ key: string; message: string } | null>(
+    null,
+  );
+  const [loadedKey, setLoadedKey] = useState('');
+  const [retry, setRetry] = useState(0);
   const [periodMode, setPeriodMode] = useState<PeriodMode>('month');
   const [anchorDate, setAnchorDate] = useState(
     () => getDefaultPeriod().anchorDate,
@@ -89,7 +98,7 @@ const TransactionList = () => {
   const [income, setIncome] = useState(0);
   const [expense, setExpense] = useState(0);
   const [viewType, setViewType] = useState(ViewType.List);
-  const [isLoading, setIsloading] = useState(false);
+  const [isLoading, setIsloading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<
     TransactionCategory | 'all'
   >('all');
@@ -97,8 +106,20 @@ const TransactionList = () => {
     TransactionType | 'all'
   >('all');
   const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSearch(searchInput), 300);
+
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
+  const [tagIds, setTagIds] = useState<string[]>([]);
   const [recurringOnly, setRecurringOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  useEffect(() => {
+    if (!isMobile) setFiltersOpen(false);
+  }, [isMobile]);
+
   const visibleTransactions = useMemo(
     () =>
       filterTransactions(
@@ -107,6 +128,7 @@ const TransactionList = () => {
         selectedCategory,
         selectedTransactionType,
         recurringOnly,
+        tagIds,
       ),
     [
       transactions,
@@ -114,6 +136,7 @@ const TransactionList = () => {
       selectedCategory,
       selectedTransactionType,
       recurringOnly,
+      tagIds,
     ],
   );
   const filteredSum = visibleTransactions.reduce(
@@ -131,6 +154,12 @@ const TransactionList = () => {
     [anchorDate, customRange, periodMode],
   );
 
+  const queryKey = `${selectedRange.start}/${selectedRange.end}`;
+  const hasCurrentData = loadedKey === queryKey;
+  const currentError = error?.key === queryKey ? error.message : '';
+  const pending = isLoading || (!hasCurrentData && !currentError);
+  const showSkeleton = !hasCurrentData && !currentError;
+
   const defaultPeriod = getDefaultPeriod();
   const isPeriodFiltered =
     periodMode !== 'month' ||
@@ -141,16 +170,14 @@ const TransactionList = () => {
     Number(selectedCategory !== 'all') +
     Number(selectedTransactionType !== 'all') +
     Number(Boolean(search.trim())) +
-    Number(recurringOnly);
+    Number(recurringOnly) +
+    Number(tagIds.length > 0);
   const hasFilters = activeFilterCount > 0;
 
   const resetFilters = () => {
-    const defaults = getDefaultPeriod();
-
-    setPeriodMode('month');
-    setAnchorDate(defaults.anchorDate);
-    setCustomRange(defaults.customRange);
+    setSearchInput('');
     setSearch('');
+    setTagIds([]);
     setRecurringOnly(false);
     setSelectedCategory('all');
     setSelectedTransactionType('all');
@@ -261,26 +288,36 @@ const TransactionList = () => {
     let isCurrentRequest = true;
 
     const fetchTrans = async () => {
-      const [transactionsResponse, incomeExpenseResponse] = await Promise.all([
-        getTransactions(selectedRange.start, selectedRange.end, true),
-        getIncomeExpense(selectedRange.start, selectedRange.end),
-      ]);
+      try {
+        const [transactionsResponse, incomeExpenseResponse] = await Promise.all(
+          [
+            getTransactions(selectedRange.start, selectedRange.end, true),
+            getIncomeExpense(selectedRange.start, selectedRange.end),
+          ],
+        );
 
-      if (!isCurrentRequest) return;
+        if (!isCurrentRequest) return;
 
-      const { transactions, error } = transactionsResponse;
-      const { income, expense } = incomeExpenseResponse;
+        if (transactionsResponse.error || incomeExpenseResponse.error) {
+          throw new Error('history.loadError');
+        }
 
-      setTransactions(transactions || []);
-      setIncome(income || 0);
-      setExpense(expense || 0);
-
-      setError(error || '');
-      setIsloading(false);
+        setTransactions(transactionsResponse.transactions || []);
+        setIncome(incomeExpenseResponse.income ?? 0);
+        setExpense(incomeExpenseResponse.expense ?? 0);
+        setLoadedKey(queryKey);
+      } catch {
+        if (isCurrentRequest) {
+          setError({ key: queryKey, message: 'history.loadError' });
+        }
+      } finally {
+        if (isCurrentRequest) setIsloading(false);
+      }
     };
 
+    setError(null);
     setIsloading(true);
-    fetchTrans();
+    void fetchTrans();
 
     return () => {
       isCurrentRequest = false;
@@ -290,10 +327,17 @@ const TransactionList = () => {
     selectedRange.start,
     setTransactions,
     transactionsRefreshKey,
+    queryKey,
+    retry,
   ]);
 
   return (
-    <Box sx={pageStyles}>
+    <Box
+      sx={{
+        ...pageStyles,
+        maxWidth: { xs: pageStyles.maxWidth, sm: '1034px' },
+      }}
+    >
       <Box sx={pageHeaderStyles}>
         <Typography
           variant="h4"
@@ -315,98 +359,170 @@ const TransactionList = () => {
         <HistoryHeaderActions />
       </Box>
       <Stack direction="column" spacing={2} sx={{ width: '100%', minWidth: 0 }}>
-        <DatePeriodFilter
-          compact
-          horizontal
-          mode={periodMode}
-          range={selectedRange}
-          onModeChange={handlePeriodModeChange}
-          onPrevious={() => shiftSelectedPeriod(-1)}
-          onNext={() => shiftSelectedPeriod(1)}
-          onCustomRangeChange={setCustomRange}
-        />
-
         <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            gap: 2,
-            alignItems: 'center',
-            flexWrap: 'wrap',
-          }}
+          sx={
+            isMobile
+              ? { display: 'flex', flexDirection: 'column', gap: 2 }
+              : {
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(300px, 40%) minmax(0, 1fr)',
+                  gap: 2,
+                  alignItems: 'center',
+                  minWidth: 0,
+                }
+          }
         >
-          {!isMobile && (
-            <TextField
-              placeholder={formatMessage({ id: 'history.search' })}
-              inputProps={{
-                'aria-label': formatMessage({ id: 'history.search' }),
-              }}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
+          <DatePeriodFilter
+            toolbarGrid={!isMobile}
+            compact
+            horizontal
+            mode={periodMode}
+            range={selectedRange}
+            onModeChange={handlePeriodModeChange}
+            onPrevious={() => shiftSelectedPeriod(-1)}
+            onNext={() => shiftSelectedPeriod(1)}
+            onCustomRangeChange={setCustomRange}
+          />
+
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: 2,
+              alignItems: 'center',
+              flexWrap: isMobile ? 'wrap' : 'nowrap',
+              minWidth: 0,
+              ...(!isMobile && { gridColumn: 2, gridRow: 2 }),
+            }}
+          >
+            {!isMobile && (
+              <TextField
+                placeholder={formatMessage({ id: 'history.search' })}
+                inputProps={{
+                  'aria-label': formatMessage({ id: 'history.search' }),
+                }}
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                size="small"
+                sx={{
+                  flex: '1 1 0',
+                  minWidth: 0,
+                  bgcolor: 'background.paper',
+                  borderRadius: '16px',
+                  '& .MuiInputBase-root': { height: 44 },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchInput ? (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label={formatMessage({
+                          id: 'history.clearSearch',
+                        })}
+                        onClick={() => {
+                          setSearchInput('');
+                          setSearch('');
+                        }}
+                      >
+                        <CloseIcon />
+                      </IconButton>
+                    </InputAdornment>
+                  ) : undefined,
+                }}
+              />
+            )}
+            {isMobile && (
+              <Button
+                variant="outlined"
+                startIcon={<FilterListIcon />}
+                onClick={() => setFiltersOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={filtersOpen}
+              >
+                {formatMessage(
+                  { id: 'history.filters' },
+                  { count: activeFilterCount },
+                )}
+              </Button>
+            )}
+            <ToggleButtonGroup
+              exclusive
               size="small"
-              sx={{ flex: '1 1 240px', bgcolor: 'background.paper' }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-                endAdornment: search ? (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label={formatMessage({
-                        id: 'history.clearSearch',
-                      })}
-                      onClick={() => setSearch('')}
-                    >
-                      <CloseIcon />
-                    </IconButton>
-                  </InputAdornment>
-                ) : undefined,
+              color="primary"
+              sx={
+                !isMobile
+                  ? {
+                      flexShrink: 0,
+                      height: 44,
+                      width: 88,
+                      '& > button': { width: 44 },
+                    }
+                  : undefined
+              }
+              value={viewType}
+              onChange={handleTypeChange}
+            >
+              <ToggleButton
+                value={ViewType.List}
+                aria-label={formatMessage({ id: 'history.listView' })}
+              >
+                <ViewListIcon />
+              </ToggleButton>
+              <ToggleButton
+                value={ViewType.Grid}
+                aria-label={formatMessage({ id: 'history.tableView' })}
+              >
+                <TableViewIcon />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+          {!isMobile && (
+            <DesktopHistoryFilters
+              toolbarGrid
+              value={{
+                type: selectedTransactionType,
+                category: selectedCategory,
+                tagIds,
+                recurringOnly,
+                search,
+              }}
+              creditCardTrackingEnabled={creditCardTrackingEnabled}
+              onChange={(filters) => {
+                setSelectedTransactionType(filters.type);
+                setSelectedCategory(filters.category);
+                setTagIds(filters.tagIds || []);
+                setRecurringOnly(filters.recurringOnly);
               }}
             />
           )}
-          <Button
-            variant="outlined"
-            startIcon={<FilterListIcon />}
-            onClick={() => setFiltersOpen(true)}
-            aria-haspopup="dialog"
-            aria-expanded={filtersOpen}
-          >
-            {formatMessage(
-              { id: 'history.filters' },
-              { count: activeFilterCount },
-            )}
-          </Button>
-          <ToggleButtonGroup
-            exclusive
-            size="small"
-            color="primary"
-            value={viewType}
-            onChange={handleTypeChange}
-          >
-            <ToggleButton
-              value={ViewType.List}
-              aria-label={formatMessage({ id: 'history.listView' })}
-            >
-              <ViewListIcon />
-            </ToggleButton>
-            <ToggleButton
-              value={ViewType.Grid}
-              aria-label={formatMessage({ id: 'history.tableView' })}
-            >
-              <TableViewIcon />
-            </ToggleButton>
-          </ToggleButtonGroup>
         </Box>
-        <PeriodBalance income={income} expense={expense} />
-        {filtersOpen && (
+        {!isMobile &&
+          (searchInput.trim() ||
+            selectedCategory !== 'all' ||
+            selectedTransactionType !== 'all' ||
+            recurringOnly ||
+            tagIds.length > 0) && (
+            <Button onClick={resetFilters} sx={{ alignSelf: 'flex-start' }}>
+              {formatMessage({ id: 'history.resetFilters' })}
+            </Button>
+          )}
+        <PeriodBalance
+          income={hasCurrentData ? income : null}
+          expense={hasCurrentData ? expense : null}
+          loading={showSkeleton}
+        />
+        {filtersOpen && isMobile && (
           <HistoryFiltersSheet
             desktop={!isMobile}
             value={{
               type: selectedTransactionType,
               category: selectedCategory,
               recurringOnly,
+              tagIds,
               search,
             }}
             creditCardTrackingEnabled={creditCardTrackingEnabled}
@@ -415,20 +531,16 @@ const TransactionList = () => {
               setSelectedTransactionType(filters.type);
               setSelectedCategory(filters.category);
               setRecurringOnly(filters.recurringOnly);
+              setTagIds(filters.tagIds || []);
 
-              if (isMobile) setSearch(filters.search);
+              if (isMobile) {
+                setSearchInput(filters.search);
+                setSearch(filters.search);
+              }
 
               setFiltersOpen(false);
             }}
           />
-        )}
-        {hasFilters && !isMobile && (
-          <Button onClick={resetFilters} sx={{ alignSelf: 'flex-start' }}>
-            {formatMessage({
-              id: 'history.resetFilters',
-              defaultMessage: 'Reset search and filters',
-            })}
-          </Button>
         )}
         {hasFilters && (
           <Box
@@ -453,65 +565,96 @@ const TransactionList = () => {
                 defaultMessage: 'Net total for matching transactions:',
               })}
             </Typography>
-            <Typography
-              variant="body1"
-              color={
-                filteredSum >= 0
-                  ? historyColors.income
-                  : historyColors.negativeBalance
-              }
-              sx={{ fontWeight: 'bold' }}
-            >
-              {filteredSum >= 0 ? '+' : ''}
-              {filteredSum.toFixed(2)}{' '}
-              {CURRENCY_SYMBOL_MAP[settings.defaultCurrency]}
-            </Typography>
+            {showSkeleton ? (
+              <LoadingPlaceholder width={130} height={20} />
+            ) : !hasCurrentData ? (
+              <Typography>—</Typography>
+            ) : (
+              <Typography
+                variant="body1"
+                color={
+                  filteredSum >= 0
+                    ? historyColors.income
+                    : historyColors.negativeBalance
+                }
+                sx={{ fontWeight: 'bold' }}
+              >
+                {filteredSum >= 0 ? '+' : ''}
+                {filteredSum.toFixed(2)}{' '}
+                {CURRENCY_SYMBOL_MAP[settings.defaultCurrency]}
+              </Typography>
+            )}
           </Box>
         )}
       </Stack>
 
-      {error && (
-        <Typography role="alert" color="error" my={4}>
-          {error}
-        </Typography>
-      )}
+      <Box role="status" sx={visuallyHidden}>
+        {pending
+          ? formatMessage({
+              id: hasCurrentData ? 'history.refreshing' : 'history.loading',
+            })
+          : ''}
+      </Box>
+      <Box
+        aria-busy={pending}
+        aria-label={formatMessage({ id: 'transactions.title' })}
+      >
+        {currentError && (
+          <Alert
+            severity="error"
+            sx={{ my: 2 }}
+            action={
+              <Button
+                color="inherit"
+                onClick={() => setRetry((value) => value + 1)}
+              >
+                {formatMessage({ id: 'history.retry' })}
+              </Button>
+            }
+          >
+            {formatMessage({
+              id: hasCurrentData ? 'history.refreshError' : 'history.loadError',
+            })}
+          </Alert>
+        )}
 
-      {isLoading && !transactions.length && <CircularProgress sx={{ my: 5 }} />}
+        {showSkeleton && <TransactionSkeleton />}
 
-      {!error && !visibleTransactions.length && !isLoading && (
-        <Typography variant="h5" component="p" gutterBottom mt={4}>
-          {formatMessage({
-            id: hasFilters ? 'history.noMatches' : 'transactions.noRecords',
-            defaultMessage: hasFilters
-              ? 'No matching transactions in this period'
-              : 'No records for selected period',
-          })}
-        </Typography>
-      )}
+        {hasCurrentData && !visibleTransactions.length && (
+          <Typography variant="h5" component="p" gutterBottom mt={4}>
+            {formatMessage({
+              id: hasFilters ? 'history.noMatches' : 'transactions.noRecords',
+              defaultMessage: hasFilters
+                ? 'No matching transactions in this period'
+                : 'No records for selected period',
+            })}
+          </Typography>
+        )}
 
-      {!error && !!visibleTransactions.length && (
-        <>
-          {viewType === ViewType.Grid ? (
-            <TransactionsDataGrid
-              rows={visibleTransactions}
-              isLoading={isLoading}
-              handleEdit={handleEditTransaction}
-              handleCopy={handleCopyTransaction}
-              handleDelete={handleDeleteTransaction}
-            />
-          ) : (
-            <List>
-              <TransactionRows
-                stickyDates
-                transactions={visibleTransactions}
+        {hasCurrentData && !!visibleTransactions.length && (
+          <>
+            {viewType === ViewType.Grid ? (
+              <TransactionsDataGrid
+                rows={visibleTransactions}
+                isLoading={false}
                 handleEdit={handleEditTransaction}
                 handleCopy={handleCopyTransaction}
                 handleDelete={handleDeleteTransaction}
               />
-            </List>
-          )}
-        </>
-      )}
+            ) : (
+              <List>
+                <TransactionRows
+                  stickyDates
+                  transactions={visibleTransactions}
+                  handleEdit={handleEditTransaction}
+                  handleCopy={handleCopyTransaction}
+                  handleDelete={handleDeleteTransaction}
+                />
+              </List>
+            )}
+          </>
+        )}
+      </Box>
     </Box>
   );
 };

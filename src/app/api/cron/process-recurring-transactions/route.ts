@@ -68,6 +68,7 @@ export async function GET(request: NextRequest) {
     // Credit income rows are generated from credit expense rows and must never
     // become recurring sources themselves, including legacy unlinked rows.
     const recurringTransactions = await db.transaction.findMany({
+      include: { tags: true },
       where: {
         isRecurring: true,
         date: {
@@ -189,6 +190,12 @@ export async function GET(request: NextRequest) {
 
       const newTransaction = await db.transaction.create({
         data: {
+          tags: {
+            connect: (transaction.tags || [])
+              .filter((tag) => tag.userId === transaction.userId)
+              .slice(0, 2)
+              .map(({ id }) => ({ id })),
+          },
           text: transaction.text,
           amount: transaction.amount,
           amountDefaultCurrency,

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { toast } from 'react-toastify';
+import { toast } from '@/lib/toast';
 import {
   Box,
   Card,
@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { red } from '@mui/material/colors';
 import { FormattedMessage, useIntl } from 'react-intl';
-import { Transaction } from '@prisma/client';
+import { Transaction } from '@/lib/tags';
 
 import getRecurringTransactions from '@/app/actions/getRecurringTransactions';
 import getMonthlyForecast from '@/app/actions/getMonthlyForecast';

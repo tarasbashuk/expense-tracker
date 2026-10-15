@@ -1,12 +1,12 @@
 'use client';
 
-import { Transaction } from '@prisma/client';
+import { Transaction } from '@/lib/tags';
 import { Box, Button, List, Typography } from '@mui/material';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { NavigationPath } from '@/constants/types';
 import { useIntl } from 'react-intl';
-import { toast } from 'react-toastify';
+import { toast } from '@/lib/toast';
 import { useRouter } from 'next/navigation';
 
 import TransactionRows from '@/components/TransactionRows';

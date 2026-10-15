@@ -7,9 +7,11 @@ import {
   Dispatch,
   SetStateAction,
 } from 'react';
-import { Currency, Transaction, TransactionType } from '@prisma/client';
+import { Currency, TransactionType } from '@prisma/client';
+import { Transaction } from '@/lib/tags';
 
 export type TransactionDraft = {
+  tagIds?: string[];
   text: string;
   amount?: number;
   category: string;

@@ -1,8 +1,10 @@
 'use server';
+import { ownedTagConnections } from '@/lib/tagOwnership';
 import { revalidatePath } from 'next/cache';
 import { currentUser } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
-import { Transaction, TransactionType } from '@prisma/client';
+import { TransactionType } from '@prisma/client';
+import { Transaction } from '@/lib/tags';
 import { IncomeCategory, TransactionFormData } from '@/constants/types';
 import { decrypt, decryptFloat, encrypt, encryptFloat } from '@/lib/crypto';
 import { isCreditCardCategory } from '@/constants/constants';
@@ -17,6 +19,21 @@ export async function addUpdateTransaction(
   isDefaultAmountRequired: boolean,
   transactionId?: string,
 ): Promise<TransactionResult> {
+  const tagIds = formData.tagIds;
+  // Accept only editable scalar fields; never trust client-supplied relations or ownership.
+  formData = {
+    text: formData.text,
+    date: formData.date,
+    amount: formData.amount,
+    category: formData.category,
+    currency: formData.currency,
+    type: formData.type,
+    amountDefaultCurrency: formData.amountDefaultCurrency,
+    isCreditTransaction: formData.isCreditTransaction,
+    isRecurring: formData.isRecurring,
+    recurringEndDate: formData.recurringEndDate,
+  };
+
   const {
     text,
     date,
@@ -109,97 +126,109 @@ export async function addUpdateTransaction(
   }
 
   try {
-    let transactionData;
+    const transactionData = await db.$transaction(async (tx) => {
+      const tags = await ownedTagConnections(tx, userId, tagIds);
+      let transactionData;
 
-    if (transactionId) {
-      transactionData = await db.transaction.update({
-        where: {
-          id: transactionId,
-        },
-        data: {
-          ...formData,
-          amountDefaultCurrency: amountDefaultCurrencyValue,
-          isRecurring: isRecurring || false,
-          recurringEndDate: recurringEndDate || null,
-        },
-      });
+      if (transactionId) {
+        transactionData = await tx.transaction.update({
+          include: { tags: true },
+          where: {
+            id: transactionId,
+            userId,
+          },
+          data: {
+            ...formData,
+            amountDefaultCurrency: amountDefaultCurrencyValue,
+            tags: { set: tags },
+            isRecurring: isRecurring || false,
+            recurringEndDate: recurringEndDate || null,
+          },
+        });
 
-      const expenseTransaction = await db.transaction.findUnique({
-        where: {
-          CCExpenseTransactionId: transactionId,
-        },
-      });
-      const isExpenseTransactionExist = expenseTransaction !== null;
+        const expenseTransaction = await tx.transaction.findUnique({
+          where: {
+            CCExpenseTransactionId: transactionId,
+            userId,
+          },
+        });
+        const isExpenseTransactionExist = expenseTransaction !== null;
 
-      const transactionBecomeNonCredit =
-        !formData.isCreditTransaction && isExpenseTransactionExist;
+        const transactionBecomeNonCredit =
+          !formData.isCreditTransaction && isExpenseTransactionExist;
 
-      //If CC is used we update a credit income transaction under the hood
-      if (isCreditExpenseTransaction && !transactionBecomeNonCredit) {
-        // This could happen when a user first create a non-credit transaction, but than change it to a credit one
-        if (isExpenseTransactionExist) {
-          await db.transaction.update({
+        //If CC is used we update a credit income transaction under the hood
+        if (isCreditExpenseTransaction && !transactionBecomeNonCredit) {
+          // This could happen when a user first create a non-credit transaction, but than change it to a credit one
+          if (isExpenseTransactionExist) {
+            await tx.transaction.update({
+              where: {
+                CCExpenseTransactionId: transactionId,
+                userId,
+              },
+              data: {
+                currency: formData.currency,
+                amount: formData.amount,
+                date: formData.date,
+                text: creditIncomeText,
+                amountDefaultCurrency: amountDefaultCurrencyValue,
+              },
+            });
+          } else {
+            await tx.transaction.create({
+              data: {
+                ...formData,
+                userId,
+                category: IncomeCategory.CreditReceived,
+                type: TransactionType.Income,
+                text: creditIncomeText,
+                CCExpenseTransactionId: transactionId,
+                amountDefaultCurrency: amountDefaultCurrencyValue,
+              },
+            });
+          }
+        }
+
+        // if a user change transaction for a non-credit we need to delete income counterpart
+        if (transactionBecomeNonCredit) {
+          await tx.transaction.delete({
             where: {
               CCExpenseTransactionId: transactionId,
-            },
-            data: {
-              currency: formData.currency,
-              amount: formData.amount,
-              date: formData.date,
-              text: creditIncomeText,
-              amountDefaultCurrency: amountDefaultCurrencyValue,
+              userId,
             },
           });
-        } else {
-          await db.transaction.create({
+        }
+      } else {
+        transactionData = await tx.transaction.create({
+          include: { tags: true },
+          data: {
+            ...formData,
+            userId,
+            amountDefaultCurrency: amountDefaultCurrencyValue,
+            tags: { connect: tags },
+            isRecurring: isRecurring || false,
+            recurringEndDate: recurringEndDate || null,
+          },
+        });
+
+        //If CC is used we create a credit income transaction under the hood
+        if (isCreditExpenseTransaction) {
+          await tx.transaction.create({
             data: {
               ...formData,
               userId,
               category: IncomeCategory.CreditReceived,
               type: TransactionType.Income,
               text: creditIncomeText,
-              CCExpenseTransactionId: transactionId,
+              CCExpenseTransactionId: transactionData.id,
               amountDefaultCurrency: amountDefaultCurrencyValue,
             },
           });
         }
       }
 
-      // if a user change transaction for a non-credit we need to delete income counterpart
-      if (transactionBecomeNonCredit) {
-        await db.transaction.delete({
-          where: {
-            CCExpenseTransactionId: transactionId,
-            userId,
-          },
-        });
-      }
-    } else {
-      transactionData = await db.transaction.create({
-        data: {
-          ...formData,
-          userId,
-          amountDefaultCurrency: amountDefaultCurrencyValue,
-          isRecurring: isRecurring || false,
-          recurringEndDate: recurringEndDate || null,
-        },
-      });
-
-      //If CC is used we create a credit income transaction under the hood
-      if (isCreditExpenseTransaction) {
-        await db.transaction.create({
-          data: {
-            ...formData,
-            userId,
-            category: IncomeCategory.CreditReceived,
-            type: TransactionType.Income,
-            text: creditIncomeText,
-            CCExpenseTransactionId: transactionData.id,
-            amountDefaultCurrency: amountDefaultCurrencyValue,
-          },
-        });
-      }
-    }
+      return transactionData;
+    });
 
     revalidatePath('/');
 
@@ -220,6 +249,11 @@ export async function addUpdateTransaction(
   } catch (error: any) {
     console.log('error', error);
 
-    return { error: error?.response?.message || 'Unable to save transaction' };
+    return {
+      error:
+        error instanceof Error && error.message.startsWith('tags.')
+          ? error.message
+          : 'Unable to save transaction',
+    };
   }
 }

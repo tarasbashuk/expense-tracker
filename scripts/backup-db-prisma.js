@@ -7,7 +7,8 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
+import { readBackupData, validateBackupData } from './backup-data.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,9 +22,11 @@ function loadEnvFile(filePath) {
     const content = fs.readFileSync(filePath, 'utf8');
     content.split('\n').forEach((line) => {
       const match = line.match(/^([^=:#]+)=(.*)$/);
+
       if (match) {
         const key = match[1].trim();
         const value = match[2].trim().replace(/^["']|["']$/g, '');
+
         if (!process.env[key]) {
           process.env[key] = value;
         }
@@ -39,6 +42,7 @@ const prisma = new PrismaClient();
 
 // Create backup directory
 const backupDir = path.join(__dirname, '../db_backups');
+
 if (!fs.existsSync(backupDir)) {
   fs.mkdirSync(backupDir, { recursive: true });
 }
@@ -65,32 +69,50 @@ async function createSQLBackup() {
 
   if (!DATABASE_URL) {
     console.warn('⚠️  DATABASE_URL not found, skipping SQL backup');
+
     return false;
   }
 
   try {
     console.log('📄 Creating SQL backup...');
-    execSync(
-      `pg_dump "${DATABASE_URL}" --no-owner --no-acl --clean --if-exists > "${sqlBackupFile}"`,
-      { stdio: 'pipe' },
-    );
+    const output = fs.openSync(sqlBackupFile, 'w');
+
+    try {
+      execFileSync(
+        'pg_dump',
+        [
+          '--dbname',
+          DATABASE_URL,
+          '--no-owner',
+          '--no-acl',
+          '--clean',
+          '--if-exists',
+        ],
+        { stdio: ['ignore', output, 'pipe'] },
+      );
+    } finally {
+      fs.closeSync(output);
+    }
 
     const stats = fs.statSync(sqlBackupFile);
     const fileSizeMB = (stats.size / (1024 * 1024)).toFixed(2);
     console.log(
       `✅ SQL backup created: ${path.basename(sqlBackupFile)} (${fileSizeMB} MB)`,
     );
+
     return true;
-  } catch (error) {
+  } catch {
     console.warn(
       '⚠️  SQL backup failed (this is OK if pg_dump version mismatch):',
     );
     console.warn(
       '   You can restore from JSON backup using: node scripts/restore-db-prisma.js',
     );
+
     if (fs.existsSync(sqlBackupFile)) {
       fs.unlinkSync(sqlBackupFile);
     }
+
     return false;
   }
 }
@@ -99,31 +121,12 @@ async function createJSONBackup() {
   try {
     console.log('📊 Creating JSON backup...');
 
-    // Export all data
-    const [
-      users,
-      transactions,
-      settings,
-      merchantCategoryRules,
-      quickTransactionTemplates,
-    ] = await Promise.all([
-      prisma.user.findMany(),
-      prisma.transaction.findMany(),
-      prisma.settings.findMany(),
-      prisma.merchantCategoryRule.findMany(),
-      prisma.quickTransactionTemplate.findMany(),
-    ]);
-
+    const data = validateBackupData(await readBackupData(prisma));
     const backup = {
+      version: 2,
       timestamp: new Date().toISOString(),
       description,
-      data: {
-        users,
-        transactions,
-        settings,
-        merchantCategoryRules,
-        quickTransactionTemplates,
-      },
+      data,
     };
 
     // Write to file
@@ -136,20 +139,22 @@ async function createJSONBackup() {
     console.log(
       `✅ JSON backup created: ${path.basename(jsonBackupFile)} (${fileSizeMB} MB)`,
     );
-    console.log(`   Users: ${users.length}`);
-    console.log(`   Transactions: ${transactions.length}`);
-    console.log(`   Settings: ${settings.length}`);
-    console.log(`   Merchant category rules: ${merchantCategoryRules.length}`);
-    console.log(
-      `   Quick transaction templates: ${quickTransactionTemplates.length}`,
-    );
+
+    for (const [model, rows] of Object.entries(data)) {
+      console.log(`   ${model}: ${rows.length}`);
+    }
+
     return true;
-  } catch (error) {
+  } catch {
     console.error('\n❌ JSON backup failed!');
-    console.error(error);
+    console.error(
+      'Database backup failed; check connectivity and schema version.',
+    );
+
     if (fs.existsSync(jsonBackupFile)) {
       fs.unlinkSync(jsonBackupFile);
     }
+
     return false;
   }
 }
@@ -161,6 +166,7 @@ async function createBackup() {
     const jsonSuccess = await createJSONBackup();
 
     console.log('\n' + '='.repeat(50));
+
     if (sqlSuccess && jsonSuccess) {
       console.log('✅ Both backups created successfully!');
       console.log(`   SQL: ${path.basename(sqlBackupFile)}`);
@@ -178,9 +184,11 @@ async function createBackup() {
       console.log('❌ Backup failed!');
       process.exit(1);
     }
-  } catch (error) {
+  } catch {
     console.error('\n❌ Backup failed!');
-    console.error(error);
+    console.error(
+      'Database backup failed; check connectivity and schema version.',
+    );
     process.exit(1);
   } finally {
     await prisma.$disconnect();

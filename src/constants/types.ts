@@ -58,6 +58,7 @@ export enum ExpenseCategory {
 export type TransactionCategory = IncomeCategory | ExpenseCategory;
 
 export interface TransactionFormData {
+  tagIds?: string[];
   date: Date;
   text: string;
   amount: number;

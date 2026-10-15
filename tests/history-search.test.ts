@@ -66,3 +66,69 @@ test('recurring-only intersects other filters and retains ended recurring histor
   expect(filtered).toEqual([rows[0]]);
   expect(unfiltered).toEqual(rows.slice(0, 3));
 });
+
+test('tag OR combines with search, category, type and recurrence AND without reordering', () => {
+  const tag = (id: string) => ({
+    id,
+    name: id,
+    normalizedName: id,
+    color: 'blue',
+    userId: 'test-user',
+  });
+  const rows = [
+    transaction({
+      id: 'first',
+      text: 'Coffee',
+      category: 'dining',
+      isRecurring: true,
+      tags: [tag('trip')],
+    }),
+    transaction({
+      id: 'second',
+      text: 'Coffee',
+      category: 'dining',
+      isRecurring: true,
+      tags: [tag('work')],
+    }),
+    transaction({
+      text: 'Coffee',
+      category: 'dining',
+      isRecurring: true,
+      tags: [tag('other')],
+    }),
+    transaction({
+      text: 'Coffee',
+      category: 'dining',
+      isRecurring: false,
+      tags: [tag('trip')],
+    }),
+    transaction({
+      text: 'Coffee',
+      category: 'dining',
+      type: 'Income',
+      isRecurring: true,
+      tags: [tag('trip')],
+    }),
+    transaction({
+      text: 'Coffee',
+      category: 'groceries',
+      isRecurring: true,
+      tags: [tag('trip')],
+    }),
+    transaction({
+      text: 'Tea',
+      category: 'dining',
+      isRecurring: true,
+      tags: [tag('trip')],
+    }),
+    transaction({ text: 'Coffee', category: 'dining', isRecurring: true }),
+  ];
+
+  expect(
+    filterTransactions(rows, 'coffee', 'dining', 'Expense', true, [
+      'trip',
+      'work',
+    ]),
+  ).toEqual(rows.slice(0, 2));
+  expect(filterTransactions(rows, '', 'all', 'all', false, [])).toEqual(rows);
+});

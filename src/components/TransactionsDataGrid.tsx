@@ -1,4 +1,6 @@
 'use client';
+import TagBadges from './tags/TagBadges';
+import { cardRadius } from './history/tokens';
 import { FC, useMemo } from 'react';
 import { Box, Typography, Tooltip } from '@mui/material';
 import {
@@ -9,7 +11,8 @@ import {
   gridPaginatedVisibleSortedGridRowEntriesSelector,
   useGridApiContext,
 } from '@mui/x-data-grid';
-import { Transaction, TransactionType } from '@prisma/client';
+import { TransactionType } from '@prisma/client';
+import { Transaction } from '@/lib/tags';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import { useIntl } from 'react-intl';
 
@@ -122,6 +125,12 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
       },
       {
         field: 'text',
+        renderCell: ({ row }) => (
+          <Box sx={{ py: 1, whiteSpace: 'normal', overflowWrap: 'anywhere' }}>
+            {row.text}
+            <TagBadges tags={row.tags} />
+          </Box>
+        ),
         headerName: formatMessage({
           id: 'grid.description',
           defaultMessage: 'Description',
@@ -245,10 +254,27 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
           width: '100%',
           backgroundColor: 'background.paper',
           marginTop: 2,
+          borderRadius: cardRadius,
+          overflow: 'hidden',
         }}
       >
         <DataGrid
+          sx={{
+            borderRadius: cardRadius,
+            overflow: 'hidden',
+            '& .MuiDataGrid-main': {
+              borderTopLeftRadius: 'inherit',
+              borderTopRightRadius: 'inherit',
+              overflow: 'hidden',
+            },
+            '& .MuiDataGrid-columnHeaders': {
+              borderTopLeftRadius: 'inherit',
+              borderTopRightRadius: 'inherit',
+              overflow: 'hidden',
+            },
+          }}
           rows={rows}
+          getRowHeight={() => 'auto'}
           columns={columns}
           loading={isLoading}
           initialState={{
@@ -262,7 +288,15 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
           disableRowSelectionOnClick
           slots={{
             footer: () => (
-              <Box position="relative">
+              <Box
+                position="relative"
+                sx={{
+                  borderBottomLeftRadius: cardRadius,
+                  borderBottomRightRadius: cardRadius,
+                  overflow: 'hidden',
+                  bgcolor: 'background.paper',
+                }}
+              >
                 <CurrentSum />
                 <GridFooter />
               </Box>

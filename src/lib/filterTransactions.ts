@@ -1,4 +1,5 @@
-import { Transaction, TransactionType } from '@prisma/client';
+import { TransactionType } from '@prisma/client';
+import { Transaction } from './tags';
 
 export function filterTransactions(
   transactions: Transaction[],
@@ -6,6 +7,7 @@ export function filterTransactions(
   category: string,
   type: TransactionType | 'all',
   recurringOnly = false,
+  tagIds: string[] = [],
 ): Transaction[] {
   const query = search.trim().normalize('NFC').toLocaleLowerCase();
 
@@ -20,8 +22,16 @@ export function filterTransactions(
 
     const matchesRecurring = !recurringOnly || transaction.isRecurring === true;
 
+    const matchesTags =
+      !tagIds.length ||
+      transaction.tags?.some((tag) => tagIds.includes(tag.id));
+
     return (
-      matchesDescription && matchesCategory && matchesType && matchesRecurring
+      matchesTags &&
+      matchesDescription &&
+      matchesCategory &&
+      matchesType &&
+      matchesRecurring
     );
   });
 }

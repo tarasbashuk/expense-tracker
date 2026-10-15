@@ -1,23 +1,25 @@
 'use client';
 
+import ResponsiveDialog, {
+  FormTitle,
+} from '@/components/shared/ResponsiveDialog';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Transaction } from '@prisma/client';
+import { Transaction } from '@/lib/tags';
 import {
   Alert,
   Button,
   Checkbox,
-  Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   FormControlLabel,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import { useIntl } from 'react-intl';
-import { toast } from 'react-toastify';
+import { toast } from '@/lib/toast';
 
 import { saveQuickTransactionTemplate } from '@/app/actions/quickTransactionTemplates';
 import { formatCurrency } from '@/lib/formatCurrency';
@@ -49,6 +51,7 @@ export default function SaveTransactionTemplate({
       const result = await saveQuickTransactionTemplate({
         label,
         text,
+        tagIds: transaction.tags?.map(({ id }) => id) || [],
         amount: includeAmount ? transaction.amount : undefined,
         category: transaction.category,
         currency: transaction.currency,
@@ -57,7 +60,9 @@ export default function SaveTransactionTemplate({
 
       if (result.error || !result.template) {
         setError(
-          result.error ||
+          (result.error?.startsWith('tags.')
+            ? formatMessage({ id: result.error })
+            : result.error) ||
             formatMessage({
               id: 'template.saveError',
               defaultMessage: 'Unable to save shortcut. Please try again.',
@@ -88,7 +93,7 @@ export default function SaveTransactionTemplate({
   };
 
   return (
-    <Dialog
+    <ResponsiveDialog
       open
       onClose={() => {
         if (!saving) onClose();
@@ -96,7 +101,9 @@ export default function SaveTransactionTemplate({
       fullWidth
       maxWidth="xs"
     >
-      <DialogTitle>{title}</DialogTitle>
+      <FormTitle onClose={onClose} disabled={saving}>
+        {title}
+      </FormTitle>
       <DialogContent>
         <Stack spacing={2} mt={1}>
           <Typography variant="body2" color="text.secondary">
@@ -177,6 +184,6 @@ export default function SaveTransactionTemplate({
           {formatMessage({ id: 'common.save', defaultMessage: 'Save' })}
         </Button>
       </DialogActions>
-    </Dialog>
+    </ResponsiveDialog>
   );
 }

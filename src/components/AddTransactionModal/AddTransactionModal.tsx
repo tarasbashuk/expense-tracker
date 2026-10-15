@@ -1,7 +1,7 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import Decimal from 'decimal.js';
-import { toast } from 'react-toastify';
+import { toast } from '@/lib/toast';
 import { SelectChangeEvent } from '@mui/material';
 import { isSameMonth, isSameYear } from 'date-fns';
 import { useIntl } from 'react-intl';
@@ -142,6 +142,12 @@ const AddTransactionModal: React.FC = () => {
       : amountDefaultCurrency;
   }
 
+  const [tagIds, setTagIds] = useState<string[]>(
+    selectedTransaction?.tags?.map(({ id }) => id) ||
+      transactionDraft?.tagIds ||
+      [],
+  );
+
   const [text, setText] = useState<string | undefined>(initialText);
   const [amount, setAmount] = useState<number | undefined>(initialAmount);
   const [amountDefaultCurrency, setAmountDefaultCurrency] = useState<
@@ -164,6 +170,8 @@ const AddTransactionModal: React.FC = () => {
   );
 
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const saving = useRef(false);
 
   const isBaseAmountShown = currency !== defaultCurrency;
 
@@ -250,100 +258,111 @@ const AddTransactionModal: React.FC = () => {
   // This is a rework of legacy implementaions from Brad Traversy cource,
   // TODO: think about using react-hook-form
   const clientAction = async () => {
+    if (saving.current) return;
+
+    saving.current = true;
     setIsSaving(true);
-    const formData: TransactionFormData = {
-      date,
-      currency,
-      category,
-      isCreditTransaction,
-      isRecurring,
-      recurringEndDate,
-      text: text as string,
-      type: transactionType,
-      amount: amount as number,
-      amountDefaultCurrency: amountDefaultCurrency as number,
-    };
-    const transactionId = !isCopyTransactionFlow
-      ? selectedTransaction?.id
-      : undefined;
+    setSaveError('');
 
-    const { data, error } = await addUpdateTransaction(
-      formData,
-      isBaseAmountShown,
-      transactionId,
-    );
+    try {
+      const formData: TransactionFormData = {
+        tagIds,
+        date,
+        currency,
+        category,
+        isCreditTransaction,
+        isRecurring,
+        recurringEndDate,
+        text: text as string,
+        type: transactionType,
+        amount: amount as number,
+        amountDefaultCurrency: amountDefaultCurrency as number,
+      };
+      const transactionId = !isCopyTransactionFlow
+        ? selectedTransaction?.id
+        : undefined;
 
-    if (error) {
-      toast.error(error);
-    } else if (data) {
-      toast.success(
-        formatMessage({
-          id: isEditMode ? 'addTransaction.saved' : 'addTransaction.added',
-          defaultMessage: isEditMode
-            ? 'Changes were saved'
-            : 'A transaction was added',
-        }),
+      const { data, error } = await addUpdateTransaction(
+        formData,
+        isBaseAmountShown,
+        transactionId,
       );
 
-      const isTrFromTheCurrentMonth = isSameMonth(
-        data.date,
-        transactions[0]?.date,
-      );
-      const isTrFromTheCurrentYear = isSameYear(
-        data.date,
-        transactions[0]?.date,
-      );
+      if (error) {
+        setSaveError(
+          error.startsWith('tags.') ? formatMessage({ id: error }) : error,
+        );
+      } else if (data) {
+        toast.success(
+          formatMessage({
+            id: isEditMode ? 'addTransaction.saved' : 'addTransaction.added',
+            defaultMessage: isEditMode
+              ? 'Changes were saved'
+              : 'A transaction was added',
+          }),
+        );
 
-      // No need to update transactions if a new transaction belongs to a different than the current year/month
-      if (isTrFromTheCurrentMonth && isTrFromTheCurrentYear) {
-        setTransactions((transactions) => {
-          const existingIndex = transactions.findIndex(
-            (tr) => tr.id === data.id,
-          );
+        const isTrFromTheCurrentMonth = isSameMonth(
+          data.date,
+          transactions[0]?.date,
+        );
+        const isTrFromTheCurrentYear = isSameYear(
+          data.date,
+          transactions[0]?.date,
+        );
 
-          let updatedTransactions;
+        // No need to update transactions if a new transaction belongs to a different than the current year/month
+        if (isTrFromTheCurrentMonth && isTrFromTheCurrentYear) {
+          setTransactions((transactions) => {
+            const existingIndex = transactions.findIndex(
+              (tr) => tr.id === data.id,
+            );
 
-          if (existingIndex !== -1) {
-            // Update the existing transaction
-            updatedTransactions = [
-              ...transactions.slice(0, existingIndex),
-              data,
-              ...transactions.slice(existingIndex + 1),
-            ];
-          } else {
-            // Add new transaction
-            updatedTransactions = [data, ...transactions];
-          }
+            let updatedTransactions;
 
-          // Sort transactions by date in descending order
-          updatedTransactions.sort(
-            (trA, trB) =>
-              new Date(trB.date).getTime() - new Date(trA.date).getTime(),
-          );
+            if (existingIndex !== -1) {
+              // Update the existing transaction
+              updatedTransactions = [
+                ...transactions.slice(0, existingIndex),
+                data,
+                ...transactions.slice(existingIndex + 1),
+              ];
+            } else {
+              // Add new transaction
+              updatedTransactions = [data, ...transactions];
+            }
 
-          return updatedTransactions;
-        });
+            // Sort transactions by date in descending order
+            updatedTransactions.sort(
+              (trA, trB) =>
+                new Date(trB.date).getTime() - new Date(trA.date).getTime(),
+            );
+
+            return updatedTransactions;
+          });
+        }
+        requestTransactionsRefresh();
+        handleClose();
       }
-      requestTransactionsRefresh();
-      handleClose();
+    } catch {
+      setSaveError(formatMessage({ id: 'common.saveFailed' }));
+    } finally {
+      saving.current = false;
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
-
-  useEffect(() => {
-    document.body.classList.add('hide-scroll');
-
-    return () => document.body.classList.remove('hide-scroll');
-  }, []);
 
   return (
     <AddTransactionModalView
+      tagIds={tagIds}
+      onTagsChange={setTagIds}
       text={text}
       date={date}
       amount={amount}
       category={category}
       currency={currency}
       isSubmitDisabled={isSaving}
+      saveError={saveError}
       transactionType={transactionType}
       isEditMode={isEditMode}
       isCopyMode={isCopyTransactionFlow}

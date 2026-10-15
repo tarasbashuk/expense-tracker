@@ -6,6 +6,7 @@ import {
   Select,
   SelectChangeEvent,
 } from '@mui/material';
+import { useId } from 'react';
 import { Language } from '@prisma/client';
 
 const LANGUAGE_OPTIONS = [
@@ -22,10 +23,12 @@ interface LanguageSelectProps {
 }
 
 const LanguageSelect = ({ value, label, onChange }: LanguageSelectProps) => {
+  const labelId = useId();
+
   return (
-    <FormControl variant="standard" fullWidth>
-      <InputLabel>{label}</InputLabel>
-      <Select value={value} onChange={onChange}>
+    <FormControl variant="outlined" fullWidth>
+      <InputLabel id={labelId}>{label}</InputLabel>
+      <Select labelId={labelId} label={label} value={value} onChange={onChange}>
         {LANGUAGE_OPTIONS.map((option) => (
           <MenuItem key={option.value} value={option.value}>
             {option.label}

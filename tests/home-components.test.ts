@@ -6,7 +6,7 @@ import userEvent from '@testing-library/user-event';
 import { IntlProvider } from 'react-intl';
 import { ThemeProvider } from '@mui/material/styles';
 import { afterEach, expect, test, vi } from 'vitest';
-import type { QuickTransactionTemplate } from '@prisma/client';
+import type { QuickTransactionTemplate } from '@/lib/tags';
 import QuickTransactions from '@/components/home/QuickTransactions';
 import HomeMonthlySummary from '@/components/home/HomeMonthlySummary';
 import BalanceView from '@/components/BalanceView';
@@ -19,6 +19,10 @@ const mocks = vi.hoisted(() => ({
   setTransactionDraft: vi.fn(),
   setIsCopyTransactionFlow: vi.fn(),
   setIsTransactionModalOpen: vi.fn(),
+}));
+
+vi.mock('@/app/actions/tags', () => ({
+  getTags: vi.fn().mockResolvedValue({ tags: [] }),
 }));
 
 vi.mock('@/context/TranasctionsContext', () => ({
@@ -45,6 +49,15 @@ vi.mock('@mui/x-date-pickers/LocalizationProvider', () => ({
 }));
 
 const template: QuickTransactionTemplate = {
+  tags: [
+    {
+      id: 'trip',
+      name: 'Trip',
+      normalizedName: 'trip',
+      color: 'blue',
+      userId: 'user',
+    },
+  ],
   id: 'one',
   userId: 'user',
   label: 'Donation 💙',
@@ -89,6 +102,7 @@ test('quick shortcut opens the original amount and currency draft without submit
     currency: 'UAH',
     category: 'donations',
     type: 'Expense',
+    tagIds: ['trip'],
   });
   expect(mocks.setTransactionId).toHaveBeenCalledWith(null);
   expect(mocks.setIsCopyTransactionFlow).toHaveBeenCalledWith(false);

@@ -1,4 +1,6 @@
 'use client';
+import { useAuth } from '@clerk/nextjs';
+import { TagCatalogProvider } from '@/components/tags/useTagCatalog';
 import { ThemeProvider } from '@mui/material/styles';
 import { appTheme } from '@/theme';
 import { IntlProvider } from 'react-intl';
@@ -10,6 +12,7 @@ export const ClientProviders = ({
 }: {
   children: React.ReactNode;
 }) => {
+  const { userId } = useAuth();
   const { locale } = useSettings();
 
   return (
@@ -19,7 +22,12 @@ export const ClientProviders = ({
         messages={messages[locale]}
         defaultLocale="en-US"
       >
-        {children}
+        <TagCatalogProvider
+          key={userId || 'signed-out'}
+          enabled={Boolean(userId)}
+        >
+          {children}
+        </TagCatalogProvider>
       </IntlProvider>
     </ThemeProvider>
   );

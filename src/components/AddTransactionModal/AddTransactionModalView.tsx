@@ -1,5 +1,10 @@
 'use client';
+import ResponsiveDialog, { FormTitle } from '../shared/ResponsiveDialog';
+import TagsAndRecurrence from './TagsAndRecurrence';
+import TagPicker from '../tags/TagPicker';
 import {
+  Alert,
+  CircularProgress,
   Button,
   Select,
   MenuItem,
@@ -9,18 +14,16 @@ import {
   OutlinedInput,
   InputAdornment,
   TextField,
-  Typography,
-  Dialog,
+  DialogContent,
+  Divider,
+  DialogActions,
   Box,
   Grid,
-  IconButton,
   SelectChangeEvent,
   FormControlLabel,
   Checkbox,
+  Switch,
 } from '@mui/material';
-import { cardRadius } from '../history/tokens';
-import CloseIcon from '@mui/icons-material/Close';
-import RepeatIcon from '@mui/icons-material/Repeat';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 
 import {
@@ -40,12 +43,9 @@ import TransactionTypeButtonGroup from '../shared/TransactionTypeButtonGroup';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { useCategoryI18n } from '@/lib/useCategoryI18n';
 
-const style = {
-  p: { xs: 2, sm: 3 },
-  borderRadius: cardRadius,
-};
-
 interface Props {
+  tagIds?: string[];
+  onTagsChange?: (_ids: string[]) => void;
   date: Date;
   text?: string;
   amount?: number;
@@ -54,6 +54,7 @@ interface Props {
   isEditMode: boolean;
   isCopyMode?: boolean;
   isSubmitDisabled: boolean;
+  saveError?: string;
   isBaseAmountShown: boolean;
   isCreditTransaction: boolean;
   creditCardTrackingEnabled: boolean;
@@ -80,6 +81,8 @@ interface Props {
 }
 
 const AddTransactionModalView: React.FC<Props> = ({
+  tagIds = [],
+  onTagsChange,
   date,
   text,
   amount,
@@ -89,6 +92,7 @@ const AddTransactionModalView: React.FC<Props> = ({
   isCopyMode = false,
   transactionType,
   isSubmitDisabled,
+  saveError,
   isBaseAmountShown,
   isCreditTransaction,
   creditCardTrackingEnabled,
@@ -129,53 +133,36 @@ const AddTransactionModalView: React.FC<Props> = ({
   const { getLabel } = useCategoryI18n();
 
   return (
-    <Dialog
-      fullWidth
-      maxWidth="sm"
+    <ResponsiveDialog
       open
+      maxWidth="sm"
       onClose={(_, reason) => {
-        if (reason === 'backdropClick') {
-          return;
-        }
-
-        handleClose();
+        if (reason !== 'backdropClick' && !isSubmitDisabled) handleClose();
       }}
-      aria-labelledby="modal-modal-title"
     >
-      <Box sx={style}>
-        <Stack direction="row" alignItems="center" spacing={2} marginBottom={3}>
-          <Typography
-            variant="h6"
-            component="h2"
-            id="modal-modal-title"
-            flexGrow={1}
-          >
-            {isCopyMode ? (
-              <FormattedMessage
-                id="home.repeatTransaction"
-                defaultMessage="Repeat transaction"
-              />
-            ) : isEditMode ? (
-              <FormattedMessage
-                id="addTransaction.editTitle"
-                defaultMessage="Edit transaction"
-              />
-            ) : (
-              <FormattedMessage
-                id="addTransaction.title"
-                defaultMessage="Add transaction"
-              />
-            )}
-          </Typography>
-          <IconButton
-            aria-label="close"
-            onClick={handleClose}
-            sx={{ position: 'absolute', top: 8, right: 8 }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </Stack>
-        <form>
+      <FormTitle onClose={handleClose} disabled={isSubmitDisabled}>
+        {formatMessage({
+          id: isCopyMode
+            ? 'home.repeatTransaction'
+            : isEditMode
+              ? 'addTransaction.editTitle'
+              : 'addTransaction.title',
+        })}
+      </FormTitle>
+      <DialogContent>
+        {saveError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {saveError}
+          </Alert>
+        )}
+        <form
+          id="transaction-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+
+            if (!isSubmitDisabled) onSubmit();
+          }}
+        >
           <Grid container spacing={2} justifyContent="space-between">
             <Grid item xs={12} sm={8}>
               <TransactionTypeButtonGroup
@@ -205,7 +192,7 @@ const AddTransactionModalView: React.FC<Props> = ({
               />
             </Grid>
 
-            <Grid item xs={12} sm={8}>
+            <Grid item xs={8}>
               <FormControl required fullWidth variant="outlined">
                 <InputLabel htmlFor="amount">
                   <FormattedMessage
@@ -230,7 +217,7 @@ const AddTransactionModalView: React.FC<Props> = ({
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={4}>
               <CurrencySelect
                 value={currency}
                 onChange={handleCurrencyChange}
@@ -239,7 +226,7 @@ const AddTransactionModalView: React.FC<Props> = ({
 
             {isBaseAmountShown && (
               <>
-                <Grid item xs={12} sm={8}>
+                <Grid item xs={8}>
                   <FormControl required fullWidth variant="outlined">
                     <InputLabel htmlFor="amountDefaultCurrency">
                       <FormattedMessage
@@ -264,7 +251,7 @@ const AddTransactionModalView: React.FC<Props> = ({
                   </FormControl>
                 </Grid>
 
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={4}>
                   <FormControl variant="outlined" fullWidth>
                     <InputLabel>
                       <FormattedMessage
@@ -336,8 +323,8 @@ const AddTransactionModalView: React.FC<Props> = ({
               />
             </Grid>
 
-            <Grid item xs={12}>
-              {creditCardTrackingEnabled && (
+            {creditCardTrackingEnabled && (
+              <Grid item xs={12}>
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -357,77 +344,103 @@ const AddTransactionModalView: React.FC<Props> = ({
                     </Box>
                   }
                 />
-              )}
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={isRecurring || false}
-                    onChange={handleIsRecurringChange}
-                  />
-                }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <RepeatIcon
-                      sx={{ fontSize: '1.2rem', color: 'success.main' }}
-                    />
-                    <FormattedMessage
-                      id="addTransaction.recurring"
-                      defaultMessage="Recurring (monthly)"
-                    />
-                  </Box>
-                }
-              />
-            </Grid>
-
-            {isRecurring && (
-              <Grid item xs={12}>
-                <DatePicker
-                  label={formatMessage({
-                    id: 'addTransaction.endDate',
-                    defaultMessage: 'End date',
-                  })}
-                  name="recurringEndDate"
-                  value={recurringEndDate || null}
-                  onChange={handleRecurringEndDateChange}
-                  format={DATE_FORMATS.YYYY_MM_DD}
-                  slotProps={{
-                    textField: {
-                      helperText: formatMessage({
-                        id: 'addTransaction.recurringHint',
-                        defaultMessage:
-                          'Leave empty if you want the transaction to repeat indefinitely',
-                      }),
-                    },
-                  }}
-                />
               </Grid>
             )}
-
-            <Grid item xs={12} sm={6} marginTop={2} sx={{ marginLeft: 'auto' }}>
-              <Button
-                fullWidth
-                type="submit"
-                variant="contained"
-                onClick={onSubmit}
-                disabled={isSubmitDisabled}
+            <Grid item xs={12}>
+              <TagsAndRecurrence
+                isEditMode={isEditMode}
+                tagCount={tagIds.length}
+                recurring={Boolean(isRecurring)}
               >
-                {isEditMode ? (
-                  <FormattedMessage
-                    id="addTransaction.save"
-                    defaultMessage="Save"
-                  />
-                ) : (
-                  <FormattedMessage
-                    id="addTransaction.add"
-                    defaultMessage="Add transaction"
-                  />
-                )}
-              </Button>
+                <Grid container spacing={2}>
+                  {onTagsChange && (
+                    <Grid item xs={12}>
+                      <TagPicker
+                        value={tagIds}
+                        onChange={onTagsChange}
+                        disabled={isSubmitDisabled}
+                      />
+                    </Grid>
+                  )}
+
+                  <Grid item xs={12}>
+                    {onTagsChange && <Divider sx={{ mb: 1 }} />}
+                    <FormControlLabel
+                      labelPlacement="start"
+                      sx={{
+                        width: '100%',
+                        mx: 0,
+                        justifyContent: 'space-between',
+                      }}
+                      control={
+                        <Switch
+                          checked={isRecurring || false}
+                          onChange={handleIsRecurringChange}
+                          inputProps={{ role: 'switch' }}
+                        />
+                      }
+                      label={
+                        <FormattedMessage
+                          id="addTransaction.recurring"
+                          defaultMessage="Recurring (monthly)"
+                        />
+                      }
+                    />
+                  </Grid>
+
+                  {isRecurring && (
+                    <Grid item xs={12}>
+                      <DatePicker
+                        label={formatMessage({
+                          id: 'addTransaction.endDate',
+                          defaultMessage: 'End date',
+                        })}
+                        name="recurringEndDate"
+                        value={recurringEndDate || null}
+                        onChange={handleRecurringEndDateChange}
+                        format={DATE_FORMATS.YYYY_MM_DD}
+                        slotProps={{
+                          textField: {
+                            helperText: formatMessage({
+                              id: 'addTransaction.recurringHint',
+                              defaultMessage:
+                                'Leave empty if you want the transaction to repeat indefinitely',
+                            }),
+                          },
+                        }}
+                      />
+                    </Grid>
+                  )}
+                </Grid>
+              </TagsAndRecurrence>
             </Grid>
           </Grid>
         </form>
-      </Box>
-    </Dialog>
+      </DialogContent>
+      <DialogActions>
+        <Button
+          fullWidth
+          type="submit"
+          form="transaction-form"
+          variant="contained"
+          disabled={isSubmitDisabled}
+          aria-busy={isSubmitDisabled}
+          startIcon={
+            isSubmitDisabled ? (
+              <CircularProgress size={18} color="inherit" aria-hidden="true" />
+            ) : undefined
+          }
+        >
+          {formatMessage({
+            id: isSubmitDisabled
+              ? 'common.saving'
+              : isEditMode
+                ? 'addTransaction.save'
+                : 'addTransaction.add',
+          })}
+        </Button>
+      </DialogActions>
+    </ResponsiveDialog>
   );
 };
 

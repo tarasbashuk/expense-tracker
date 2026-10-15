@@ -2,10 +2,15 @@
 
 import { createElement, type ReactNode, type ComponentProps } from 'react';
 import type DatePeriodFilter from '@/components/shared/DatePeriodFilter';
-import { dateKeyFromLocalDate, getPeriodRange } from '@/lib/dateRange';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import {
+  cleanup,
+  render as rtlRender,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { IntlProvider } from 'react-intl';
+import { TagCatalogProvider } from '@/components/tags/useTagCatalog';
 import { messages } from '@/locales';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { Transaction } from '@prisma/client';
@@ -16,6 +21,9 @@ import MobileTransactionItem from '@/components/history/MobileTransactionItem';
 import PeriodBalance from '@/components/history/PeriodBalance';
 import HistoryFiltersSheet from '@/components/history/HistoryFiltersSheet';
 import RecentTransactions from '@/components/home/RecentTransactions';
+
+const render = (element: ReactNode) =>
+  rtlRender(element, { wrapper: TagCatalogProvider });
 
 const mocks = vi.hoisted(() => ({
   saveTemplate: vi.fn(),
@@ -31,6 +39,20 @@ const mocks = vi.hoisted(() => ({
   deleteTransaction: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
+}));
+
+vi.mock('@/app/actions/tags', () => ({
+  getTags: vi.fn().mockResolvedValue({
+    tags: [
+      {
+        id: 'trip',
+        name: 'Trip',
+        normalizedName: 'trip',
+        color: 'blue',
+        userId: 'owner',
+      },
+    ],
+  }),
 }));
 
 vi.mock('@/context/SettingsContexts', () => ({
@@ -118,7 +140,7 @@ vi.mock('@/app/actions/deleteTransaction', () => ({
   default: mocks.deleteTransaction,
 }));
 
-vi.mock('react-toastify', () => ({
+vi.mock('@/lib/toast', () => ({
   toast: { success: mocks.success, error: mocks.error },
 }));
 
@@ -333,7 +355,7 @@ test('description search filters locally and clearing restores results without a
     'missing',
   );
 
-  expect(screen.queryByText('Coffee')).toBeNull();
+  await waitFor(() => expect(screen.queryByText('Coffee')).toBeNull());
   expect(
     screen.getByText('No matching transactions in this period'),
   ).toBeTruthy();
@@ -357,6 +379,7 @@ test('saving a shortcut copies original currency and amount rather than the conv
   expect(mocks.saveTemplate).toHaveBeenCalledExactlyOnceWith({
     label: 'Coffee',
     text: 'Coffee',
+    tagIds: [],
     amount: 20,
     currency: 'PLN',
     category: 'dining',
@@ -386,13 +409,14 @@ test('shortcut can omit the amount and preserves the dialog on failure', async (
   expect(mocks.refresh).not.toHaveBeenCalled();
 });
 
-test('desktop search is directly available while additional filters are closed', async () => {
+test('desktop search and additional filters are directly available', async () => {
   const user = userEvent.setup();
   await renderHistory();
   const search = screen.getByRole('textbox', { name: 'Search descriptions' });
 
   expect(screen.queryByRole('dialog')).toBeNull();
-  expect(screen.queryByRole('combobox')).toBeNull();
+  expect(screen.getAllByRole('combobox')).toHaveLength(2);
+  expect(screen.queryByRole('button', { name: /^Filters/ })).toBeNull();
   expect(screen.queryByText('Entire selected period')).toBeNull();
 
   await user.type(search, 'Coffee');
@@ -426,20 +450,17 @@ test.each([
   'Year period',
   'Previous period',
   'Custom period',
-])('desktop %s resets to the current month', async (period) => {
+])('desktop reset preserves %s', async (period) => {
   const user = userEvent.setup();
   await renderHistory();
-  const today = dateKeyFromLocalDate(new Date());
-  const expected = getPeriodRange('month', today, {
-    start: today,
-    end: today,
-  });
-
   await user.click(screen.getByRole('button', { name: period }));
+  await waitFor(() => expect(mocks.getTransactions).toHaveBeenCalledTimes(2));
+  const selectedPeriod = screen.getByTestId('selected-period').textContent;
+  const periodRequest = mocks.getTransactions.mock.calls.at(-1);
 
   expect(
-    screen.getByRole('button', { name: 'Reset search and filters' }),
-  ).toBeTruthy();
+    screen.queryByRole('button', { name: 'Reset search and filters' }),
+  ).toBeNull();
 
   await user.type(
     screen.getByRole('textbox', { name: 'Search descriptions' }),
@@ -455,7 +476,7 @@ test.each([
   );
 
   expect(screen.getByTestId('selected-period').textContent).toBe(
-    `month:${expected.start}:${expected.end}`,
+    selectedPeriod,
   );
   expect(
     screen.getByRole('textbox', { name: 'Search descriptions' }),
@@ -463,28 +484,18 @@ test.each([
   expect(
     screen.queryByRole('button', { name: 'Reset search and filters' }),
   ).toBeNull();
-  await waitFor(() =>
-    expect(mocks.getTransactions).toHaveBeenLastCalledWith(
-      expected.start,
-      expected.end,
-      true,
-    ),
-  );
+  expect(mocks.getTransactions).toHaveBeenCalledTimes(2);
+  expect(mocks.getTransactions.mock.calls.at(-1)).toEqual(periodRequest);
 });
 
-test('desktop recurring filter applies a draft, preserves search and resets without refetching', async () => {
+test('desktop recurring filter applies immediately, preserves search and resets without refetching', async () => {
   const user = userEvent.setup();
   await renderHistory();
   const calls = mocks.getTransactions.mock.calls.length;
   const search = screen.getByRole('textbox', { name: 'Search descriptions' });
 
   await user.type(search, 'Coffee');
-  await user.click(screen.getByRole('button', { name: 'Filters (1)' }));
   await user.click(screen.getByRole('checkbox', { name: 'Recurring only' }));
-
-  expect(screen.getByText('Coffee')).toBeTruthy();
-
-  await user.click(screen.getByRole('button', { name: 'Apply' }));
 
   expect((search as HTMLInputElement).value).toBe('Coffee');
   expect(
@@ -495,7 +506,6 @@ test('desktop recurring filter applies a draft, preserves search and resets with
   await user.click(
     screen.getByRole('button', { name: 'Reset search and filters' }),
   );
-  await user.click(screen.getByRole('button', { name: 'Filters (0)' }));
 
   expect(
     (
@@ -800,9 +810,12 @@ test('mobile header actions remain available when loading history fails', async 
   useMobileViewport();
   mocks.getTransactions.mockResolvedValue({ error: 'Database error' });
 
-  await renderHistory();
+  renderWithIntl(createElement(TransactionList));
+  await screen.findByRole('alert');
 
-  expect(screen.getByRole('alert').textContent).toBe('Database error');
+  expect(screen.getByRole('alert').textContent).toContain(
+    'Unable to load transactions',
+  );
   expect(screen.getByRole('button', { name: 'Add transaction' })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Import' })).toBeTruthy();
   expect(screen.queryByText('Coffee')).toBeNull();
@@ -881,4 +894,33 @@ test('desktop filter draft preserves a newer applied search', async () => {
     recurringOnly: true,
     search: 'new search',
   });
+});
+
+test('desktop tag filters update the net summary immediately, then reset', async () => {
+  const user = userEvent.setup();
+  await renderHistory();
+  const calls = mocks.getTransactions.mock.calls.length;
+
+  await user.click(screen.getByRole('combobox', { name: 'Tags' }));
+  await user.click(await screen.findByRole('option', { name: 'Trip' }));
+
+  await user.keyboard('{Escape}');
+
+  expect(screen.getByRole('combobox', { name: 'Tags' }).textContent).toBe(
+    'Trip',
+  );
+  await waitFor(() => expect(screen.queryByText('Coffee')).toBeNull());
+  expect(screen.getByText('Net total for matching transactions:')).toBeTruthy();
+  expect(screen.getByText('+0.00 €')).toBeTruthy();
+  expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
+
+  await user.click(
+    screen.getByRole('button', { name: 'Reset search and filters' }),
+  );
+
+  expect(screen.getByText('Coffee')).toBeTruthy();
+  expect(screen.getByRole('combobox', { name: 'Tags' }).textContent).toBe(
+    'All tags',
+  );
+  expect(screen.queryByText('Net total for matching transactions:')).toBeNull();
 });
