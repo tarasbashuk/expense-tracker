@@ -9,6 +9,14 @@ import DesktopHistoryFilters from '@/components/history/DesktopHistoryFilters';
 import type { HistoryFilters } from '@/components/history/HistoryFiltersSheet';
 import { messages } from '@/locales';
 
+// TagPicker imports TagEditor even when only filter controls are rendered.
+// Keep its server actions (Clerk/Prisma/Next) outside this UI test module graph.
+vi.mock('@/app/actions/tags', () => ({
+  getTags: vi.fn(),
+  saveTag: vi.fn(),
+  deleteTag: vi.fn(),
+}));
+
 vi.mock('@/components/tags/useTagCatalog', () => ({
   useTagCatalog: () => ({
     tags: ['Alpha', 'Beta', 'Gamma'].map((name) => ({

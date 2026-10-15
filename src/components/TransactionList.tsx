@@ -383,7 +383,7 @@ const TransactionList = () => {
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
               size="small"
-              sx={{ flex: '1 1 240px', bgcolor: 'background.paper' }}
+              sx={{ flex: '1 1 240px', bgcolor: 'background.paper', borderRadius: '16px' }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">

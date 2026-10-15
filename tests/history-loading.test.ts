@@ -16,6 +16,14 @@ import type DatePeriodFilter from '@/components/shared/DatePeriodFilter';
 import { messages } from '@/locales';
 import { transaction } from './fixtures';
 
+// TagPicker imports TagEditor even when only filter controls are rendered.
+// Keep its server actions (Clerk/Prisma/Next) outside this UI test module graph.
+vi.mock('@/app/actions/tags', () => ({
+  getTags: vi.fn(),
+  saveTag: vi.fn(),
+  deleteTag: vi.fn(),
+}));
+
 vi.mock('@/components/tags/useTagCatalog', () => ({
   useTagCatalog: () => ({ tags: [], loading: false, error: '' }),
 }));
