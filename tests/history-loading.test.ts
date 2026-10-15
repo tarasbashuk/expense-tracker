@@ -17,16 +17,23 @@ import { messages } from '@/locales';
 import { transaction } from './fixtures';
 
 vi.mock('@/app/actions/getTransactions', () => ({ default: vi.fn() }));
+
 vi.mock('@/app/actions/getIncomeExpense', () => ({ default: vi.fn() }));
+
 vi.mock('@/app/actions/deleteTransaction', () => ({ default: vi.fn() }));
+
 vi.mock('@/components/TransactionActionsMenu', () => ({ default: () => null }));
+
 vi.mock('@/components/history/HistoryHeaderActions', () => ({
   default: () => createElement('button', null, 'Add transaction'),
 }));
+
 vi.mock('@/components/TransactionsDataGrid', () => ({ default: () => null }));
+
 vi.mock('@/context/SettingsContexts', () => ({
   useSettings: () => ({ settings: { defaultCurrency: 'EUR' } }),
 }));
+
 vi.mock('@/components/shared/DatePeriodFilter', () => ({
   default: ({ onNext }: ComponentProps<typeof DatePeriodFilter>) =>
     createElement('button', { onClick: onNext }, 'Next month'),

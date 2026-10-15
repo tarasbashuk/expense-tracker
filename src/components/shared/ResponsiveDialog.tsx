@@ -142,7 +142,7 @@ export default function ResponsiveDialog({
   }, [open, mobile, mobileFullHeight]);
 
   useLayoutEffect(() => {
-    if (!open || !mobile || !mobileFullHeight) return;
+    if (!open || !mobile) return;
 
     if (!surface) return;
 
@@ -180,7 +180,7 @@ export default function ResponsiveDialog({
       cancelAnimationFrame(frame);
       surface.removeEventListener('focusin', scheduleReveal);
     };
-  }, [open, mobile, mobileFullHeight, viewport, step, surface]);
+  }, [open, mobile, viewport, step, surface]);
 
   const close: DialogProps['onClose'] = (event, reason) => {
     if (busy) return;

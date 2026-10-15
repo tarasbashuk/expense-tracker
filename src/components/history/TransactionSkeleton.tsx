@@ -11,7 +11,7 @@ export function LoadingPlaceholder(props: SkeletonProps) {
       animation="pulse"
       {...props}
       sx={{
-        bgcolor: '#E6EBF1',
+        bgcolor: historyColors.divider,
         '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
         ...props.sx,
       }}

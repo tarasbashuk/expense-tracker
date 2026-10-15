@@ -507,6 +507,17 @@ test.each([false, true])(
       expect(getComputedStyle(content).height).toBe('500px');
       expect(getComputedStyle(content).transform).toBe('translateY(0px)');
       expect(getComputedStyle(dialog).borderRadius).toBe('0px');
+    } else {
+      act(() => {
+        viewport.offsetTop = 120;
+        viewport.dispatchEvent(new Event('scroll'));
+      });
+
+      expect(getComputedStyle(dialog).bottom).toBe(
+        `${Math.max(0, window.innerHeight - 350 - 120)}px`,
+      );
+      expect(getComputedStyle(dialog).height).not.toBe('100dvh');
+      expect(getComputedStyle(dialog).borderRadius).toBe('20px 20px 0 0');
     }
 
     await user.click(screen.getByRole('button', { name: 'Done' }));
@@ -571,39 +582,45 @@ test.each([393, 402, 900])(
   },
 );
 
-test('full-height form reveals a lower focused input by scrolling only its content', async () => {
-  render(
-    translated(createElement(TransactionDraftForm, { mobileFullHeight: true })),
-  );
-  const input = screen.getByRole('textbox', { name: 'Description' });
-  const content = input.closest<HTMLElement>('.MuiDialogContent-root')!;
-  vi.spyOn(content, 'getBoundingClientRect').mockReturnValue({
-    top: 60,
-    bottom: 300,
-    height: 240,
-    left: 0,
-    right: 393,
-    width: 393,
-    x: 0,
-    y: 60,
-    toJSON: () => ({}),
-  });
-  vi.spyOn(input, 'getBoundingClientRect').mockReturnValue({
-    top: 420,
-    bottom: 460,
-    height: 40,
-    left: 0,
-    right: 393,
-    width: 393,
-    x: 0,
-    y: 420,
-    toJSON: () => ({}),
-  });
-  const pageScroll = window.scrollY;
+test.each([false, true])(
+  'mobile form reveals a lower focused input by scrolling only its content; full height=%s',
+  async (mobileFullHeight) => {
+    render(
+      translated(createElement(TransactionDraftForm, { mobileFullHeight })),
+    );
+    const input = screen.getByRole('textbox', { name: 'Description' });
+    const content = input.closest<HTMLElement>('.MuiDialogContent-root')!;
+    vi.spyOn(content, 'getBoundingClientRect').mockReturnValue({
+      top: 60,
+      bottom: 300,
+      height: 240,
+      left: 0,
+      right: 393,
+      width: 393,
+      x: 0,
+      y: 60,
+      toJSON: () => ({}),
+    });
+    vi.spyOn(input, 'getBoundingClientRect').mockReturnValue({
+      top: 420,
+      bottom: 460,
+      height: 40,
+      left: 0,
+      right: 393,
+      width: 393,
+      x: 0,
+      y: 420,
+      toJSON: () => ({}),
+    });
+    const pageScroll = window.scrollY;
 
-  act(() => input.focus());
+    act(() => input.focus());
 
-  await waitFor(() => expect(content.scrollTop).toBe(172));
-  expect(window.scrollY).toBe(pageScroll);
-  expect(getComputedStyle(screen.getByRole('dialog')).top).toBe('0px');
-});
+    await waitFor(() => expect(content.scrollTop).toBe(172));
+    expect(window.scrollY).toBe(pageScroll);
+
+    if (mobileFullHeight) {
+      expect(getComputedStyle(screen.getByRole('dialog')).top).toBe('0px');
+    }
+  },
+);
