@@ -21,7 +21,7 @@ import DocumentScannerIcon from '@mui/icons-material/DocumentScanner';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { useIntl } from 'react-intl';
-import { toast } from 'react-toastify';
+import { toast } from '@/lib/toast';
 
 import analyzeStatementScreenshots from '@/app/actions/analyzeStatementScreenshots';
 import saveImportedTransaction from '@/app/actions/saveImportedTransaction';
@@ -260,6 +260,7 @@ export default function ImportStatementModal({
   const handleSaveRow = async (index: number) => {
     const row = rows[index];
 
+    setError('');
     setSavingRowIndex(index);
     try {
       const result = await saveImportedTransaction({
@@ -276,7 +277,7 @@ export default function ImportStatementModal({
       });
 
       if (result.error) {
-        toast.error(result.error);
+        setError(result.error);
       } else if (result.data) {
         toast.success(
           formatMessage({
@@ -323,7 +324,7 @@ export default function ImportStatementModal({
       }
     } catch (error) {
       console.error('Smart import save failed:', error);
-      toast.error(
+      setError(
         formatMessage({
           id: 'importStatement.saveFailed',
           defaultMessage: 'Unable to save this transaction. Please try again.',

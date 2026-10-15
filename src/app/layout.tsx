@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Roboto } from 'next/font/google';
-import { ToastContainer } from 'react-toastify';
+import AppToasts from '@/components/AppToasts';
 import CssBaseline from '@mui/material/CssBaseline';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
@@ -83,7 +83,7 @@ export default async function RootLayout({
             <Header />
             <main className="container">{children}</main>
             <MobileAppBar />
-            <ToastContainer />
+            <AppToasts />
             <SpeedInsights />
           </body>
         </html>

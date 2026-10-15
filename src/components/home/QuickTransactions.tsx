@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { Currency, TransactionType } from '@prisma/client';
 import { QuickTransactionTemplate } from '@/lib/tags';
 import {
+  Alert,
   Button,
   Box,
   ButtonBase,
@@ -28,7 +29,6 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { toast } from 'react-toastify';
 import { useIntl } from 'react-intl';
 
 import {
@@ -78,6 +78,7 @@ function TemplateEditorDialog({
   const {
     settings: { defaultCurrency, creditCardTrackingEnabled },
   } = useSettings();
+  const [error, setError] = useState('');
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [label, setLabel] = useState('');
   const [text, setText] = useState('');
@@ -90,6 +91,7 @@ function TemplateEditorDialog({
   useEffect(() => {
     if (!open) return;
 
+    setError('');
     setTagIds(template?.tags?.map(({ id }) => id) || []);
     setLabel(template?.label || '');
     setText(template?.text || '');
@@ -110,6 +112,7 @@ function TemplateEditorDialog({
   };
 
   const handleSave = async () => {
+    setError('');
     setIsSaving(true);
     const input: QuickTransactionTemplateInput = {
       id: template?.id,
@@ -125,7 +128,7 @@ function TemplateEditorDialog({
     setIsSaving(false);
 
     if (result.error) {
-      toast.error(
+      setError(
         result.error.startsWith('tags.')
           ? formatMessage({ id: result.error })
           : result.error,
@@ -160,6 +163,11 @@ function TemplateEditorDialog({
         })}
       </FormTitle>
       <DialogContent>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
         <Stack spacing={2.5} mt={1}>
           <TextField
             label={formatMessage({
@@ -254,6 +262,7 @@ export default function QuickTransactions({
 }: {
   initialTemplates: QuickTransactionTemplate[];
 }) {
+  const [error, setError] = useState('');
   const { formatMessage } = useIntl();
   const [templates, setTemplates] = useState(initialTemplates);
   const [managerOpen, setManagerOpen] = useState(false);
@@ -324,7 +333,7 @@ export default function QuickTransactions({
     const result = await deleteQuickTransactionTemplate(template.id);
 
     if (result.error) {
-      toast.error(
+      setError(
         result.error.startsWith('tags.')
           ? formatMessage({ id: result.error })
           : result.error,
@@ -354,7 +363,7 @@ export default function QuickTransactions({
 
     if (result.error) {
       setTemplates(previous);
-      toast.error(
+      setError(
         result.error.startsWith('tags.')
           ? formatMessage({ id: result.error })
           : result.error,
@@ -524,6 +533,11 @@ export default function QuickTransactions({
           })}
         </FormTitle>
         <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
           {!templates.length ? (
             <Typography color="text.secondary">
               {formatMessage({

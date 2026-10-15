@@ -141,7 +141,7 @@ vi.mock('@/app/actions/deleteTransaction', () => ({
   default: mocks.deleteTransaction,
 }));
 
-vi.mock('react-toastify', () => ({
+vi.mock('@/lib/toast', () => ({
   toast: { success: mocks.success, error: mocks.error },
 }));
 
@@ -824,9 +824,12 @@ test('mobile header actions remain available when loading history fails', async 
   useMobileViewport();
   mocks.getTransactions.mockResolvedValue({ error: 'Database error' });
 
-  await renderHistory();
+  renderWithIntl(createElement(TransactionList));
+  await screen.findByRole('alert');
 
-  expect(screen.getByRole('alert').textContent).toBe('Database error');
+  expect(screen.getByRole('alert').textContent).toContain(
+    'Unable to load transactions',
+  );
   expect(screen.getByRole('button', { name: 'Add transaction' })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Import' })).toBeTruthy();
   expect(screen.queryByText('Coffee')).toBeNull();

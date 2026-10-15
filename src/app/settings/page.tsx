@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { Currency, Language } from '@prisma/client';
-import { toast } from 'react-toastify';
+import { toast } from '@/lib/toast';
 import { FormattedMessage, useIntl } from 'react-intl';
 
 import { useSettings } from '@/context/SettingsContexts';

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { toast } from 'react-toastify';
+import { toast } from '@/lib/toast';
 import {
   Box,
   Card,

@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 
 import { createElement, type ComponentProps } from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { messages } from '@/locales';
 import { IntlProvider } from 'react-intl';
 import { afterEach, expect, test, vi } from 'vitest';
 
@@ -56,7 +57,7 @@ vi.mock('@/app/actions/addUpdateTransaction', () => ({
   addUpdateTransaction: mocks.save,
 }));
 
-vi.mock('react-toastify', () => ({
+vi.mock('@/lib/toast', () => ({
   toast: { success: mocks.success, error: vi.fn() },
 }));
 
@@ -65,15 +66,26 @@ vi.mock('@/components/AddTransactionModal/AddTransactionModalView', () => ({
     isEditMode,
     isCopyMode,
     onSubmit,
+    isSubmitDisabled,
+    saveError,
   }: ComponentProps<typeof AddTransactionModalView>) =>
     createElement(
-      'button',
-      {
-        onClick: onSubmit,
-        'data-edit': String(isEditMode),
-        'data-copy': String(isCopyMode),
-      },
-      'Submit',
+      'div',
+      null,
+      createElement(
+        'button',
+        {
+          onClick: () => {
+            void onSubmit();
+            void onSubmit();
+          },
+          'data-edit': String(isEditMode),
+          'data-copy': String(isCopyMode),
+          'aria-busy': isSubmitDisabled,
+        },
+        'Submit',
+      ),
+      saveError && createElement('div', { role: 'alert' }, saveError),
     ),
 }));
 
@@ -108,3 +120,43 @@ test.each([true, false])(
     );
   },
 );
+
+test('saving is guarded before rerender and rejected requests remain inline with retry available', async () => {
+  let reject!: (_error: Error) => void;
+  mocks.save.mockImplementationOnce(
+    () =>
+      new Promise((_resolve, fail) => {
+        reject = fail;
+      }),
+  );
+  const user = userEvent.setup();
+  render(
+    createElement(
+      IntlProvider,
+      { locale: 'en-US', messages: messages['en-US'] },
+      createElement(AddTransactionModal),
+    ),
+  );
+  const submit = screen.getByRole('button', { name: 'Submit' });
+
+  await user.click(submit);
+
+  expect(mocks.save).toHaveBeenCalledOnce();
+  expect(submit.getAttribute('aria-busy')).toBe('true');
+
+  await act(async () => reject(new Error('offline')));
+
+  expect(screen.getByRole('alert').textContent).toBe(
+    'Unable to save. Please try again.',
+  );
+  expect(submit.getAttribute('aria-busy')).toBe('false');
+  expect(mocks.success).not.toHaveBeenCalled();
+
+  mocks.save.mockResolvedValueOnce({ error: 'Validation error' });
+  await user.click(submit);
+
+  await waitFor(() =>
+    expect(screen.getByRole('alert').textContent).toBe('Validation error'),
+  );
+  expect(mocks.save).toHaveBeenCalledTimes(2);
+});

@@ -1,12 +1,12 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { toast } from 'react-toastify';
+import { toast } from '@/lib/toast';
 import { Transaction } from '@/lib/tags';
 import {
   Box,
   List,
   Typography,
-  CircularProgress,
+  Alert,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -17,6 +17,10 @@ import CloseIcon from '@mui/icons-material/Close';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { filterTransactions } from '@/lib/filterTransactions';
 
+import TransactionSkeleton, {
+  LoadingPlaceholder,
+} from './history/TransactionSkeleton';
+import { visuallyHidden } from '@mui/utils';
 import TransactionRows from './TransactionRows';
 import HistoryFiltersSheet from './history/HistoryFiltersSheet';
 import PeriodBalance from './history/PeriodBalance';
@@ -78,7 +82,11 @@ const TransactionList = () => {
     requestTransactionsRefresh,
   } = useTransactions();
 
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<{ key: string; message: string } | null>(
+    null,
+  );
+  const [loadedKey, setLoadedKey] = useState('');
+  const [retry, setRetry] = useState(0);
   const [periodMode, setPeriodMode] = useState<PeriodMode>('month');
   const [anchorDate, setAnchorDate] = useState(
     () => getDefaultPeriod().anchorDate,
@@ -89,7 +97,7 @@ const TransactionList = () => {
   const [income, setIncome] = useState(0);
   const [expense, setExpense] = useState(0);
   const [viewType, setViewType] = useState(ViewType.List);
-  const [isLoading, setIsloading] = useState(false);
+  const [isLoading, setIsloading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<
     TransactionCategory | 'all'
   >('all');
@@ -133,6 +141,12 @@ const TransactionList = () => {
     () => getPeriodRange(periodMode, anchorDate, customRange),
     [anchorDate, customRange, periodMode],
   );
+
+  const queryKey = `${selectedRange.start}/${selectedRange.end}`;
+  const hasCurrentData = loadedKey === queryKey;
+  const currentError = error?.key === queryKey ? error.message : '';
+  const pending = isLoading || (!hasCurrentData && !currentError);
+  const showSkeleton = !hasCurrentData && !currentError;
 
   const defaultPeriod = getDefaultPeriod();
   const isPeriodFiltered =
@@ -266,26 +280,36 @@ const TransactionList = () => {
     let isCurrentRequest = true;
 
     const fetchTrans = async () => {
-      const [transactionsResponse, incomeExpenseResponse] = await Promise.all([
-        getTransactions(selectedRange.start, selectedRange.end, true),
-        getIncomeExpense(selectedRange.start, selectedRange.end),
-      ]);
+      try {
+        const [transactionsResponse, incomeExpenseResponse] = await Promise.all(
+          [
+            getTransactions(selectedRange.start, selectedRange.end, true),
+            getIncomeExpense(selectedRange.start, selectedRange.end),
+          ],
+        );
 
-      if (!isCurrentRequest) return;
+        if (!isCurrentRequest) return;
 
-      const { transactions, error } = transactionsResponse;
-      const { income, expense } = incomeExpenseResponse;
+        if (transactionsResponse.error || incomeExpenseResponse.error) {
+          throw new Error('history.loadError');
+        }
 
-      setTransactions(transactions || []);
-      setIncome(income || 0);
-      setExpense(expense || 0);
-
-      setError(error || '');
-      setIsloading(false);
+        setTransactions(transactionsResponse.transactions || []);
+        setIncome(incomeExpenseResponse.income ?? 0);
+        setExpense(incomeExpenseResponse.expense ?? 0);
+        setLoadedKey(queryKey);
+      } catch {
+        if (isCurrentRequest) {
+          setError({ key: queryKey, message: 'history.loadError' });
+        }
+      } finally {
+        if (isCurrentRequest) setIsloading(false);
+      }
     };
 
+    setError(null);
     setIsloading(true);
-    fetchTrans();
+    void fetchTrans();
 
     return () => {
       isCurrentRequest = false;
@@ -295,6 +319,8 @@ const TransactionList = () => {
     selectedRange.start,
     setTransactions,
     transactionsRefreshKey,
+    queryKey,
+    retry,
   ]);
 
   return (
@@ -404,7 +430,11 @@ const TransactionList = () => {
             </ToggleButton>
           </ToggleButtonGroup>
         </Box>
-        <PeriodBalance income={income} expense={expense} />
+        <PeriodBalance
+          income={hasCurrentData ? income : null}
+          expense={hasCurrentData ? expense : null}
+          loading={showSkeleton}
+        />
         {filtersOpen && (
           <HistoryFiltersSheet
             desktop={!isMobile}
@@ -460,65 +490,96 @@ const TransactionList = () => {
                 defaultMessage: 'Net total for matching transactions:',
               })}
             </Typography>
-            <Typography
-              variant="body1"
-              color={
-                filteredSum >= 0
-                  ? historyColors.income
-                  : historyColors.negativeBalance
-              }
-              sx={{ fontWeight: 'bold' }}
-            >
-              {filteredSum >= 0 ? '+' : ''}
-              {filteredSum.toFixed(2)}{' '}
-              {CURRENCY_SYMBOL_MAP[settings.defaultCurrency]}
-            </Typography>
+            {showSkeleton ? (
+              <LoadingPlaceholder width={130} height={20} />
+            ) : !hasCurrentData ? (
+              <Typography>—</Typography>
+            ) : (
+              <Typography
+                variant="body1"
+                color={
+                  filteredSum >= 0
+                    ? historyColors.income
+                    : historyColors.negativeBalance
+                }
+                sx={{ fontWeight: 'bold' }}
+              >
+                {filteredSum >= 0 ? '+' : ''}
+                {filteredSum.toFixed(2)}{' '}
+                {CURRENCY_SYMBOL_MAP[settings.defaultCurrency]}
+              </Typography>
+            )}
           </Box>
         )}
       </Stack>
 
-      {error && (
-        <Typography role="alert" color="error" my={4}>
-          {error}
-        </Typography>
-      )}
+      <Box role="status" sx={visuallyHidden}>
+        {pending
+          ? formatMessage({
+              id: hasCurrentData ? 'history.refreshing' : 'history.loading',
+            })
+          : ''}
+      </Box>
+      <Box
+        aria-busy={pending}
+        aria-label={formatMessage({ id: 'transactions.title' })}
+      >
+        {currentError && (
+          <Alert
+            severity="error"
+            sx={{ my: 2 }}
+            action={
+              <Button
+                color="inherit"
+                onClick={() => setRetry((value) => value + 1)}
+              >
+                {formatMessage({ id: 'history.retry' })}
+              </Button>
+            }
+          >
+            {formatMessage({
+              id: hasCurrentData ? 'history.refreshError' : 'history.loadError',
+            })}
+          </Alert>
+        )}
 
-      {isLoading && !transactions.length && <CircularProgress sx={{ my: 5 }} />}
+        {showSkeleton && <TransactionSkeleton />}
 
-      {!error && !visibleTransactions.length && !isLoading && (
-        <Typography variant="h5" component="p" gutterBottom mt={4}>
-          {formatMessage({
-            id: hasFilters ? 'history.noMatches' : 'transactions.noRecords',
-            defaultMessage: hasFilters
-              ? 'No matching transactions in this period'
-              : 'No records for selected period',
-          })}
-        </Typography>
-      )}
+        {hasCurrentData && !visibleTransactions.length && (
+          <Typography variant="h5" component="p" gutterBottom mt={4}>
+            {formatMessage({
+              id: hasFilters ? 'history.noMatches' : 'transactions.noRecords',
+              defaultMessage: hasFilters
+                ? 'No matching transactions in this period'
+                : 'No records for selected period',
+            })}
+          </Typography>
+        )}
 
-      {!error && !!visibleTransactions.length && (
-        <>
-          {viewType === ViewType.Grid ? (
-            <TransactionsDataGrid
-              rows={visibleTransactions}
-              isLoading={isLoading}
-              handleEdit={handleEditTransaction}
-              handleCopy={handleCopyTransaction}
-              handleDelete={handleDeleteTransaction}
-            />
-          ) : (
-            <List>
-              <TransactionRows
-                stickyDates
-                transactions={visibleTransactions}
+        {hasCurrentData && !!visibleTransactions.length && (
+          <>
+            {viewType === ViewType.Grid ? (
+              <TransactionsDataGrid
+                rows={visibleTransactions}
+                isLoading={false}
                 handleEdit={handleEditTransaction}
                 handleCopy={handleCopyTransaction}
                 handleDelete={handleDeleteTransaction}
               />
-            </List>
-          )}
-        </>
-      )}
+            ) : (
+              <List>
+                <TransactionRows
+                  stickyDates
+                  transactions={visibleTransactions}
+                  handleEdit={handleEditTransaction}
+                  handleCopy={handleCopyTransaction}
+                  handleDelete={handleDeleteTransaction}
+                />
+              </List>
+            )}
+          </>
+        )}
+      </Box>
     </Box>
   );
 };

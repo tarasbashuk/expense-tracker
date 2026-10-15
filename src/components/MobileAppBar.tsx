@@ -79,7 +79,7 @@ const MobileAppBar = () => {
   return (
     <>
       <LocalizationProvider dateAdapter={AdapterDateFns}>
-        <AppBar position="fixed" color="info" sx={appBarStyles}>
+        <AppBar data-bottom-navigation position="fixed" color="info" sx={appBarStyles}>
           <Toolbar
             sx={{
               display: 'block',

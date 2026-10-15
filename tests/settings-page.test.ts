@@ -30,7 +30,7 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: mocks.refresh }),
 }));
 
-vi.mock('react-toastify', () => ({
+vi.mock('@/lib/toast', () => ({
   toast: { success: mocks.success, error: mocks.error },
 }));
 

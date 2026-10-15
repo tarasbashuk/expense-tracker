@@ -3,6 +3,8 @@ import ResponsiveDialog, { FormTitle } from '../shared/ResponsiveDialog';
 import TagsAndRecurrence from './TagsAndRecurrence';
 import TagPicker from '../tags/TagPicker';
 import {
+  Alert,
+  CircularProgress,
   Button,
   Select,
   MenuItem,
@@ -52,6 +54,7 @@ interface Props {
   isEditMode: boolean;
   isCopyMode?: boolean;
   isSubmitDisabled: boolean;
+  saveError?: string;
   isBaseAmountShown: boolean;
   isCreditTransaction: boolean;
   creditCardTrackingEnabled: boolean;
@@ -89,6 +92,7 @@ const AddTransactionModalView: React.FC<Props> = ({
   isCopyMode = false,
   transactionType,
   isSubmitDisabled,
+  saveError,
   isBaseAmountShown,
   isCreditTransaction,
   creditCardTrackingEnabled,
@@ -147,6 +151,11 @@ const AddTransactionModalView: React.FC<Props> = ({
         })}
       </FormTitle>
       <DialogContent>
+        {saveError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {saveError}
+          </Alert>
+        )}
         <form
           id="transaction-form"
           onSubmit={(event) => {
@@ -416,9 +425,19 @@ const AddTransactionModalView: React.FC<Props> = ({
           form="transaction-form"
           variant="contained"
           disabled={isSubmitDisabled}
+          aria-busy={isSubmitDisabled}
+          startIcon={
+            isSubmitDisabled ? (
+              <CircularProgress size={18} color="inherit" aria-hidden="true" />
+            ) : undefined
+          }
         >
           {formatMessage({
-            id: isEditMode ? 'addTransaction.save' : 'addTransaction.add',
+            id: isSubmitDisabled
+              ? 'common.saving'
+              : isEditMode
+                ? 'addTransaction.save'
+                : 'addTransaction.add',
           })}
         </Button>
       </DialogActions>

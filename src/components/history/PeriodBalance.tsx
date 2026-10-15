@@ -6,20 +6,23 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useIntl } from 'react-intl';
 import { useSettings } from '@/context/SettingsContexts';
 import { formatCurrency } from '@/lib/formatCurrency';
+import { LoadingPlaceholder } from './TransactionSkeleton';
 import { cardRadius, historyColors as colors } from './tokens';
 
 export default function PeriodBalance({
   income,
   expense,
+  loading = false,
 }: {
-  income: number;
-  expense: number;
+  income: number | null;
+  expense: number | null;
+  loading?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const id = useId();
   const { formatMessage } = useIntl();
   const { settings } = useSettings();
-  const balance = income - expense;
+  const balance = income === null || expense === null ? null : income - expense;
 
   return (
     <Box
@@ -66,11 +69,18 @@ export default function PeriodBalance({
                 display: 'block',
                 fontSize: 24,
                 fontWeight: 600,
-                color: balance < 0 ? colors.negativeBalance : colors.income,
+                color:
+                  (balance ?? 0) < 0 ? colors.negativeBalance : colors.income,
                 fontVariantNumeric: 'tabular-nums',
               }}
             >
-              {formatCurrency(balance, settings.defaultCurrency)}
+              {loading ? (
+                <LoadingPlaceholder component="span" width={110} height={28} />
+              ) : balance === null ? (
+                '—'
+              ) : (
+                formatCurrency(balance, settings.defaultCurrency)
+              )}
             </Typography>
           )}
         </Box>
@@ -113,7 +123,13 @@ export default function PeriodBalance({
                   overflowWrap: 'anywhere',
                 }}
               >
-                {formatCurrency(item.value, settings.defaultCurrency)}
+                {loading ? (
+                  <LoadingPlaceholder width={90} height={22} />
+                ) : item.value === null ? (
+                  '—'
+                ) : (
+                  formatCurrency(item.value, settings.defaultCurrency)
+                )}
               </Typography>
             </Box>
           ))}

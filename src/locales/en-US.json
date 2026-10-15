@@ -275,5 +275,13 @@
   "settings.encryptionSetupHint": "Determined during initial setup",
   "settings.enabled": "Enabled",
   "settings.disabled": "Disabled",
-  "tags.emptySettings": "No tags yet"
+  "tags.emptySettings": "No tags yet",
+  "history.loading": "Loading transactions",
+  "history.refreshing": "Refreshing…",
+  "history.loadError": "Unable to load transactions",
+  "history.refreshError": "Unable to refresh transactions. Previously loaded data is shown.",
+  "history.retry": "Try again",
+  "common.saving": "Saving…",
+  "common.saveFailed": "Unable to save. Please try again.",
+  "common.notifications": "Notifications"
 }

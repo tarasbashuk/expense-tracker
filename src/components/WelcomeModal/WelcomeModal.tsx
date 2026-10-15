@@ -24,7 +24,7 @@ import { Currency, Language } from '@prisma/client';
 import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
 import { useMediaQueries } from '@/lib/useMediaQueries';
 import updateSettings from '@/app/actions/updateSettings';
-import { toast } from 'react-toastify';
+import { toast } from '@/lib/toast';
 import { FormattedMessage, useIntl } from 'react-intl';
 
 const style = {
@@ -47,6 +47,7 @@ const WelcomeModal = () => {
   const { isSmall } = useMediaQueries();
   const { formatMessage } = useIntl();
 
+  const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -76,6 +77,7 @@ const WelcomeModal = () => {
   };
 
   const handleSubmit = async () => {
+    setError('');
     setIsSaving(true);
 
     const { settings, error } = await updateSettings({
@@ -87,7 +89,7 @@ const WelcomeModal = () => {
     });
 
     if (error) {
-      toast.error(error);
+      setError(error);
     } else if (settings) {
       setSettings(settings);
       toast.success('Changes were saved');
@@ -105,6 +107,7 @@ const WelcomeModal = () => {
     >
       <Box sx={style}>
         <Stack spacing={2} marginBottom={3} direction="column">
+          {error && <Alert severity="error">{error}</Alert>}
           <Typography variant="h4">
             <FormattedMessage
               id="welcome.title"

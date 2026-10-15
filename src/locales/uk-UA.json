@@ -276,5 +276,13 @@
   "settings.encryptionSetupHint": "Визначається під час початкового налаштування",
   "settings.enabled": "Увімкнено",
   "settings.disabled": "Вимкнено",
-  "tags.emptySettings": "Тегів ще немає"
+  "tags.emptySettings": "Тегів ще немає",
+  "history.loading": "Завантаження транзакцій",
+  "history.refreshing": "Оновлення…",
+  "history.loadError": "Не вдалося завантажити транзакції",
+  "history.refreshError": "Не вдалося оновити транзакції. Показано попередні дані.",
+  "history.retry": "Спробувати ще",
+  "common.saving": "Збереження…",
+  "common.saveFailed": "Не вдалося зберегти. Спробуйте ще раз.",
+  "common.notifications": "Сповіщення"
 }

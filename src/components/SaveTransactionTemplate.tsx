@@ -19,7 +19,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useIntl } from 'react-intl';
-import { toast } from 'react-toastify';
+import { toast } from '@/lib/toast';
 
 import { saveQuickTransactionTemplate } from '@/app/actions/quickTransactionTemplates';
 import { formatCurrency } from '@/lib/formatCurrency';
