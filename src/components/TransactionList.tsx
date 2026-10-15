@@ -23,6 +23,7 @@ import TransactionSkeleton, {
 import { visuallyHidden } from '@mui/utils';
 import TransactionRows from './TransactionRows';
 import HistoryFiltersSheet from './history/HistoryFiltersSheet';
+import DesktopHistoryFilters from './history/DesktopHistoryFilters';
 import PeriodBalance from './history/PeriodBalance';
 import HistoryHeaderActions from './history/HistoryHeaderActions';
 import { historyColors, pageStyles, pageHeaderStyles } from './history/tokens';
@@ -105,9 +106,20 @@ const TransactionList = () => {
     TransactionType | 'all'
   >('all');
   const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSearch(searchInput), 300);
+
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [recurringOnly, setRecurringOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  useEffect(() => {
+    if (!isMobile) setFiltersOpen(false);
+  }, [isMobile]);
+
   const visibleTransactions = useMemo(
     () =>
       filterTransactions(
@@ -163,11 +175,7 @@ const TransactionList = () => {
   const hasFilters = activeFilterCount > 0;
 
   const resetFilters = () => {
-    const defaults = getDefaultPeriod();
-
-    setPeriodMode('month');
-    setAnchorDate(defaults.anchorDate);
-    setCustomRange(defaults.customRange);
+    setSearchInput('');
     setSearch('');
     setTagIds([]);
     setRecurringOnly(false);
@@ -372,8 +380,8 @@ const TransactionList = () => {
               inputProps={{
                 'aria-label': formatMessage({ id: 'history.search' }),
               }}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
               size="small"
               sx={{ flex: '1 1 240px', bgcolor: 'background.paper' }}
               InputProps={{
@@ -382,13 +390,16 @@ const TransactionList = () => {
                     <SearchIcon />
                   </InputAdornment>
                 ),
-                endAdornment: search ? (
+                endAdornment: searchInput ? (
                   <InputAdornment position="end">
                     <IconButton
                       aria-label={formatMessage({
                         id: 'history.clearSearch',
                       })}
-                      onClick={() => setSearch('')}
+                      onClick={() => {
+                        setSearchInput('');
+                        setSearch('');
+                      }}
                     >
                       <CloseIcon />
                     </IconButton>
@@ -397,18 +408,20 @@ const TransactionList = () => {
               }}
             />
           )}
-          <Button
-            variant="outlined"
-            startIcon={<FilterListIcon />}
-            onClick={() => setFiltersOpen(true)}
-            aria-haspopup="dialog"
-            aria-expanded={filtersOpen}
-          >
-            {formatMessage(
-              { id: 'history.filters' },
-              { count: activeFilterCount },
-            )}
-          </Button>
+          {isMobile && (
+            <Button
+              variant="outlined"
+              startIcon={<FilterListIcon />}
+              onClick={() => setFiltersOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={filtersOpen}
+            >
+              {formatMessage(
+                { id: 'history.filters' },
+                { count: activeFilterCount },
+              )}
+            </Button>
+          )}
           <ToggleButtonGroup
             exclusive
             size="small"
@@ -430,12 +443,40 @@ const TransactionList = () => {
             </ToggleButton>
           </ToggleButtonGroup>
         </Box>
+        {!isMobile && (
+          <DesktopHistoryFilters
+            value={{
+              type: selectedTransactionType,
+              category: selectedCategory,
+              tagIds,
+              recurringOnly,
+              search,
+            }}
+            creditCardTrackingEnabled={creditCardTrackingEnabled}
+            onChange={(filters) => {
+              setSelectedTransactionType(filters.type);
+              setSelectedCategory(filters.category);
+              setTagIds(filters.tagIds || []);
+              setRecurringOnly(filters.recurringOnly);
+            }}
+          />
+        )}
+        {!isMobile &&
+          (searchInput.trim() ||
+            selectedCategory !== 'all' ||
+            selectedTransactionType !== 'all' ||
+            recurringOnly ||
+            tagIds.length > 0) && (
+            <Button onClick={resetFilters} sx={{ alignSelf: 'flex-start' }}>
+              {formatMessage({ id: 'history.resetFilters' })}
+            </Button>
+          )}
         <PeriodBalance
           income={hasCurrentData ? income : null}
           expense={hasCurrentData ? expense : null}
           loading={showSkeleton}
         />
-        {filtersOpen && (
+        {filtersOpen && isMobile && (
           <HistoryFiltersSheet
             desktop={!isMobile}
             value={{
@@ -453,19 +494,14 @@ const TransactionList = () => {
               setRecurringOnly(filters.recurringOnly);
               setTagIds(filters.tagIds || []);
 
-              if (isMobile) setSearch(filters.search);
+              if (isMobile) {
+                setSearchInput(filters.search);
+                setSearch(filters.search);
+              }
 
               setFiltersOpen(false);
             }}
           />
-        )}
-        {hasFilters && !isMobile && (
-          <Button onClick={resetFilters} sx={{ alignSelf: 'flex-start' }}>
-            {formatMessage({
-              id: 'history.resetFilters',
-              defaultMessage: 'Reset search and filters',
-            })}
-          </Button>
         )}
         {hasFilters && (
           <Box

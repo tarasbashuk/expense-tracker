@@ -1,4 +1,6 @@
 {
+  "tags.all": "All tags",
+  "tags.selectedCount": "Tags: {count}",
   "home.allTransactions": "All",
   "grid.recurringTooltip": "Recurring transaction",
   "history.editTransaction": "Edit transaction: {description}",

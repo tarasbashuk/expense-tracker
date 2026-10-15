@@ -46,7 +46,7 @@ const allCategories = Object.entries({
   ...INCOME_CATEGORIES,
   ...EXPENSE_CATEGORIES,
 }).map(([value, label]) => ({ value, label }));
-const categoriesByType = {
+export const categoriesByType = {
   all: allCategories,
   Income: INCOME_CATEGORIES_LIST,
   Expense: EXPENSE_CATEGORIES_LIST,

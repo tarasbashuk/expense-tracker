@@ -1,4 +1,6 @@
 {
+  "tags.all": "Усі теги",
+  "tags.selectedCount": "Теги: {count}",
   "home.allTransactions": "Усі",
   "grid.recurringTooltip": "Регулярна транзакція",
   "history.editTransaction": "Редагувати транзакцію: {description}",
@@ -221,7 +223,7 @@
   "history.searchScope": "Пошук у вибраному періоді",
   "history.clearSearch": "Очистити пошук",
   "history.filters": "Фільтри ({count})",
-  "history.resetFilters": "Скинути пошук і фільтри",
+  "history.resetFilters": "Скинути фільтри",
   "history.filteredSum": "Баланс знайдених операцій:",
   "history.noMatches": "У цьому періоді відповідних операцій немає",
   "history.periodTotals": "За весь вибраний період",

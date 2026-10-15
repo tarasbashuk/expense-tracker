@@ -147,7 +147,7 @@ const DatePeriodFilter = ({
     >
       <Stack
         spacing={1.25}
-        direction={horizontal ? { xs: 'column', md: 'row' } : 'column'}
+        direction={horizontal ? { xs: 'column', sm: 'row' } : 'column'}
         sx={{ width: '100%', minWidth: 0 }}
       >
         <ToggleButtonGroup

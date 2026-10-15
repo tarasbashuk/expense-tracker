@@ -16,6 +16,10 @@ import type DatePeriodFilter from '@/components/shared/DatePeriodFilter';
 import { messages } from '@/locales';
 import { transaction } from './fixtures';
 
+vi.mock('@/components/tags/useTagCatalog', () => ({
+  useTagCatalog: () => ({ tags: [], loading: false, error: '' }),
+}));
+
 vi.mock('@/app/actions/getTransactions', () => ({ default: vi.fn() }));
 
 vi.mock('@/app/actions/getIncomeExpense', () => ({ default: vi.fn() }));
@@ -193,4 +197,28 @@ test('initial request or summary failure offers retry and never masquerades as a
   await user.click(screen.getByRole('button', { name: 'Try again' }));
 
   expect(await screen.findByText('Loaded transaction')).toBeTruthy();
+});
+
+test('desktop reset clears search and extra filters without changing the selected period or refetching', async () => {
+  const user = userEvent.setup();
+  show();
+  await screen.findByText('Loaded transaction');
+  await user.click(screen.getByRole('button', { name: 'Next month' }));
+  await waitFor(() => expect(getTransactions).toHaveBeenCalledTimes(2));
+  await screen.findByText('Loaded transaction');
+  const search = screen.getByRole('textbox', { name: 'Search descriptions' });
+
+  await user.type(search, 'unmatched');
+  await waitFor(() =>
+    expect(screen.queryByText('Loaded transaction')).toBeNull(),
+  );
+
+  expect(document.activeElement).toBe(search);
+  await user.click(
+    screen.getByRole('button', { name: 'Reset search and filters' }),
+  );
+
+  expect(await screen.findByText('Loaded transaction')).toBeTruthy();
+  expect((search as HTMLInputElement).value).toBe('');
+  expect(getTransactions).toHaveBeenCalledTimes(2);
 });
