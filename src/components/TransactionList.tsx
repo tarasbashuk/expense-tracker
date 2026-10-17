@@ -1,9 +1,11 @@
 'use client';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from '@/lib/toast';
 import { Transaction } from '@/lib/tags';
 import {
   Box,
+  CircularProgress,
+  Tooltip,
   List,
   Typography,
   Alert,
@@ -28,7 +30,12 @@ import HistoryFiltersSheet from './history/HistoryFiltersSheet';
 import DesktopHistoryFilters from './history/DesktopHistoryFilters';
 import PeriodBalance from './history/PeriodBalance';
 import HistoryHeaderActions from './history/HistoryHeaderActions';
-import { historyColors, pageStyles, pageHeaderStyles } from './history/tokens';
+import {
+  cardRadius,
+  historyColors,
+  pageStyles,
+  pageHeaderStyles,
+} from './history/tokens';
 import getTransactions from '@/app/actions/getTransactions';
 import deleteTransaction from '@/app/actions/deleteTransaction';
 import { useTransactions } from '@/context/TranasctionsContext';
@@ -107,6 +114,8 @@ const TransactionList = () => {
   const [selectedTransactionType, setSelectedTransactionType] = useState<
     TransactionType | 'all'
   >('all');
+  const [isExporting, setIsExporting] = useState(false);
+  const exportInProgress = useRef(false);
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
 
@@ -161,6 +170,31 @@ const TransactionList = () => {
   const currentError = error?.key === queryKey ? error.message : '';
   const pending = isLoading || (!hasCurrentData && !currentError);
   const showSkeleton = !hasCurrentData && !currentError;
+
+  const handleExport = async () => {
+    if (exportInProgress.current) return;
+
+    exportInProgress.current = true;
+    setIsExporting(true);
+
+    try {
+      // Let the loading indicator paint before synchronous CSV serialization.
+      await new Promise<void>((resolve) => {
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => resolve());
+        });
+      });
+
+      downloadTransactionsCsv(
+        visibleTransactions,
+        settings.defaultCurrency,
+        `transactions_${selectedRange.start}_${selectedRange.end}.csv`,
+      );
+    } finally {
+      exportInProgress.current = false;
+      setIsExporting(false);
+    }
+  };
 
   const defaultPeriod = getDefaultPeriod();
   const isPeriodFiltered =
@@ -451,62 +485,84 @@ const TransactionList = () => {
                 )}
               </Button>
             )}
-            {!isMobile && (
-              <Button
-                variant="outlined"
-                startIcon={<DownloadIcon />}
-                sx={{
-                  flexShrink: 0,
-                  height: 44,
-                  display: { xs: 'none', sm: 'inline-flex' },
-                }}
-                disabled={
-                  pending ||
-                  !!currentError ||
-                  !visibleTransactions.length ||
-                  searchInput !== search
-                }
-                onClick={() =>
-                  downloadTransactionsCsv(
-                    visibleTransactions,
-                    settings.defaultCurrency,
-                    `transactions_${selectedRange.start}_${selectedRange.end}.csv`,
-                  )
-                }
-              >
-                {formatMessage({ id: 'history.exportCsv' })}
-              </Button>
-            )}
-            <ToggleButtonGroup
-              exclusive
-              size="small"
-              color="primary"
-              sx={
-                !isMobile
-                  ? {
-                      flexShrink: 0,
-                      height: 44,
-                      width: 88,
-                      '& > button': { width: 44 },
-                    }
-                  : undefined
-              }
-              value={viewType}
-              onChange={handleTypeChange}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                flexShrink: 0,
+              }}
             >
-              <ToggleButton
-                value={ViewType.List}
-                aria-label={formatMessage({ id: 'history.listView' })}
+              <ToggleButtonGroup
+                exclusive
+                size="small"
+                color="primary"
+                sx={
+                  !isMobile
+                    ? {
+                        flexShrink: 0,
+                        height: 44,
+                        width: 88,
+                        '& > button': { width: 44 },
+                      }
+                    : undefined
+                }
+                value={viewType}
+                onChange={handleTypeChange}
               >
-                <ViewListIcon />
-              </ToggleButton>
-              <ToggleButton
-                value={ViewType.Grid}
-                aria-label={formatMessage({ id: 'history.tableView' })}
-              >
-                <TableViewIcon />
-              </ToggleButton>
-            </ToggleButtonGroup>
+                <ToggleButton
+                  value={ViewType.List}
+                  aria-label={formatMessage({ id: 'history.listView' })}
+                >
+                  <ViewListIcon />
+                </ToggleButton>
+                <ToggleButton
+                  value={ViewType.Grid}
+                  aria-label={formatMessage({ id: 'history.tableView' })}
+                >
+                  <TableViewIcon />
+                </ToggleButton>
+              </ToggleButtonGroup>
+              {!isMobile && (
+                <Tooltip title={formatMessage({ id: 'history.exportCsv' })}>
+                  <Box
+                    component="span"
+                    sx={{
+                      display: { xs: 'none', sm: 'inline-flex' },
+                      flexShrink: 0,
+                    }}
+                  >
+                    <IconButton
+                      aria-label={formatMessage({ id: 'history.exportCsv' })}
+                      aria-busy={isExporting}
+                      disabled={
+                        isExporting ||
+                        pending ||
+                        !!currentError ||
+                        !visibleTransactions.length ||
+                        searchInput !== search
+                      }
+                      onClick={handleExport}
+                      sx={{
+                        width: 44,
+                        height: 44,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: cardRadius,
+                        color: 'text.secondary',
+                        '&:hover': { color: 'primary.main' },
+                      }}
+                    >
+                      {isExporting ? (
+                        <CircularProgress size={20} color="inherit" />
+                      ) : (
+                        <DownloadIcon sx={{ fontSize: 22 }} />
+                      )}
+                    </IconButton>
+                  </Box>
+                </Tooltip>
+              )}
+            </Box>
           </Box>
           {!isMobile && (
             <DesktopHistoryFilters

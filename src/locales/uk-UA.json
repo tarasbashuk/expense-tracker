@@ -220,7 +220,7 @@
   "recurring.forecast.recurring": "Повторювані транзакції",
   "recurring.forecast.total": "Всього",
   "history.search": "Пошук за описом або сумою",
-  "history.exportCsv": "Експорт CSV",
+  "history.exportCsv": "Експортувати CSV",
   "history.searchScope": "Пошук у вибраному періоді",
   "history.clearSearch": "Очистити пошук",
   "history.filters": "Фільтри ({count})",

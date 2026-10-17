@@ -243,12 +243,38 @@ test('desktop CSV export downloads the loaded filtered history and releases its 
     'URL',
     Object.assign(URL, { createObjectURL, revokeObjectURL }),
   );
+  const frames: FrameRequestCallback[] = [];
+  const animationFrame = vi
+    .spyOn(window, 'requestAnimationFrame')
+    .mockImplementation((callback) => {
+      frames.push(callback);
+
+      return frames.length;
+    });
   const user = userEvent.setup();
 
   try {
     show();
     await screen.findByText('Loaded transaction');
-    await user.click(screen.getByRole('button', { name: 'Export CSV' }));
+    const exportButton = screen.getByRole('button', { name: 'Export CSV' });
+
+    expect(exportButton.closest('.MuiToggleButtonGroup-root')).toBeNull();
+    expect(exportButton.textContent).toBe('');
+    await user.click(exportButton);
+
+    expect((exportButton as HTMLButtonElement).disabled).toBe(true);
+    expect(exportButton.getAttribute('aria-busy')).toBe('true');
+    expect(exportButton.querySelector('[role="progressbar"]')).toBeTruthy();
+    expect(createObjectURL).not.toHaveBeenCalled();
+
+    (exportButton as HTMLButtonElement).click();
+    await act(async () => {
+      frames.shift()?.(0);
+      frames.shift()?.(16);
+    });
+
+    expect((exportButton as HTMLButtonElement).disabled).toBe(false);
+    expect(exportButton.querySelector('[role="progressbar"]')).toBeNull();
 
     expect(createObjectURL).toHaveBeenCalledOnce();
     expect(createObjectURL.mock.calls[0]).toHaveLength(1);
@@ -260,6 +286,7 @@ test('desktop CSV export downloads the loaded filtered history and releases its 
       { timeout: 2000 },
     );
   } finally {
+    animationFrame.mockRestore();
     click.mockRestore();
     vi.unstubAllGlobals();
   }
