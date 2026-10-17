@@ -1,7 +1,14 @@
 'use client';
 
 import { useId, useState } from 'react';
-import { Box, ButtonBase, Collapse, Typography } from '@mui/material';
+import {
+  Box,
+  ButtonBase,
+  Collapse,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useIntl } from 'react-intl';
 import { useSettings } from '@/context/SettingsContexts';
@@ -19,6 +26,10 @@ export default function PeriodBalance({
   loading?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const theme = useTheme();
+  const desktop = useMediaQuery(theme.breakpoints.up('sm'));
+  const expanded = desktop || open;
+  const Details = desktop ? Box : Collapse;
   const id = useId();
   const { formatMessage } = useIntl();
   const { settings } = useSettings();
@@ -35,14 +46,17 @@ export default function PeriodBalance({
         gap: 3,
       }}
     >
-      <ButtonBase
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-        aria-controls={id}
+      <Box
+        component={desktop ? 'div' : ButtonBase}
+        {...(!desktop && {
+          onClick: () => setOpen((value) => !value),
+          'aria-expanded': open,
+          'aria-controls': id,
+        })}
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
-          width: { xs: '100%', sm: open ? '34%' : '100%' },
+          width: { xs: '100%', sm: '34%' },
           flexShrink: 0,
           textAlign: 'left',
           minHeight: 44,
@@ -59,10 +73,10 @@ export default function PeriodBalance({
             sx={{ display: 'block', fontSize: 14, color: colors.secondary }}
           >
             {formatMessage({
-              id: open ? 'history.periodBalance' : 'balance.showInfo',
+              id: expanded ? 'history.periodBalance' : 'balance.showInfo',
             })}
           </Typography>
-          {open && (
+          {expanded && (
             <Typography
               component="span"
               sx={{
@@ -84,9 +98,13 @@ export default function PeriodBalance({
             </Typography>
           )}
         </Box>
-        {open ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-      </ButtonBase>
-      <Collapse in={open} unmountOnExit sx={{ flex: 1, minWidth: 0 }}>
+        {!desktop &&
+          (open ? <ChevronUp size={20} /> : <ChevronDown size={20} />)}
+      </Box>
+      <Details
+        {...(!desktop && { in: open, unmountOnExit: true })}
+        sx={{ flex: 1, minWidth: 0 }}
+      >
         <Box
           id={id}
           sx={{
@@ -134,7 +152,7 @@ export default function PeriodBalance({
             </Box>
           ))}
         </Box>
-      </Collapse>
+      </Details>
     </Box>
   );
 }
