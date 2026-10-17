@@ -4,10 +4,8 @@ import { useMemo, useState } from 'react';
 import {
   Box,
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   IconButton,
   Stack,
   ToggleButton,
@@ -29,6 +27,7 @@ import {
 } from '@mui/x-date-pickers/locales';
 import { useIntl } from 'react-intl';
 
+import ResponsiveDialog, { FormTitle } from './ResponsiveDialog';
 import { useSettings } from '@/context/SettingsContexts';
 import {
   DateRangeValue,
@@ -297,18 +296,18 @@ const DatePeriodFilter = ({
         </Box>
       </Stack>
 
-      <Dialog
+      <ResponsiveDialog
         open={isPickerOpen}
         onClose={() => setIsPickerOpen(false)}
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>
+        <FormTitle onClose={() => setIsPickerOpen(false)}>
           {formatMessage({
             id: 'filters.customRangeTitle',
             defaultMessage: 'Choose date range',
           })}
-        </DialogTitle>
+        </FormTitle>
         <DialogContent>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} pt={1}>
             <DatePicker
@@ -340,7 +339,7 @@ const DatePeriodFilter = ({
             </Typography>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
+        <DialogActions>
           <Button onClick={() => setIsPickerOpen(false)}>
             {formatMessage({ id: 'common.cancel', defaultMessage: 'Cancel' })}
           </Button>
@@ -352,7 +351,7 @@ const DatePeriodFilter = ({
             {formatMessage({ id: 'common.apply', defaultMessage: 'Apply' })}
           </Button>
         </DialogActions>
-      </Dialog>
+      </ResponsiveDialog>
     </LocalizationProvider>
   );
 };

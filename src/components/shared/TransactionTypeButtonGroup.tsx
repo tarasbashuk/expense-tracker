@@ -25,6 +25,7 @@ const TransactionTypeButtonGroup: FC<Props> = ({
     newType: TransactionType,
   ) => {
     if (!newType) return;
+
     setTranasctionType(newType);
   };
 
@@ -36,6 +37,12 @@ const TransactionTypeButtonGroup: FC<Props> = ({
       color="primary"
       value={transactionType}
       onChange={handleTypeChange}
+      sx={{
+        '& .MuiToggleButton-root.Mui-selected': {
+          bgcolor: 'action.selected',
+          '&:hover': { bgcolor: 'action.hover' },
+        },
+      }}
     >
       <ToggleButton sx={buttonsSx} value={TransactionType.Expense}>
         {formatMessage({
