@@ -114,7 +114,7 @@ test('first load keeps controls, hides skeleton from readers and never presents 
   expect(screen.queryByText('No records for selected period')).toBeNull();
 
   await user.type(
-    screen.getByRole('textbox', { name: 'Search descriptions' }),
+    screen.getByRole('textbox', { name: 'Search by description or amount' }),
     'coffee',
   );
   await user.click(screen.getByRole('button', { name: 'Show balance info' }));
@@ -214,7 +214,9 @@ test('desktop reset clears search and extra filters without changing the selecte
   await user.click(screen.getByRole('button', { name: 'Next month' }));
   await waitFor(() => expect(getTransactions).toHaveBeenCalledTimes(2));
   await screen.findByText('Loaded transaction');
-  const search = screen.getByRole('textbox', { name: 'Search descriptions' });
+  const search = screen.getByRole('textbox', {
+    name: 'Search by description or amount',
+  });
 
   await user.type(search, 'unmatched');
   await waitFor(() =>
@@ -229,4 +231,36 @@ test('desktop reset clears search and extra filters without changing the selecte
   expect(await screen.findByText('Loaded transaction')).toBeTruthy();
   expect((search as HTMLInputElement).value).toBe('');
   expect(getTransactions).toHaveBeenCalledTimes(2);
+});
+
+test('desktop CSV export downloads the loaded filtered history and releases its URL', async () => {
+  const createObjectURL = vi.fn(() => 'blob:transactions');
+  const revokeObjectURL = vi.fn();
+  const click = vi
+    .spyOn(HTMLAnchorElement.prototype, 'click')
+    .mockImplementation(() => {});
+  vi.stubGlobal(
+    'URL',
+    Object.assign(URL, { createObjectURL, revokeObjectURL }),
+  );
+  const user = userEvent.setup();
+
+  try {
+    show();
+    await screen.findByText('Loaded transaction');
+    await user.click(screen.getByRole('button', { name: 'Export CSV' }));
+
+    expect(createObjectURL).toHaveBeenCalledOnce();
+    expect(createObjectURL.mock.calls[0]).toHaveLength(1);
+    expect(click).toHaveBeenCalledOnce();
+    expect(document.querySelector('a[download]')).toBeNull();
+
+    await waitFor(
+      () => expect(revokeObjectURL).toHaveBeenCalledWith('blob:transactions'),
+      { timeout: 2000 },
+    );
+  } finally {
+    click.mockRestore();
+    vi.unstubAllGlobals();
+  }
 });

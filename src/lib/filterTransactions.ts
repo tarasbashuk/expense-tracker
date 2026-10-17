@@ -11,11 +11,21 @@ export function filterTransactions(
 ): Transaction[] {
   const query = search.trim().normalize('NFC').toLocaleLowerCase();
 
+  const amountQuery = query.replace(/\s/g, '').replace(',', '.');
+  const searchedAmount = /^\d+(?:\.\d+)?$/.test(amountQuery)
+    ? Number(amountQuery)
+    : null;
+
   return transactions.filter((transaction) => {
     const matchesDescription = transaction.text
       .normalize('NFC')
       .toLocaleLowerCase()
       .includes(query);
+    const matchesAmount =
+      searchedAmount !== null &&
+      [transaction.amount, transaction.amountDefaultCurrency].some(
+        (amount) => Number(amount.toFixed(2)) === searchedAmount,
+      );
     const matchesCategory =
       category === 'all' || transaction.category === category;
     const matchesType = type === 'all' || transaction.type === type;
@@ -28,7 +38,7 @@ export function filterTransactions(
 
     return (
       matchesTags &&
-      matchesDescription &&
+      (matchesDescription || matchesAmount) &&
       matchesCategory &&
       matchesType &&
       matchesRecurring

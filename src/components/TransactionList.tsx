@@ -13,6 +13,8 @@ import {
 import ViewListIcon from '@mui/icons-material/ViewList';
 import TableViewIcon from '@mui/icons-material/TableView';
 import SearchIcon from '@mui/icons-material/Search';
+import DownloadIcon from '@mui/icons-material/Download';
+import { downloadTransactionsCsv } from '@/lib/transactionsCsv';
 import CloseIcon from '@mui/icons-material/Close';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { filterTransactions } from '@/lib/filterTransactions';
@@ -447,6 +449,32 @@ const TransactionList = () => {
                   { id: 'history.filters' },
                   { count: activeFilterCount },
                 )}
+              </Button>
+            )}
+            {!isMobile && (
+              <Button
+                variant="outlined"
+                startIcon={<DownloadIcon />}
+                sx={{
+                  flexShrink: 0,
+                  height: 44,
+                  display: { xs: 'none', sm: 'inline-flex' },
+                }}
+                disabled={
+                  pending ||
+                  !!currentError ||
+                  !visibleTransactions.length ||
+                  searchInput !== search
+                }
+                onClick={() =>
+                  downloadTransactionsCsv(
+                    visibleTransactions,
+                    settings.defaultCurrency,
+                    `transactions_${selectedRange.start}_${selectedRange.end}.csv`,
+                  )
+                }
+              >
+                {formatMessage({ id: 'history.exportCsv' })}
               </Button>
             )}
             <ToggleButtonGroup

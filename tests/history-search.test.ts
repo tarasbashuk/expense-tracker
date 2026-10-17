@@ -132,3 +132,29 @@ test('tag OR combines with search, category, type and recurrence AND without reo
   ).toEqual(rows.slice(0, 2));
   expect(filterTransactions(rows, '', 'all', 'all', false, [])).toEqual(rows);
 });
+
+test('amount search matches exact original or converted amounts with either decimal separator', () => {
+  const rows = [
+    transaction({ amount: 1234.5, amountDefaultCurrency: 300 }),
+    transaction({ amount: 20, amountDefaultCurrency: 1234.5 }),
+    transaction({ amount: 12345, amountDefaultCurrency: 40 }),
+    transaction({ text: 'Invoice 1234.50', amount: 1 }),
+  ];
+
+  expect(filterTransactions(rows, '1 234,50', 'all', 'all')).toEqual(
+    rows.slice(0, 2),
+  );
+  expect(filterTransactions(rows, '1234.50', 'all', 'all')).toEqual([
+    rows[0],
+    rows[1],
+    rows[3],
+  ]);
+  expect(filterTransactions(rows, '300', 'all', 'Income')).toEqual([]);
+});
+
+test('amount search supports zero and rejects nonnumeric queries as amounts', () => {
+  const rows = [transaction({ amount: 0 }), transaction({ amount: 12.34 })];
+
+  expect(filterTransactions(rows, '0', 'all', 'all')).toEqual([rows[0]]);
+  expect(filterTransactions(rows, '12x34', 'all', 'all')).toEqual([]);
+});

@@ -351,7 +351,7 @@ test('description search filters locally and clearing restores results without a
   const calls = mocks.getTransactions.mock.calls.length;
 
   await user.type(
-    screen.getByRole('textbox', { name: 'Search descriptions' }),
+    screen.getByRole('textbox', { name: 'Search by description or amount' }),
     'missing',
   );
 
@@ -412,7 +412,9 @@ test('shortcut can omit the amount and preserves the dialog on failure', async (
 test('desktop search and additional filters are directly available', async () => {
   const user = userEvent.setup();
   await renderHistory();
-  const search = screen.getByRole('textbox', { name: 'Search descriptions' });
+  const search = screen.getByRole('textbox', {
+    name: 'Search by description or amount',
+  });
 
   expect(screen.queryByRole('dialog')).toBeNull();
   expect(screen.getAllByRole('combobox')).toHaveLength(2);
@@ -463,7 +465,7 @@ test.each([
   ).toBeNull();
 
   await user.type(
-    screen.getByRole('textbox', { name: 'Search descriptions' }),
+    screen.getByRole('textbox', { name: 'Search by description or amount' }),
     'Coffee',
   );
 
@@ -479,7 +481,7 @@ test.each([
     selectedPeriod,
   );
   expect(
-    screen.getByRole('textbox', { name: 'Search descriptions' }),
+    screen.getByRole('textbox', { name: 'Search by description or amount' }),
   ).toHaveProperty('value', '');
   expect(
     screen.queryByRole('button', { name: 'Reset search and filters' }),
@@ -492,7 +494,9 @@ test('desktop recurring filter applies immediately, preserves search and resets 
   const user = userEvent.setup();
   await renderHistory();
   const calls = mocks.getTransactions.mock.calls.length;
-  const search = screen.getByRole('textbox', { name: 'Search descriptions' });
+  const search = screen.getByRole('textbox', {
+    name: 'Search by description or amount',
+  });
 
   await user.type(search, 'Coffee');
   await user.click(screen.getByRole('checkbox', { name: 'Recurring only' }));
@@ -605,7 +609,7 @@ test('mobile filter drafts are discarded on close and apply updates results with
 
   await user.click(screen.getByRole('button', { name: 'Filters (0)' }));
   await user.type(
-    screen.getByRole('textbox', { name: 'Search descriptions' }),
+    screen.getByRole('textbox', { name: 'Search by description or amount' }),
     'missing',
   );
 
@@ -615,11 +619,11 @@ test('mobile filter drafts are discarded on close and apply updates results with
   await user.click(screen.getByRole('button', { name: 'Filters (0)' }));
 
   expect(
-    screen.getByRole('textbox', { name: 'Search descriptions' }),
+    screen.getByRole('textbox', { name: 'Search by description or amount' }),
   ).toHaveProperty('value', '');
 
   await user.type(
-    screen.getByRole('textbox', { name: 'Search descriptions' }),
+    screen.getByRole('textbox', { name: 'Search by description or amount' }),
     'missing',
   );
   await user.click(screen.getByRole('button', { name: 'Apply' }));
@@ -635,7 +639,7 @@ test('mobile filter drafts are discarded on close and apply updates results with
   await user.click(screen.getByRole('button', { name: 'Filters (1)' }));
 
   expect(
-    screen.getByRole('textbox', { name: 'Search descriptions' }),
+    screen.getByRole('textbox', { name: 'Search by description or amount' }),
   ).toHaveProperty('value', 'missing');
 
   await user.click(screen.getByRole('button', { name: 'Reset' }));
@@ -646,7 +650,7 @@ test('mobile filter drafts are discarded on close and apply updates results with
   await user.click(screen.getByRole('button', { name: 'Filters (1)' }));
 
   expect(
-    screen.getByRole('textbox', { name: 'Search descriptions' }),
+    screen.getByRole('textbox', { name: 'Search by description or amount' }),
   ).toHaveProperty('value', 'missing');
 
   await user.click(screen.getByRole('button', { name: 'Reset' }));
