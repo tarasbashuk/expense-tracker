@@ -27,6 +27,7 @@ import {
 } from '@mui/x-date-pickers/locales';
 import { useIntl } from 'react-intl';
 
+import { selectedSegmentStyles } from '../history/tokens';
 import ResponsiveDialog, { FormTitle } from './ResponsiveDialog';
 import { useSettings } from '@/context/SettingsContexts';
 import {
@@ -169,6 +170,7 @@ const DatePeriodFilter = ({
           size="small"
           color="primary"
           sx={{
+            ...selectedSegmentStyles,
             minWidth: 0,
             flex: 1,
             ...(toolbarGrid && {

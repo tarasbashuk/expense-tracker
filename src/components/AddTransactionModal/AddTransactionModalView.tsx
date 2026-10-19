@@ -36,7 +36,7 @@ import {
 } from '@/constants/constants';
 import { Currency, TransactionType } from '@prisma/client';
 import { TransactionCategory } from '@/constants/types';
-import { getIconByName } from '@/lib/getCategoryIcon';
+import CategoryIcon from '../history/CategoryIcon';
 import { DatePicker } from '@mui/x-date-pickers';
 import CurrencySelect from '../CurrencySelect';
 import TransactionTypeButtonGroup from '../shared/TransactionTypeButtonGroup';
@@ -289,20 +289,14 @@ const AddTransactionModalView: React.FC<Props> = ({
                   value={category as string}
                   onChange={handleCategoryChange}
                 >
-                  {categories.map(({ value }) => {
-                    const IconComponent = getIconByName(
-                      value as TransactionCategory,
-                    );
-
-                    return (
-                      <MenuItem key={value} value={value}>
-                        <Stack direction="row" alignItems="center">
-                          <IconComponent sx={{ marginRight: '8px' }} />
-                          {getLabel(value as TransactionCategory)}
-                        </Stack>
-                      </MenuItem>
-                    );
-                  })}
+                  {categories.map(({ value }) => (
+                    <MenuItem key={value} value={value}>
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <CategoryIcon category={value} />
+                        {getLabel(value as TransactionCategory)}
+                      </Stack>
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Grid>

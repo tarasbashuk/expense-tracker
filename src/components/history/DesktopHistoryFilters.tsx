@@ -16,6 +16,8 @@ import { useIntl } from 'react-intl';
 import { categoriesByType, type HistoryFilters } from './HistoryFiltersSheet';
 import { isCreditCardCategory } from '@/constants/constants';
 import { useTagCatalog } from '../tags/useTagCatalog';
+import CategoryIcon from './CategoryIcon';
+import { selectedSegmentStyles } from './tokens';
 import { TAG_COLORS } from '@/lib/tags';
 
 export default function DesktopHistoryFilters({
@@ -48,6 +50,7 @@ export default function DesktopHistoryFilters({
           if (type) onChange({ ...value, type, category: 'all' });
         }}
         sx={{
+          ...selectedSegmentStyles,
           height: 44,
           flexShrink: 0,
           ...(toolbarGrid && {
@@ -111,10 +114,16 @@ export default function DesktopHistoryFilters({
                 value={category.value}
                 sx={{ whiteSpace: 'normal', overflowWrap: 'anywhere' }}
               >
-                {formatMessage({
-                  id: `categories.${category.value}`,
-                  defaultMessage: category.label,
-                })}
+                <Box
+                  component="span"
+                  sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}
+                >
+                  <CategoryIcon category={category.value} />
+                  {formatMessage({
+                    id: `categories.${category.value}`,
+                    defaultMessage: category.label,
+                  })}
+                </Box>
               </MenuItem>
             ))}
           </Select>

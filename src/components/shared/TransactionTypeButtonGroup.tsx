@@ -3,6 +3,7 @@ import { FC } from 'react';
 import { ToggleButtonGroup, ToggleButton, SxProps } from '@mui/material';
 import { TransactionType } from '@prisma/client';
 import { useIntl } from 'react-intl';
+import { selectedSegmentStyles } from '../history/tokens';
 
 interface Props {
   transactionType: TransactionType;
@@ -37,12 +38,7 @@ const TransactionTypeButtonGroup: FC<Props> = ({
       color="primary"
       value={transactionType}
       onChange={handleTypeChange}
-      sx={{
-        '& .MuiToggleButton-root.Mui-selected': {
-          bgcolor: 'action.selected',
-          '&:hover': { bgcolor: 'action.hover' },
-        },
-      }}
+      sx={selectedSegmentStyles}
     >
       <ToggleButton sx={buttonsSx} value={TransactionType.Expense}>
         {formatMessage({

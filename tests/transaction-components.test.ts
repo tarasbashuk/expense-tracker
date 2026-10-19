@@ -928,3 +928,50 @@ test('desktop tag filters update the net summary immediately, then reset', async
   );
   expect(screen.queryByText('Net total for matching transactions:')).toBeNull();
 });
+
+test('mobile reset clears applied filters immediately and disappears without refetching', async () => {
+  useMobileViewport();
+  const user = userEvent.setup();
+
+  await renderHistory();
+
+  const calls = mocks.getTransactions.mock.calls.length;
+
+  expect(screen.queryByRole('button', { name: 'Reset' })).toBeNull();
+
+  await user.click(screen.getByRole('button', { name: 'Filters (0)' }));
+
+  expect(screen.getByRole('button', { name: 'Reset' })).toHaveProperty(
+    'disabled',
+    true,
+  );
+
+  await user.type(
+    screen.getByRole('textbox', { name: 'Search by description or amount' }),
+    'missing',
+  );
+
+  expect(screen.getByRole('button', { name: 'Reset' })).toHaveProperty(
+    'disabled',
+    false,
+  );
+
+  await user.click(screen.getByRole('button', { name: 'Reset' }));
+
+  expect(screen.getByRole('button', { name: 'Reset' })).toHaveProperty(
+    'disabled',
+    true,
+  );
+
+  await user.click(screen.getByRole('button', { name: 'INCOME' }));
+  await user.click(screen.getByRole('button', { name: 'Apply' }));
+
+  expect(screen.queryByText('Coffee')).toBeNull();
+
+  await user.click(screen.getByRole('button', { name: 'Reset' }));
+
+  expect(screen.getByText('Coffee')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Reset' })).toBeNull();
+  expect(screen.getByRole('button', { name: 'Filters (0)' })).toBeTruthy();
+  expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
+});

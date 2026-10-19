@@ -26,12 +26,15 @@ import TransactionSkeleton, {
 } from './history/TransactionSkeleton';
 import { visuallyHidden } from '@mui/utils';
 import TransactionRows from './TransactionRows';
-import HistoryFiltersSheet from './history/HistoryFiltersSheet';
+import HistoryFiltersSheet, {
+  hasActiveHistoryFilters,
+} from './history/HistoryFiltersSheet';
 import DesktopHistoryFilters from './history/DesktopHistoryFilters';
 import PeriodBalance from './history/PeriodBalance';
 import HistoryHeaderActions from './history/HistoryHeaderActions';
 import {
   cardRadius,
+  selectedSegmentStyles,
   historyColors,
   pageStyles,
   pageHeaderStyles,
@@ -209,6 +212,13 @@ const TransactionList = () => {
     Number(recurringOnly) +
     Number(tagIds.length > 0);
   const hasFilters = activeFilterCount > 0;
+  const hasResettableFilters = hasActiveHistoryFilters({
+    type: selectedTransactionType,
+    category: selectedCategory,
+    recurringOnly,
+    search: searchInput,
+    tagIds,
+  });
 
   const resetFilters = () => {
     setSearchInput('');
@@ -472,18 +482,25 @@ const TransactionList = () => {
               />
             )}
             {isMobile && (
-              <Button
-                variant="outlined"
-                startIcon={<FilterListIcon />}
-                onClick={() => setFiltersOpen(true)}
-                aria-haspopup="dialog"
-                aria-expanded={filtersOpen}
-              >
-                {formatMessage(
-                  { id: 'history.filters' },
-                  { count: activeFilterCount },
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Button
+                  variant="outlined"
+                  startIcon={<FilterListIcon />}
+                  onClick={() => setFiltersOpen(true)}
+                  aria-haspopup="dialog"
+                  aria-expanded={filtersOpen}
+                >
+                  {formatMessage(
+                    { id: 'history.filters' },
+                    { count: activeFilterCount },
+                  )}
+                </Button>
+                {hasResettableFilters && (
+                  <Button onClick={resetFilters}>
+                    {formatMessage({ id: 'history.resetDraft' })}
+                  </Button>
                 )}
-              </Button>
+              </Stack>
             )}
             <Box
               sx={{
@@ -497,16 +514,15 @@ const TransactionList = () => {
                 exclusive
                 size="small"
                 color="primary"
-                sx={
-                  !isMobile
-                    ? {
-                        flexShrink: 0,
-                        height: 44,
-                        width: 88,
-                        '& > button': { width: 44 },
-                      }
-                    : undefined
-                }
+                sx={{
+                  ...selectedSegmentStyles,
+                  ...(!isMobile && {
+                    flexShrink: 0,
+                    height: 44,
+                    width: 88,
+                    '& > button': { width: 44 },
+                  }),
+                }}
                 value={viewType}
                 onChange={handleTypeChange}
               >
@@ -584,16 +600,11 @@ const TransactionList = () => {
             />
           )}
         </Box>
-        {!isMobile &&
-          (searchInput.trim() ||
-            selectedCategory !== 'all' ||
-            selectedTransactionType !== 'all' ||
-            recurringOnly ||
-            tagIds.length > 0) && (
-            <Button onClick={resetFilters} sx={{ alignSelf: 'flex-start' }}>
-              {formatMessage({ id: 'history.resetFilters' })}
-            </Button>
-          )}
+        {!isMobile && hasResettableFilters && (
+          <Button onClick={resetFilters} sx={{ alignSelf: 'flex-start' }}>
+            {formatMessage({ id: 'history.resetFilters' })}
+          </Button>
+        )}
         <PeriodBalance
           income={hasCurrentData ? income : null}
           expense={hasCurrentData ? expense : null}

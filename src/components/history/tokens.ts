@@ -46,3 +46,10 @@ export const pageHeaderStyles = {
   borderBottom: { xs: `1px solid ${historyColors.divider}`, sm: 0 },
   zIndex: 1100,
 };
+
+export const selectedSegmentStyles = {
+  '& .MuiToggleButton-root.Mui-selected': {
+    bgcolor: 'action.selected',
+    '&:hover': { bgcolor: 'action.hover' },
+  },
+};

@@ -29,7 +29,7 @@ import getStats from '@/app/actions/getStats';
 import AdditionalBalanceInfo from './AdditionalBalanceInfo';
 import getIncomeExpense from '@/app/actions/getIncomeExpense';
 import MobileWarning from './shared/MobileWarning';
-import { getIconByName } from '@/lib/getCategoryIcon';
+import CategoryIcon from './history/CategoryIcon';
 import { ChartType, TransactionCategory } from '@/constants/types';
 import { useIntl, FormattedMessage } from 'react-intl';
 import { useCategoryI18n } from '@/lib/useCategoryI18n';
@@ -206,7 +206,6 @@ const Stats = () => {
   //  Use the category key from raw data instead of searching by label
   const activeCategory = activeRawData?.label;
 
-  const IconComponent = getIconByName(activeCategory as TransactionCategory);
   const labelColor = COLOR_MAP[activeCategory as TransactionCategory];
 
   if (error) {
@@ -259,7 +258,13 @@ const Stats = () => {
               <ListItem>
                 <ListItemAvatar>
                   <Avatar sx={{ bgcolor: labelColor }}>
-                    {IconComponent && <IconComponent />}
+                    <CategoryIcon
+                      category={
+                        typeof activeCategory === 'string'
+                          ? activeCategory
+                          : 'others'
+                      }
+                    />
                   </Avatar>
                 </ListItemAvatar>
                 <ListItemText

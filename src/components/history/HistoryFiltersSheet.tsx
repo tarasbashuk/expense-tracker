@@ -2,7 +2,7 @@
 
 import ResponsiveDialog, { FormTitle } from '../shared/ResponsiveDialog';
 import TagPicker from '../tags/TagPicker';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -33,6 +33,7 @@ import {
   isCreditCardCategory,
 } from '@/constants/constants';
 import CategoryIcon from './CategoryIcon';
+import { selectedSegmentStyles } from './tokens';
 
 export interface HistoryFilters {
   tagIds?: string[];
@@ -59,6 +60,16 @@ const emptyFilters: HistoryFilters = {
   tagIds: [],
 };
 
+export function hasActiveHistoryFilters(value: HistoryFilters): boolean {
+  return (
+    value.type !== 'all' ||
+    value.category !== 'all' ||
+    value.recurringOnly ||
+    Boolean(value.search.trim()) ||
+    Boolean(value.tagIds?.length)
+  );
+}
+
 interface Props {
   desktop?: boolean;
   value: HistoryFilters;
@@ -76,6 +87,7 @@ export default function HistoryFiltersSheet({
   onApply,
 }: Props) {
   const [draft, setDraft] = useState(value);
+  const allTypesButton = useRef<HTMLButtonElement>(null);
 
   // A search applied outside this dialog must survive an older filter draft.
   useEffect(() => {
@@ -101,7 +113,13 @@ export default function HistoryFiltersSheet({
           }}
         >
           {formatMessage({ id: 'history.filtersTitle' })}
-          <Button onClick={() => setDraft(emptyFilters)}>
+          <Button
+            disabled={!hasActiveHistoryFilters(draft)}
+            onClick={() => {
+              allTypesButton.current?.focus();
+              setDraft(emptyFilters);
+            }}
+          >
             {formatMessage({ id: 'history.resetDraft' })}
           </Button>
         </Box>
@@ -120,6 +138,7 @@ export default function HistoryFiltersSheet({
           }}
         >
           <ToggleButtonGroup
+            sx={selectedSegmentStyles}
             exclusive
             fullWidth
             value={draft.type}
@@ -127,7 +146,7 @@ export default function HistoryFiltersSheet({
               if (type) setDraft({ ...draft, type, category: 'all' });
             }}
           >
-            <ToggleButton value="all">
+            <ToggleButton ref={allTypesButton} value="all">
               {formatMessage({ id: 'filters.allTypes' })}
             </ToggleButton>
             <ToggleButton value="Expense">

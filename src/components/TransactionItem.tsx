@@ -17,10 +17,9 @@ import {
   Box,
 } from '@mui/material';
 import RepeatIcon from '@mui/icons-material/Repeat';
-import { getIconByName } from '@/lib/getCategoryIcon';
+import CategoryIcon from './history/CategoryIcon';
 import { green, red } from '@mui/material/colors';
 
-import { TransactionCategory } from '@/constants/types';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { useSettings } from '@/context/SettingsContexts';
 import { getTransactionSign, formatDate } from '@/lib/utils';
@@ -64,7 +63,6 @@ const TransactionItem: FC<Props> = ({
     recurringEndDate,
   } = transaction;
   const sign = getTransactionSign(type);
-  const IconComponent = getIconByName(category as TransactionCategory);
   const labelColor = type === TransactionType.Expense ? red[500] : green[500];
   const formattedDate = formatDate(date, locale as Locale);
   const isSecondaryAmountShown = currency !== settings.defaultCurrency;
@@ -113,7 +111,7 @@ const TransactionItem: FC<Props> = ({
               height: { xs: 36, sm: 40 },
             }}
           >
-            {IconComponent && <IconComponent />}
+            <CategoryIcon category={category} />
           </Avatar>
         </ListItemAvatar>
         <ListItemText

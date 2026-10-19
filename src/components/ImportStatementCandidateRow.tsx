@@ -1,5 +1,6 @@
 'use client';
 
+import CategoryIcon from './history/CategoryIcon';
 import { useEffect, useState } from 'react';
 import {
   Alert,
@@ -311,7 +312,10 @@ export default function ImportStatementCandidateRow({
             >
               {categoryOptions.map(({ value }, index) => (
                 <MenuItem key={`${value}-${index}`} value={value}>
-                  {getLabel(value as TransactionCategory)}
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <CategoryIcon category={value} />
+                    {getLabel(value as TransactionCategory)}
+                  </Stack>
                 </MenuItem>
               ))}
             </Select>
