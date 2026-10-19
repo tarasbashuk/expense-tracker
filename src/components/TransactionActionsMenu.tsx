@@ -1,4 +1,5 @@
 'use client';
+import { MoreHorizIcon } from '@/components/shared/icons';
 
 import { useId, useState } from 'react';
 import { Transaction } from '@/lib/tags';
@@ -14,7 +15,6 @@ import {
 import { ChevronDown, Pencil, Copy, BookmarkPlus, Trash2 } from 'lucide-react';
 import CategoryIcon from './history/CategoryIcon';
 import { cardRadius, historyColors } from './history/tokens';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import { useIntl } from 'react-intl';
 
 import SaveTransactionTemplate from './SaveTransactionTemplate';
@@ -70,10 +70,11 @@ export default function TransactionActionsMenu({
           sx={{
             width: categoryButton ? 52 : 44,
             height: categoryButton ? (stretchCategoryButton ? 'auto' : 48) : 44,
-            ...(categoryButton && stretchCategoryButton && {
-              alignSelf: 'stretch',
-              minHeight: 48,
-            }),
+            ...(categoryButton &&
+              stretchCategoryButton && {
+                alignSelf: 'stretch',
+                minHeight: 48,
+              }),
             flexShrink: 0,
             borderRadius: categoryButton ? '10px' : '50%',
             ...(categoryButton && {

@@ -1,4 +1,9 @@
 'use client';
+import {
+  QuestionMarkIcon,
+  PieChartIcon,
+  BarChartIcon,
+} from '@/components/shared/icons';
 import React, { useEffect, useState } from 'react';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { BarChart } from '@mui/x-charts/BarChart';
@@ -17,9 +22,6 @@ import {
   ToggleButtonGroup,
   ToggleButton,
 } from '@mui/material';
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import PieChartIcon from '@mui/icons-material/PieChart';
-import BarChartIcon from '@mui/icons-material/BarChart';
 import { blue, green } from '@mui/material/colors';
 
 import YearMonthSelect from './shared/YearMonthSelect';

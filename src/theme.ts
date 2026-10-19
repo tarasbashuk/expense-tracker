@@ -1,4 +1,40 @@
 import type {} from '@mui/x-date-pickers/themeAugmentation';
+import type {} from '@mui/x-data-grid/themeAugmentation';
+import { createElement } from 'react';
+import {
+  AddIcon,
+  MinusIcon,
+  ResizeIcon,
+  ReorderIcon,
+  CompactRowsIcon,
+  StandardRowsIcon,
+  ComfortableRowsIcon,
+  LoadingIcon,
+  ArrowBackIosNew,
+  ArrowForwardIos,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  CalendarMonth,
+  ChevronDownIcon,
+  CheckedIcon,
+  UncheckedIcon,
+  IndeterminateIcon,
+  CheckIcon,
+  CloseIcon,
+  ErrorIcon,
+  InfoIcon,
+  WarningIcon,
+  FirstPageIcon,
+  LastPageIcon,
+  MoreVertIcon,
+  FilterListIcon,
+  ColumnsIcon,
+  HideIcon,
+  SearchIcon,
+  DownloadIcon,
+  DeleteIcon,
+  SortIcon,
+} from '@/components/shared/icons';
 import PickerSlideTransition from '@/components/shared/PickerSlideTransition';
 import { createTheme } from '@mui/material/styles';
 import { cardRadius, historyColors } from '@/components/history/tokens';
@@ -12,6 +48,102 @@ export const appTheme = createTheme({
     text: { primary: historyColors.text, secondary: historyColors.secondary },
   },
   components: {
+    MuiSelect: { defaultProps: { IconComponent: ChevronDownIcon } },
+    MuiNativeSelect: { defaultProps: { IconComponent: ChevronDownIcon } },
+    MuiCheckbox: {
+      defaultProps: {
+        icon: createElement(UncheckedIcon),
+        checkedIcon: createElement(CheckedIcon),
+        indeterminateIcon: createElement(IndeterminateIcon),
+      },
+    },
+    MuiAlert: {
+      defaultProps: {
+        iconMapping: {
+          success: createElement(CheckIcon),
+          error: createElement(ErrorIcon),
+          info: createElement(InfoIcon),
+          warning: createElement(WarningIcon),
+        },
+        slots: { closeIcon: CloseIcon },
+      },
+    },
+    MuiAutocomplete: {
+      defaultProps: {
+        popupIcon: createElement(ChevronDownIcon),
+        clearIcon: createElement(CloseIcon, { fontSize: 'small' }),
+      },
+    },
+    MuiChip: { defaultProps: { deleteIcon: createElement(CloseIcon) } },
+    MuiTablePagination: {
+      defaultProps: {
+        slots: {
+          actions: {
+            firstButtonIcon: FirstPageIcon,
+            lastButtonIcon: LastPageIcon,
+            previousButtonIcon: ArrowBackIosNew,
+            nextButtonIcon: ArrowForwardIos,
+          },
+        },
+      },
+    },
+    MuiDatePicker: {
+      defaultProps: { slots: { openPickerIcon: CalendarMonth } },
+    },
+    MuiDesktopDatePicker: {
+      defaultProps: { slots: { openPickerIcon: CalendarMonth } },
+    },
+    MuiPickersCalendarHeader: {
+      defaultProps: {
+        slots: {
+          switchViewIcon: ChevronDownIcon,
+          leftArrowIcon: ArrowBackIosNew,
+          rightArrowIcon: ArrowForwardIos,
+        },
+      },
+    },
+    MuiDataGrid: {
+      defaultProps: {
+        slots: {
+          booleanCellTrueIcon: CheckIcon,
+          booleanCellFalseIcon: CloseIcon,
+          columnMenuIcon: MoreVertIcon,
+          openFilterButtonIcon: FilterListIcon,
+          columnFilteredIcon: FilterListIcon,
+          columnSelectorIcon: ColumnsIcon,
+          columnResizeIcon: ResizeIcon,
+          densityCompactIcon: CompactRowsIcon,
+          densityStandardIcon: StandardRowsIcon,
+          densityComfortableIcon: ComfortableRowsIcon,
+          treeDataExpandIcon: ArrowForwardIos,
+          treeDataCollapseIcon: ChevronDownIcon,
+          groupingCriteriaExpandIcon: ArrowForwardIos,
+          groupingCriteriaCollapseIcon: ChevronDownIcon,
+          detailPanelExpandIcon: AddIcon,
+          detailPanelCollapseIcon: MinusIcon,
+          rowReorderIcon: ReorderIcon,
+          columnReorderIcon: ReorderIcon,
+          loadIcon: LoadingIcon,
+          columnSortedAscendingIcon: ArrowUpIcon,
+          columnSortedDescendingIcon: ArrowDownIcon,
+          exportIcon: DownloadIcon,
+          moreActionsIcon: MoreVertIcon,
+          filterPanelAddIcon: AddIcon,
+          filterPanelDeleteIcon: DeleteIcon,
+          filterPanelRemoveAllIcon: DeleteIcon,
+          quickFilterIcon: SearchIcon,
+          quickFilterClearIcon: CloseIcon,
+          columnMenuHideIcon: HideIcon,
+          columnMenuSortAscendingIcon: ArrowUpIcon,
+          columnMenuSortDescendingIcon: ArrowDownIcon,
+          columnMenuUnsortIcon: SortIcon,
+          columnMenuFilterIcon: FilterListIcon,
+          columnMenuManageColumnsIcon: ColumnsIcon,
+          columnMenuClearIcon: CloseIcon,
+          menuItemCheckIcon: CheckIcon,
+        },
+      },
+    },
     MuiButton: {
       defaultProps: { disableElevation: true },
       styleOverrides: {

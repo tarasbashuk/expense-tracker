@@ -1,11 +1,10 @@
 'use client';
+import { AddIcon, AutoAwesomeIcon } from '@/components/shared/icons';
 
 import { useState } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { Button, Box, Stack } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useIntl } from 'react-intl';
 import { useTransactions } from '@/context/TranasctionsContext';
 import ImportStatementModal from '../ImportStatementModal';

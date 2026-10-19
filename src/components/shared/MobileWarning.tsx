@@ -1,7 +1,7 @@
 'use client';
+import { CloseIcon } from '@/components/shared/icons';
 import React, { useState } from 'react';
 import { Alert, Box, IconButton } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import { useMediaQueries } from '@/lib/useMediaQueries';
 import { useIntl } from 'react-intl';
 

@@ -1,4 +1,5 @@
 'use client';
+import { CreditCardIcon } from '@/components/shared/icons';
 import ResponsiveDialog, { FormTitle } from '../shared/ResponsiveDialog';
 import TagsAndRecurrence from './TagsAndRecurrence';
 import TagPicker from '../tags/TagPicker';
@@ -24,7 +25,6 @@ import {
   Checkbox,
   Switch,
 } from '@mui/material';
-import CreditCardIcon from '@mui/icons-material/CreditCard';
 
 import {
   CURRENCY_SYMBOL_MAP,

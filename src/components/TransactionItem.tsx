@@ -1,4 +1,5 @@
 'use client';
+import { RepeatIcon } from '@/components/shared/icons';
 import TagBadges from './tags/TagBadges';
 import { FC } from 'react';
 import TransactionActionsMenu from './TransactionActionsMenu';
@@ -16,7 +17,6 @@ import {
   Tooltip,
   Box,
 } from '@mui/material';
-import RepeatIcon from '@mui/icons-material/Repeat';
 import CategoryIcon from './history/CategoryIcon';
 import { green, red } from '@mui/material/colors';
 

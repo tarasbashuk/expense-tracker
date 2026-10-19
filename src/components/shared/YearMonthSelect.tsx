@@ -1,3 +1,4 @@
+import { ArrowBack, ArrowForward } from '@/components/shared/icons';
 import { FC, useCallback } from 'react';
 import {
   FormControl,
@@ -18,7 +19,6 @@ import {
   MONTH_LIST,
   YEAR_LIST,
 } from '@/constants/constants';
-import { ArrowBack, ArrowForward } from '@mui/icons-material';
 import { useIntl } from 'react-intl';
 import { useSettings } from '@/context/SettingsContexts';
 

@@ -1,4 +1,11 @@
 'use client';
+import {
+  CloseIcon,
+  DeleteIcon,
+  DocumentScannerIcon,
+  PictureAsPdfIcon,
+  UploadFileIcon,
+} from '@/components/shared/icons';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { isSameMonth, isSameYear } from 'date-fns';
@@ -15,11 +22,6 @@ import {
   Typography,
 } from '@mui/material';
 import { Currency } from '@prisma/client';
-import CloseIcon from '@mui/icons-material/Close';
-import DeleteIcon from '@mui/icons-material/Delete';
-import DocumentScannerIcon from '@mui/icons-material/DocumentScanner';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { useIntl } from 'react-intl';
 import { toast } from '@/lib/toast';
 

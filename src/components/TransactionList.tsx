@@ -1,4 +1,12 @@
 'use client';
+import {
+  ViewListIcon,
+  TableViewIcon,
+  SearchIcon,
+  DownloadIcon,
+  CloseIcon,
+  FilterListIcon,
+} from '@/components/shared/icons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from '@/lib/toast';
 import { Transaction } from '@/lib/tags';
@@ -12,13 +20,7 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import ViewListIcon from '@mui/icons-material/ViewList';
-import TableViewIcon from '@mui/icons-material/TableView';
-import SearchIcon from '@mui/icons-material/Search';
-import DownloadIcon from '@mui/icons-material/Download';
 import { downloadTransactionsCsv } from '@/lib/transactionsCsv';
-import CloseIcon from '@mui/icons-material/Close';
-import FilterListIcon from '@mui/icons-material/FilterList';
 import { filterTransactions } from '@/lib/filterTransactions';
 
 import TransactionSkeleton, {

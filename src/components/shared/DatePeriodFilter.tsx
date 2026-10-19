@@ -1,4 +1,9 @@
 'use client';
+import {
+  ArrowBackIosNew,
+  ArrowForwardIos,
+  CalendarMonth,
+} from '@/components/shared/icons';
 
 import { useMemo, useState } from 'react';
 import {
@@ -12,11 +17,6 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import {
-  ArrowBackIosNew,
-  ArrowForwardIos,
-  CalendarMonth,
-} from '@mui/icons-material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { format } from 'date-fns';

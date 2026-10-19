@@ -1,4 +1,5 @@
 'use client';
+import { RepeatIcon } from '@/components/shared/icons';
 import TagBadges from './tags/TagBadges';
 import { cardRadius } from './history/tokens';
 import { FC, useMemo } from 'react';
@@ -13,7 +14,6 @@ import {
 } from '@mui/x-data-grid';
 import { TransactionType } from '@prisma/client';
 import { Transaction } from '@/lib/tags';
-import RepeatIcon from '@mui/icons-material/Repeat';
 import { useIntl } from 'react-intl';
 
 import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';

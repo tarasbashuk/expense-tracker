@@ -1,4 +1,5 @@
 'use client';
+import { CreditCardIcon } from '@/components/shared/icons';
 
 import CategoryIcon from './history/CategoryIcon';
 import { useEffect, useState } from 'react';
@@ -17,7 +18,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import CreditCardIcon from '@mui/icons-material/CreditCard';
 import { DatePicker } from '@mui/x-date-pickers';
 import { Currency, TransactionType } from '@prisma/client';
 import { format, parseISO } from 'date-fns';

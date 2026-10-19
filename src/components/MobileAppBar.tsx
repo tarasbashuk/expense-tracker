@@ -1,4 +1,15 @@
 'use client';
+import {
+  MoreHorizIcon,
+  AddIcon,
+  AutoAwesomeIcon,
+  SettingsIcon,
+  HomeIcon,
+  ReceiptIcon,
+  DonutSmallIcon,
+  BarChartIcon,
+  RepeatIcon,
+} from '@/components/shared/icons';
 import { useState, MouseEvent } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { BottomNavigation, BottomNavigationAction } from '@mui/material';
@@ -10,15 +21,6 @@ import Toolbar from '@mui/material/Toolbar';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import AddIcon from '@mui/icons-material/Add';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import SettingsIcon from '@mui/icons-material/Settings';
-import HomeIcon from '@mui/icons-material/Home';
-import ReceiptIcon from '@mui/icons-material/Receipt';
-import DonutSmallIcon from '@mui/icons-material/DonutSmall';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import RepeatIcon from '@mui/icons-material/Repeat';
 import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -79,7 +81,12 @@ const MobileAppBar = () => {
   return (
     <>
       <LocalizationProvider dateAdapter={AdapterDateFns}>
-        <AppBar data-bottom-navigation position="fixed" color="info" sx={appBarStyles}>
+        <AppBar
+          data-bottom-navigation
+          position="fixed"
+          color="info"
+          sx={appBarStyles}
+        >
           <Toolbar
             sx={{
               display: 'block',
