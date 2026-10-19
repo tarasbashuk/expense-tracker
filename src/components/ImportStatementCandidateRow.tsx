@@ -312,7 +312,7 @@ export default function ImportStatementCandidateRow({
             >
               {categoryOptions.map(({ value }, index) => (
                 <MenuItem key={`${value}-${index}`} value={value}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
+                  <Stack direction="row" alignItems="center" sx={{ gap: 1 }}>
                     <CategoryIcon category={value} />
                     {getLabel(value as TransactionCategory)}
                   </Stack>
