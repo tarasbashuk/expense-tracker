@@ -128,8 +128,6 @@ vi.mock('@/components/ImportStatementModal', () => ({
     createElement('div', { role: 'dialog', 'aria-label': 'Import statement' }),
 }));
 
-vi.mock('@/components/AdditionalBalanceInfo', () => ({ default: () => null }));
-
 vi.mock('@/components/TransactionsDataGrid', () => ({ default: () => null }));
 
 vi.mock('next/navigation', () => ({

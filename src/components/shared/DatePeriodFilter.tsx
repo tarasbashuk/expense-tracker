@@ -1,17 +1,11 @@
 'use client';
-import {
-  ArrowBackIosNew,
-  ArrowForwardIos,
-  CalendarMonth,
-} from '@/components/shared/icons';
 
+import { CalendarMonth } from '@/components/shared/icons';
 import { useMemo, useState } from 'react';
 import {
-  Box,
   Button,
   DialogActions,
   DialogContent,
-  IconButton,
   Stack,
   ToggleButton,
   ToggleButtonGroup,
@@ -26,8 +20,8 @@ import {
   ukUA as ukUAPickers,
 } from '@mui/x-date-pickers/locales';
 import { useIntl } from 'react-intl';
-
 import { selectedSegmentStyles } from '../history/tokens';
+import PeriodNavigation, { periodCellStyles } from './PeriodNavigation';
 import ResponsiveDialog, { FormTitle } from './ResponsiveDialog';
 import { useSettings } from '@/context/SettingsContexts';
 import {
@@ -48,14 +42,6 @@ interface Props {
   onNext: () => void;
   onCustomRangeChange: (_range: DateRangeValue) => void;
 }
-
-const periodCellStyles = {
-  border: '1px solid',
-  borderColor: 'divider',
-  borderRadius: '12px',
-  bgcolor: 'background.paper',
-  color: 'text.primary',
-};
 
 const modes: PeriodMode[] = ['month', 'quarter', 'year', 'custom'];
 
@@ -208,34 +194,12 @@ const DatePeriodFilter = ({
           ))}
         </ToggleButtonGroup>
 
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: '44px minmax(0, 1fr) 44px',
-            alignItems: 'center',
-            width: '100%',
-            minWidth: 0,
-            flex: 1,
-            ...(toolbarGrid && {
-              gridColumn: 2,
-              gridRow: 1,
-              justifySelf: 'end',
-              maxWidth: 360,
-              gap: 1,
-            }),
-          }}
+        <PeriodNavigation
+          onPrevious={onPrevious}
+          onNext={onNext}
+          styled={toolbarGrid}
+          toolbarGrid={toolbarGrid}
         >
-          <IconButton
-            aria-label={formatMessage({
-              id: 'filters.previousPeriod',
-              defaultMessage: 'Previous period',
-            })}
-            onClick={onPrevious}
-            sx={{ width: 44, height: 44, ...(toolbarGrid && periodCellStyles) }}
-          >
-            <ArrowBackIosNew fontSize="small" />
-          </IconButton>
-
           {mode === 'custom' ? (
             <Button
               color="inherit"
@@ -284,18 +248,7 @@ const DatePeriodFilter = ({
               {formattedRange}
             </Typography>
           )}
-
-          <IconButton
-            aria-label={formatMessage({
-              id: 'filters.nextPeriod',
-              defaultMessage: 'Next period',
-            })}
-            onClick={onNext}
-            sx={{ width: 44, height: 44, ...(toolbarGrid && periodCellStyles) }}
-          >
-            <ArrowForwardIos fontSize="small" />
-          </IconButton>
-        </Box>
+        </PeriodNavigation>
       </Stack>
 
       <ResponsiveDialog

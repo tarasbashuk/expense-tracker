@@ -1,5 +1,6 @@
 'use client';
-import React, { useEffect, useState, useMemo } from 'react';
+
+import { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -8,180 +9,441 @@ import {
   Select,
   FormControl,
   InputLabel,
+  ToggleButtonGroup,
+  ToggleButton,
+  Chip,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { BarChart } from '@mui/x-charts/BarChart';
-import { YEAR_LIST } from '@/constants/constants';
-import { getYearlyStats } from '@/app/actions/getYearlyStats';
-import { MONTH_LIST } from '@/constants/constants';
-import { useMediaQueries } from '@/lib/useMediaQueries';
-import { getYearlyChartDims } from '@/lib/getYearlyChartDims';
-import MobileWarning from '@/components/shared/MobileWarning';
-import AdditionalBalanceInfo from './AdditionalBalanceInfo';
 import { useIntl } from 'react-intl';
+import { YEAR_LIST } from '@/constants/constants';
+import { getYearlyStats, YearlyStatsData } from '@/app/actions/getYearlyStats';
 import { useSettings } from '@/context/SettingsContexts';
+import useAnalyticsCurrency from './statistics/useAnalyticsCurrency';
+import {
+  initialHalfYear,
+  yearlyPresentation,
+} from '@/lib/statisticsPresentation';
+import AdditionalBalanceInfo from './AdditionalBalanceInfo';
+import StatisticsLayout from './statistics/StatisticsLayout';
+import PeriodAmounts from './statistics/PeriodAmounts';
+import ChartLegendMarker from './statistics/ChartLegendMarker';
+import { cardStyles, historyColors } from './history/tokens';
+import TransactionSkeleton from './history/TransactionSkeleton';
 
-const CURRENT_YEAR = new Date().getFullYear();
+const ukrainianMonths = [
+  'Січ',
+  'Лют',
+  'Бер',
+  'Кві',
+  'Тра',
+  'Чер',
+  'Лип',
+  'Сер',
+  'Вер',
+  'Жов',
+  'Лис',
+  'Гру',
+];
 
-const YearlyStatsContent = () => {
-  const { isExtraSmall, isSmall, isMedium } = useMediaQueries();
-  const [year, setYear] = useState(CURRENT_YEAR);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [incomeData, setIncomeData] = useState<number[]>([]);
-  const [expenseData, setExpenseData] = useState<number[]>([]);
-  const { formatMessage } = useIntl();
-  const { locale } = useSettings();
-  const capitalize = (s: string) =>
-    s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
-
-  const { width, height, margin } = getYearlyChartDims({
-    isExtraSmall,
-    isSmall,
-    isMedium,
-  });
+export default function YearlyStatsContent() {
+  const [year, setYear] = useState(() => new Date().getFullYear());
+  const [half, setHalf] = useState(() => initialHalfYear(year));
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [data, setData] = useState<YearlyStatsData | null>(null);
+  const { formatMessage, locale } = useIntl();
+  const { settings } = useSettings();
+  const theme = useTheme();
+  const mobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
-    const fetchYearlyData = async () => {
-      setIsLoading(true);
-      setError(null);
-      setIncomeData([]);
-      setExpenseData([]);
+    let cancelled = false;
+    setLoading(true);
+    setError('');
 
-      const response = await getYearlyStats(year);
+    const fetchData = async () => {
+      try {
+        const response = await getYearlyStats(year);
 
-      if (response.error) {
-        setError(response.error);
-      } else if (response.data) {
-        setIncomeData(response.data.monthlyIncome);
-        setExpenseData(response.data.monthlyExpense);
+        if (!cancelled) {
+          setData(response.data ?? null);
+          setError(response.error ?? '');
+        }
+      } catch {
+        if (!cancelled) {
+          setError(formatMessage({ id: 'stats.loadError' }));
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-
-      setIsLoading(false);
     };
-    fetchYearlyData();
-  }, [year]);
 
-  const series = useMemo(
-    () => [
-      {
-        data: incomeData,
-        label: formatMessage({ id: 'yearly.income', defaultMessage: 'Income' }),
-        color: '#4CAF50',
-      },
-      {
-        data: expenseData,
-        label: formatMessage({
-          id: 'yearly.expense',
-          defaultMessage: 'Expense',
-        }),
-        color: '#2196F3',
-      },
-    ],
-    [incomeData, expenseData, formatMessage],
+    void fetchData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [year, formatMessage]);
+
+  const presentation = yearlyPresentation(
+    data?.monthlyIncome ?? [],
+    data?.monthlyExpense ?? [],
+    data?.monthlyTransactionCounts ?? [],
+    year,
   );
+  const visibleMonths = mobile
+    ? presentation.months.slice(half * 6, half * 6 + 6)
+    : presentation.months;
+  const monthLabel = (month: number, short = false) =>
+    short && locale.startsWith('uk')
+      ? ukrainianMonths[month]
+      : new Intl.DateTimeFormat(locale, {
+          month: short ? 'short' : 'long',
+        }).format(new Date(year, month, 1));
+  const money = useAnalyticsCurrency();
+  const incompleteLabel = formatMessage({ id: 'stats.incompleteMonth' });
+
+  const series = [
+    {
+      id: 'income',
+      data: visibleMonths.map((month) => (month.missing ? null : month.income)),
+      label: formatMessage({ id: 'yearly.income' }),
+      color: '#399F65',
+      valueFormatter: (value: number | null) =>
+        value === null ? '—' : money(value),
+    },
+    {
+      id: 'expense',
+      data: visibleMonths.map((month) =>
+        month.missing ? null : month.expense,
+      ),
+      label: formatMessage({ id: 'yearly.expense' }),
+      color: '#3982E4',
+      valueFormatter: (value: number | null) =>
+        value === null ? '—' : money(value),
+    },
+  ];
+  const showIncomplete = visibleMonths.some((month) => month.incomplete);
+  const showMissing = visibleMonths.some((month) => month.missing);
 
   return (
-    <Stack alignItems="center" spacing={3} sx={{ mt: 4 }}>
-      <MobileWarning />
-      <Typography variant="h4">
-        {formatMessage({
-          id: 'yearly.title',
-          defaultMessage: 'Yearly overview',
-        })}
-      </Typography>
-      <FormControl sx={{ minWidth: 120 }}>
-        <InputLabel id="year-select-label">
-          {formatMessage({ id: 'filters.year', defaultMessage: 'Year' })}
-        </InputLabel>
-        <Select
-          labelId="year-select-label"
-          value={year}
-          label={formatMessage({ id: 'filters.year', defaultMessage: 'Year' })}
-          onChange={(e) => setYear(Number(e.target.value))}
-        >
-          {YEAR_LIST.map((y) => (
-            <MenuItem key={y} value={y}>
-              {y}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+    <StatisticsLayout titleId="yearly.title">
+      <Stack spacing={2}>
+        <FormControl sx={{ width: 160 }} size="small">
+          <InputLabel id="year-select-label">
+            {formatMessage({ id: 'filters.year' })}
+          </InputLabel>
+          <Select
+            labelId="year-select-label"
+            value={year}
+            label={formatMessage({ id: 'filters.year' })}
+            onChange={(event) => {
+              const selectedYear = Number(event.target.value);
+              setYear(selectedYear);
+              setHalf(initialHalfYear(selectedYear));
+            }}
+          >
+            {YEAR_LIST.map((value) => (
+              <MenuItem key={value} value={value}>
+                {value}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        {error ? (
+          <Typography role="alert" color="error">
+            {error}
+          </Typography>
+        ) : (
+          <>
+            <AdditionalBalanceInfo
+              income={presentation.income}
+              expense={presentation.expense}
+              loading={loading}
+            />
+            {loading ? (
+              <TransactionSkeleton />
+            ) : (
+              <>
+                <Box sx={{ ...cardStyles, p: { xs: 1.5, sm: 3 }, minWidth: 0 }}>
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    justifyContent="space-between"
+                    alignItems={{ xs: 'flex-start', sm: 'center' }}
+                    gap={1}
+                    mb={1}
+                  >
+                    <Box>
+                      <Typography component="h2" variant="h6" fontWeight={600}>
+                        {formatMessage({ id: 'yearly.chartTitle' })}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {settings.defaultCurrency}
+                      </Typography>
+                    </Box>
+                    <Stack
+                      direction="row"
+                      gap={2}
+                      aria-label={formatMessage({ id: 'yearly.chartLegend' })}
+                    >
+                      {series.map((item) => (
+                        <Stack
+                          key={item.id}
+                          direction="row"
+                          alignItems="center"
+                          gap={0.75}
+                        >
+                          <ChartLegendMarker color={item.color} />
+                          <Typography variant="body2" color="text.secondary">
+                            {item.label}
+                          </Typography>
+                        </Stack>
+                      ))}
+                    </Stack>
+                  </Stack>
+                  {mobile && (
+                    <ToggleButtonGroup
+                      exclusive
+                      fullWidth
+                      size="small"
+                      value={half}
+                      onChange={(_, value) => {
+                        if (value !== null) {
+                          setHalf(value);
+                        }
+                      }}
+                      aria-label={formatMessage({ id: 'yearly.halfYear' })}
+                    >
+                      <ToggleButton value={0}>
+                        {formatMessage({ id: 'yearly.firstHalf' })}
+                      </ToggleButton>
+                      <ToggleButton value={1}>
+                        {formatMessage({ id: 'yearly.secondHalf' })}
+                      </ToggleButton>
+                    </ToggleButtonGroup>
+                  )}
+                  {!presentation.rows.length ? (
+                    <Typography color="text.secondary" sx={{ py: 4 }}>
+                      {formatMessage({ id: 'yearly.noData' })}
+                    </Typography>
+                  ) : (
+                    <BarChart
+                      height={mobile ? 280 : 320}
+                      hideLegend
+                      margin={{ top: 8, right: 8, bottom: 4, left: 0 }}
+                      grid={{ horizontal: true }}
+                      series={series}
+                      xAxis={[
+                        {
+                          data: visibleMonths.map((month) => month.month),
+                          scaleType: 'band',
+                          valueFormatter: (month, context) => {
+                            const entry = presentation.months[month];
+                            const label = monthLabel(
+                              month,
+                              context.location === 'tick',
+                            );
 
-      {error && (
-        <Typography color="error" sx={{ textAlign: 'center' }}>
-          {error}
-        </Typography>
-      )}
+                            if (context.location === 'tick') {
+                              return `${label}${entry.incomplete ? '*' : entry.missing ? ' —' : ''}`;
+                            }
 
-      <AdditionalBalanceInfo
-        income={Math.round(incomeData.reduce((acc, curr) => acc + curr, 0))}
-        expense={Math.round(expenseData.reduce((acc, curr) => acc + curr, 0))}
-        sx={{ alignSelf: 'flex-start' }}
-      />
+                            return entry.incomplete
+                              ? `${label} · ${incompleteLabel}`
+                              : entry.missing
+                                ? `${label} · ${formatMessage({ id: 'yearly.noRecordsYet' })}`
+                                : label;
+                          },
+                          tickLabelInterval: () => true,
+                          tickLabelStyle: { angle: 0 },
+                          height: 32,
+                        },
+                      ]}
+                      yAxis={[
+                        {
+                          min: 0,
+                          max: presentation.axisMax,
+                          width: 58,
+                          valueFormatter: (value: number) =>
+                            new Intl.NumberFormat(locale, {
+                              notation: 'compact',
+                              maximumFractionDigits: 1,
+                            }).format(value),
+                        },
+                      ]}
+                      sx={{
+                        '& .MuiChartsAxis-line, & .MuiChartsAxis-tick': {
+                          stroke: '#D8DFE8',
+                        },
+                        '& .MuiChartsAxis-tickLabel': {
+                          fill: historyColors.secondary,
+                        },
+                        '& .MuiChartsGrid-line': { stroke: '#EEF1F5' },
+                      }}
+                    />
+                  )}
+                  {!!presentation.rows.length &&
+                    (showIncomplete || showMissing) && (
+                      <Stack direction="row" flexWrap="wrap" gap={2}>
+                        {showIncomplete && (
+                          <Typography variant="caption" color="text.secondary">
+                            * {incompleteLabel}
+                          </Typography>
+                        )}
+                        {showMissing && (
+                          <Typography variant="caption" color="text.secondary">
+                            — {formatMessage({ id: 'yearly.noRecordsYet' })}
+                          </Typography>
+                        )}
+                      </Stack>
+                    )}
+                </Box>
+                {!!presentation.rows.length && (
+                  <Box sx={{ ...cardStyles, p: { xs: 2, sm: 3 } }}>
+                    <Typography
+                      component="h2"
+                      variant="h6"
+                      fontWeight={600}
+                      mb={2}
+                    >
+                      {formatMessage({ id: 'yearly.byMonth' })}
+                    </Typography>
+                    {mobile ? (
+                      <Stack spacing={2}>
+                        {presentation.rows.map((month) => (
+                          <Box
+                            key={month.month}
+                            sx={{
+                              border: `1px solid ${historyColors.divider}`,
+                              borderRadius: 2,
+                              p: 1.5,
+                            }}
+                          >
+                            <Stack
+                              direction="row"
+                              flexWrap="wrap"
+                              gap={1}
+                              justifyContent="space-between"
+                              mb={1.5}
+                            >
+                              <Typography
+                                fontWeight={600}
+                                sx={{ textTransform: 'capitalize' }}
+                              >
+                                {monthLabel(month.month)}
+                              </Typography>
+                              {month.incomplete && (
+                                <Chip size="small" label={incompleteLabel} />
+                              )}
+                            </Stack>
+                            <PeriodAmounts
+                              income={month.income}
+                              expense={month.expense}
+                            />
+                          </Box>
+                        ))}
+                      </Stack>
+                    ) : (
+                      <Table
+                        size="small"
+                        sx={{
+                          fontVariantNumeric: 'tabular-nums',
+                          '& .MuiTableCell-root': {
+                            borderColor: 'rgba(100, 112, 132, 0.12)',
+                          },
+                        }}
+                      >
+                        <TableHead>
+                          <TableRow>
+                            {[
+                              'filters.month',
+                              'incomeExpense.income',
+                              'incomeExpense.expense',
+                              'home.net',
+                            ].map((id, index) => (
+                              <TableCell
+                                key={id}
+                                align={index ? 'right' : 'left'}
+                              >
+                                {formatMessage({ id })}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {presentation.rows.map((month) => {
+                            const difference = month.income - month.expense;
 
-      <Box
-        sx={{
-          width: '100%',
-          maxWidth: 900,
-          minHeight: 400,
-          position: 'relative',
-          overflowX: 'auto',
-          '&::-webkit-scrollbar': {
-            height: '8px',
-          },
-          '&::-webkit-scrollbar-track': {
-            background: '#f1f1f1',
-            borderRadius: '4px',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            background: '#888',
-            borderRadius: '4px',
-            '&:hover': {
-              background: '#555',
-            },
-          },
-        }}
-      >
-        <BarChart
-          loading={isLoading}
-          series={series}
-          xAxis={[
-            {
-              data: MONTH_LIST.map((m) =>
-                capitalize(
-                  new Intl.DateTimeFormat(locale, { month: 'long' }).format(
-                    new Date(2000, Number(m.value), 1),
-                  ),
-                ),
-              ),
-              scaleType: 'band',
-              height: 120,
-              tickLabelStyle: {
-                angle: isExtraSmall || isSmall ? -45 : 45,
-                textAnchor: isExtraSmall || isSmall ? 'end' : 'start',
-                fontSize: isExtraSmall || isSmall ? 10 : 12,
-              },
-            },
-          ]}
-          width={width}
-          height={height}
-          margin={margin}
-          slotProps={{
-            noDataOverlay: {
-              message: formatMessage({
-                id: 'yearly.noData',
-                defaultMessage: 'No data for selected year',
-              }),
-            },
-            legend: {
-              direction: 'horizontal',
-              position: { vertical: 'top', horizontal: 'center' },
-            },
-          }}
-        />
-      </Box>
-    </Stack>
+                            return (
+                              <TableRow key={month.month}>
+                                <TableCell sx={{ py: 2 }}>
+                                  <Box
+                                    component="span"
+                                    sx={{ textTransform: 'capitalize' }}
+                                  >
+                                    {monthLabel(month.month)}
+                                  </Box>{' '}
+                                  {month.incomplete && (
+                                    <Chip
+                                      size="small"
+                                      label={incompleteLabel}
+                                      sx={{ ml: 1 }}
+                                    />
+                                  )}
+                                </TableCell>
+                                <TableCell
+                                  align="right"
+                                  sx={{
+                                    color: historyColors.income,
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {money(month.income)}
+                                </TableCell>
+                                <TableCell
+                                  align="right"
+                                  sx={{
+                                    color: historyColors.expense,
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {money(month.expense)}
+                                </TableCell>
+                                <TableCell
+                                  align="right"
+                                  sx={{
+                                    color:
+                                      difference < 0
+                                        ? historyColors.negativeBalance
+                                        : historyColors.income,
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {difference > 0 ? '+' : ''}
+                                  {money(difference)}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </Box>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </Stack>
+    </StatisticsLayout>
   );
-};
-
-export default YearlyStatsContent;
+}

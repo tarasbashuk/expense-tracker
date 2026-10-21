@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId, useState, ReactNode } from 'react';
 import {
   Box,
   ButtonBase,
@@ -20,10 +20,12 @@ export default function PeriodBalance({
   income,
   expense,
   loading = false,
+  summaryContent,
 }: {
   income: number | null;
   expense: number | null;
   loading?: boolean;
+  summaryContent?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const theme = useTheme();
@@ -34,6 +36,48 @@ export default function PeriodBalance({
   const { formatMessage } = useIntl();
   const { settings } = useSettings();
   const balance = income === null || expense === null ? null : income - expense;
+
+  if (summaryContent !== undefined) {
+    return (
+      <Box
+        sx={{
+          bgcolor: colors.card,
+          borderRadius: cardRadius,
+          px: { xs: 2, sm: 3 },
+          py: 1,
+        }}
+      >
+        <ButtonBase
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+          aria-controls={id}
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            gap: 1,
+            width: '100%',
+            minHeight: 44,
+            textAlign: 'left',
+            borderRadius: 1,
+            '&.Mui-focusVisible': {
+              outline: '2px solid',
+              outlineColor: 'primary.main',
+            },
+          }}
+        >
+          <Typography component="span" fontWeight={500}>
+            {formatMessage({ id: 'stats.periodSummary' })}
+          </Typography>
+          {open ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+        </ButtonBase>
+        <Collapse in={open} unmountOnExit>
+          <Box id={id} sx={{ pt: 1, pb: 2 }}>
+            {summaryContent}
+          </Box>
+        </Collapse>
+      </Box>
+    );
+  }
 
   return (
     <Box

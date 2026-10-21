@@ -171,7 +171,6 @@
   "incomeExpense.creditReturned": "credit back",
 
   "common.plus": "plus:",
-  "stats.clickToSeeInfo": "Click on chart to see the info",
   "stats.noDataForMonth": "No transactions available for the selected month.",
   "mobile.warning": "This page is not optimized for mobile screens. For the best experience, please view it on a larger device.",
   "categories.salary": "Salary",
@@ -286,5 +285,21 @@
   "history.retry": "Try again",
   "common.saving": "Saving…",
   "common.saveFailed": "Unable to save. Please try again.",
-  "common.notifications": "Notifications"
+  "common.notifications": "Notifications",
+  "stats.incompleteMonth": "Incomplete month",
+  "stats.loadError": "Unable to load statistics. Please try again.",
+  "stats.expenseCategories": "Expenses by category",
+  "stats.incomeCategories": "Income by category",
+  "stats.displayMode": "Display mode",
+  "stats.barMode": "Chart",
+  "yearly.chartTitle": "Income and expenses",
+  "yearly.byMonth": "By month",
+  "yearly.halfYear": "Chart half-year",
+  "yearly.firstHalf": "Jan–Jun",
+  "yearly.secondHalf": "Jul–Dec",
+  "stats.periodSummary": "Period summary",
+  "stats.chooseMonth": "Choose month and year: {period}",
+  "stats.monthAndYear": "Month and year",
+  "yearly.chartLegend": "Chart legend",
+  "yearly.noRecordsYet": "No records"
 }

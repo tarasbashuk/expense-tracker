@@ -8,7 +8,6 @@ import {
   ArrowUpDown,
   ChartColumn,
   ChartPie,
-  CircleHelp,
   CircleCheck,
   CircleAlert,
   Info,
@@ -106,7 +105,6 @@ export const ChevronDownIcon = createIcon(ChevronDown);
 export const FirstPageIcon = createIcon(ChevronsLeft);
 export const LastPageIcon = createIcon(ChevronsRight);
 export const CalendarMonth = createIcon(CalendarDays);
-export const QuestionMarkIcon = createIcon(CircleHelp);
 export const PieChartIcon = createIcon(ChartPie);
 export const DonutSmallIcon = PieChartIcon;
 export const BarChartIcon = createIcon(ChartColumn);

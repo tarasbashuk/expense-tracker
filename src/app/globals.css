@@ -32,6 +32,13 @@ a {
   justify-content: center;
 }
 
+/* Only analytics pages expand; retain the existing 16px page gutters. */
+@media (min-width: 600px) {
+  .container:has(> .statistics-page) {
+    max-width: 1232px;
+  }
+}
+
 @media (max-width: 1199px) {
   .container {
     margin-top: 20px;
