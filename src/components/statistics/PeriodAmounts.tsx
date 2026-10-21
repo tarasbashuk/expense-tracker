@@ -2,8 +2,7 @@
 
 import { Box, Typography } from '@mui/material';
 import { useIntl } from 'react-intl';
-import { useSettings } from '@/context/SettingsContexts';
-import { formatCurrency } from '@/lib/formatCurrency';
+import useAnalyticsCurrency from './useAnalyticsCurrency';
 import { historyColors } from '../history/tokens';
 
 export default function PeriodAmounts({
@@ -14,7 +13,7 @@ export default function PeriodAmounts({
   expense: number;
 }) {
   const { formatMessage } = useIntl();
-  const { settings } = useSettings();
+  const money = useAnalyticsCurrency();
   const difference = income - expense;
   const amounts = [
     { id: 'incomeExpense.income', value: income, color: historyColors.income },
@@ -32,10 +31,7 @@ export default function PeriodAmounts({
   ];
   const columnWidth = Math.max(
     90,
-    ...amounts.map(
-      ({ value }) =>
-        (formatCurrency(value, settings.defaultCurrency).length + 1) * 10,
-    ),
+    ...amounts.map(({ value }) => (money(value).length + 1) * 10),
   );
 
   return (
@@ -61,7 +57,7 @@ export default function PeriodAmounts({
             }}
           >
             {id === 'home.net' && value > 0 ? '+' : ''}
-            {formatCurrency(value, settings.defaultCurrency)}
+            {money(value)}
           </Typography>
         </Box>
       ))}

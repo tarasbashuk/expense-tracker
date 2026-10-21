@@ -16,7 +16,10 @@ export default function StatisticsLayout({
   const { formatMessage } = useIntl();
 
   return (
-    <Box sx={{ ...pageStyles, maxWidth: '1000px', pb: 3 }}>
+    <Box
+      className="statistics-page"
+      sx={{ ...pageStyles, maxWidth: '1200px', pb: 3 }}
+    >
       <Box sx={pageHeaderStyles}>
         <Typography
           component="h1"

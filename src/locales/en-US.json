@@ -296,5 +296,10 @@
   "yearly.byMonth": "By month",
   "yearly.halfYear": "Chart half-year",
   "yearly.firstHalf": "Jan–Jun",
-  "yearly.secondHalf": "Jul–Dec"
+  "yearly.secondHalf": "Jul–Dec",
+  "stats.periodSummary": "Period summary",
+  "stats.chooseMonth": "Choose month and year: {period}",
+  "stats.monthAndYear": "Month and year",
+  "yearly.chartLegend": "Chart legend",
+  "yearly.noRecordsYet": "No records"
 }

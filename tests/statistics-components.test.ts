@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { createElement } from 'react';
+import { createElement, ReactNode } from 'react';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { IntlProvider } from 'react-intl';
@@ -8,6 +8,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import Stats from '@/components/Stats';
 import YearlyStatsContent from '@/components/YearlyStatsContent';
 import { messages } from '@/locales';
+import { EXPENSE_CATEGORIES_LIST } from '@/constants/constants';
 
 const mocks = vi.hoisted(() => ({
   stats: vi.fn(),
@@ -36,6 +37,19 @@ vi.mock('@/context/SettingsContexts', () => ({
   }),
 }));
 
+vi.mock('@mui/x-date-pickers/LocalizationProvider', () => ({
+  LocalizationProvider: ({ children }: { children: ReactNode }) => children,
+}));
+
+vi.mock('@mui/x-date-pickers/DateCalendar', () => ({
+  DateCalendar: ({ onChange }: { onChange: (_date: Date) => void }) =>
+    createElement(
+      'button',
+      { onClick: () => onChange(new Date(2025, 7, 1)) },
+      'Choose August 2025',
+    ),
+}));
+
 vi.mock('@mui/x-charts/BarChart', () => ({
   BarChart: (props: unknown) => {
     mocks.bar(props);
@@ -52,11 +66,14 @@ vi.mock('@mui/x-charts/PieChart', () => ({
   },
 }));
 
-function show(component: typeof Stats | typeof YearlyStatsContent) {
+function show(
+  component: typeof Stats | typeof YearlyStatsContent,
+  locale: 'en-US' | 'uk-UA' = 'en-US',
+) {
   return render(
     createElement(
       IntlProvider,
-      { locale: 'en-US', messages: messages['en-US'] },
+      { locale, messages: messages[locale] },
       createElement(component),
     ),
   );
@@ -92,15 +109,15 @@ test('both category modes expose exact amounts and shares, with collapsible tota
   expect(screen.getByText('24.8%')).toBeTruthy();
   expect(view.container.querySelectorAll('li')).toHaveLength(2);
 
-  await user.click(screen.getByRole('checkbox'));
+  await user.click(screen.getByRole('button', { name: 'Period summary' }));
 
-  expect(screen.getByText('+50.5 €')).toBeTruthy();
+  expect(screen.getByText('+50.50 €')).toBeTruthy();
 
-  await user.click(screen.getByRole('checkbox'));
+  await user.click(screen.getByRole('button', { name: 'Period summary' }));
   await user.click(screen.getByRole('button', { name: 'Donut' }));
 
-  expect(screen.queryByText('+50.5 €')).toBeNull();
-  expect(screen.getByText('100 €')).toBeTruthy();
+  await waitFor(() => expect(screen.queryByText('+50.50 €')).toBeNull());
+  expect(screen.getByText('100.00 €')).toBeTruthy();
   expect(mocks.pie.mock.lastCall?.[0].series[0].innerRadius).toBeGreaterThan(0);
 
   act(() => mocks.pie.mock.lastCall?.[0].onItemClick(null, { dataIndex: 0 }));
@@ -109,7 +126,7 @@ test('both category modes expose exact amounts and shares, with collapsible tota
 
   await user.click(screen.getByRole('button', { name: 'INCOME' }));
 
-  expect(screen.getAllByText('150.5 €')).toHaveLength(2);
+  expect(screen.getAllByText('150.50 €')).toHaveLength(2);
   expect(screen.getByText('100.0%')).toBeTruthy();
 });
 
@@ -127,7 +144,7 @@ test('zero categories show finite percentages and empty datasets keep period con
   expect(
     screen.getByText(messages['en-US']['stats.noDataForMonth']),
   ).toBeTruthy();
-  expect(screen.getByRole('button', { name: 'previous' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Previous period' })).toBeTruthy();
 });
 
 test('failed statistics requests show an error without misleading totals', async () => {
@@ -135,7 +152,7 @@ test('failed statistics requests show an error without misleading totals', async
   show(Stats);
 
   expect(await screen.findByRole('alert')).toBeTruthy();
-  expect(screen.queryByRole('checkbox')).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Period summary' })).toBeNull();
 });
 
 test('mobile half-year changes only the six plotted months and keeps the annual axis and totals', async () => {
@@ -150,7 +167,7 @@ test('mobile half-year changes only the six plotted months and keeps the annual 
   const user = userEvent.setup();
   show(YearlyStatsContent);
   await screen.findByText('By month');
-  await user.click(screen.getByRole('checkbox'));
+  await user.click(screen.getByRole('button', { name: 'Period summary' }));
   await user.click(screen.getByRole('button', { name: 'Jan–Jun' }));
 
   const first = mocks.bar.mock.lastCall?.[0];
@@ -190,4 +207,119 @@ test('desktop yearly view renders all months and a non-navigating monthly table'
   expect(screen.getByText('-25.25 €')).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'Jan–Jun' })).toBeNull();
   expect(view.container.querySelector('a')).toBeNull();
+});
+
+test('all expense categories remain visible in both modes with a badge independent of summary visibility', async () => {
+  const categories = EXPENSE_CATEGORIES_LIST.map(({ value }, index) => ({
+    label: value,
+    value: index + 0.25,
+  }));
+  mocks.stats.mockResolvedValue({
+    expenseChartData: categories,
+    incomeChartData: [],
+  });
+  const user = userEvent.setup();
+  const view = show(Stats);
+  await screen.findByRole('list');
+
+  expect(view.container.querySelectorAll('li')).toHaveLength(categories.length);
+  expect(screen.getByText('Incomplete month')).toBeTruthy();
+
+  await user.click(screen.getByRole('button', { name: 'Period summary' }));
+  await user.click(screen.getByRole('button', { name: 'Period summary' }));
+  await user.click(screen.getByRole('button', { name: 'Donut' }));
+
+  expect(view.container.querySelectorAll('li')).toHaveLength(categories.length);
+  expect(mocks.pie.mock.lastCall?.[0].series[0].data).toHaveLength(
+    categories.length,
+  );
+  expect(screen.getByText('Incomplete month')).toBeTruthy();
+  expect(screen.queryByRole('link')).toBeNull();
+});
+
+test('the month and year picker applies only on confirmation and preserves the expanded summary', async () => {
+  const user = userEvent.setup();
+  show(Stats);
+  await screen.findByText('75.25 €');
+  await user.click(screen.getByRole('button', { name: 'Period summary' }));
+  await user.click(
+    screen.getByRole('button', { name: /Choose month and year:/ }),
+  );
+  await user.click(screen.getByRole('button', { name: 'Choose August 2025' }));
+
+  expect(mocks.stats).toHaveBeenCalledTimes(1);
+
+  await user.click(screen.getByRole('button', { name: 'Apply' }));
+  await waitFor(() => expect(mocks.stats).toHaveBeenLastCalledWith(2025, 7));
+
+  expect(
+    screen
+      .getByRole('button', { name: 'Period summary' })
+      .getAttribute('aria-expanded'),
+  ).toBe('true');
+  expect(screen.queryByText('Incomplete month')).toBeNull();
+  expect(await screen.findByText('+50.50 €')).toBeTruthy();
+});
+
+test('Ukrainian analytics share the same two-decimal formatter across totals, categories and donut tooltip', async () => {
+  mocks.stats.mockResolvedValue({
+    expenseChartData: [{ label: 'education', value: 470 }],
+    incomeChartData: [],
+  });
+  mocks.totals.mockResolvedValue({ income: 6772.56, expense: 470 });
+  const user = userEvent.setup();
+  show(Stats, 'uk-UA');
+  await screen.findByText('470,00 €');
+  await user.click(screen.getByRole('button', { name: 'Підсумки періоду' }));
+
+  expect(screen.getByText('+6 302,56 €')).toBeTruthy();
+  expect(screen.getAllByText('470,00 €')).toHaveLength(2);
+
+  await user.click(screen.getByRole('button', { name: 'Donut' }));
+
+  expect(screen.getAllByText('470,00 €')).toHaveLength(3);
+  expect(
+    mocks.pie.mock.lastCall?.[0].series[0].valueFormatter({ value: 470 }),
+  ).toBe('470,00 €');
+});
+
+test('yearly chart labels incomplete and missing months and formats precise tooltip values without changing totals', async () => {
+  vi.stubGlobal('matchMedia', () => ({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+  const currentMonth = new Date().getMonth();
+  const income = Array<number>(12).fill(0);
+  const counts = Array<number>(12).fill(0);
+  income[currentMonth] = 100.125;
+  counts[currentMonth] = 1;
+  mocks.yearly.mockResolvedValue({
+    data: {
+      monthlyIncome: income,
+      monthlyExpense: Array(12).fill(0),
+      monthlyTransactionCounts: counts,
+    },
+  });
+  show(YearlyStatsContent, 'uk-UA');
+  await screen.findByRole('table');
+
+  const chart = mocks.bar.mock.lastCall?.[0];
+  expect(chart.series[0].data[currentMonth]).toBe(100.125);
+  expect(chart.series[0].valueFormatter(100.125)).toBe('100,13 €');
+  expect(chart.series[0].valueFormatter(null)).toBe('—');
+  expect(
+    chart.xAxis[0].valueFormatter(currentMonth, { location: 'tick' }),
+  ).toMatch(/\*$/);
+  expect(
+    chart.xAxis[0].valueFormatter(currentMonth, { location: 'tooltip' }),
+  ).toContain('Неповний місяць');
+  expect(chart.yAxis[0].max).toBeCloseTo(110.1375);
+
+  if (currentMonth < 11) {
+    expect(chart.series[0].data[currentMonth + 1]).toBeNull();
+    expect(
+      chart.xAxis[0].valueFormatter(currentMonth + 1, { location: 'tick' }),
+    ).toMatch(/—$/);
+  }
 });

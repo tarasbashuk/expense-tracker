@@ -25,7 +25,7 @@ import { useIntl } from 'react-intl';
 import { YEAR_LIST } from '@/constants/constants';
 import { getYearlyStats, YearlyStatsData } from '@/app/actions/getYearlyStats';
 import { useSettings } from '@/context/SettingsContexts';
-import { formatCurrency } from '@/lib/formatCurrency';
+import useAnalyticsCurrency from './statistics/useAnalyticsCurrency';
 import {
   initialHalfYear,
   yearlyPresentation,
@@ -108,9 +108,31 @@ export default function YearlyStatsContent() {
       : new Intl.DateTimeFormat(locale, {
           month: short ? 'short' : 'long',
         }).format(new Date(year, month, 1));
-  const money = (value: number) =>
-    formatCurrency(value, settings.defaultCurrency);
+  const money = useAnalyticsCurrency();
   const incompleteLabel = formatMessage({ id: 'stats.incompleteMonth' });
+
+  const series = [
+    {
+      id: 'income',
+      data: visibleMonths.map((month) => (month.missing ? null : month.income)),
+      label: formatMessage({ id: 'yearly.income' }),
+      color: '#399F65',
+      valueFormatter: (value: number | null) =>
+        value === null ? '—' : money(value),
+    },
+    {
+      id: 'expense',
+      data: visibleMonths.map((month) =>
+        month.missing ? null : month.expense,
+      ),
+      label: formatMessage({ id: 'yearly.expense' }),
+      color: '#3982E4',
+      valueFormatter: (value: number | null) =>
+        value === null ? '—' : money(value),
+    },
+  ];
+  const showIncomplete = visibleMonths.some((month) => month.incomplete);
+  const showMissing = visibleMonths.some((month) => month.missing);
 
   return (
     <StatisticsLayout titleId="yearly.title">
@@ -152,12 +174,49 @@ export default function YearlyStatsContent() {
             ) : (
               <>
                 <Box sx={{ ...cardStyles, p: { xs: 1.5, sm: 3 }, minWidth: 0 }}>
-                  <Typography component="h2" variant="h6" fontWeight={600}>
-                    {formatMessage({ id: 'yearly.chartTitle' })}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" mb={2}>
-                    {settings.defaultCurrency}
-                  </Typography>
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    justifyContent="space-between"
+                    alignItems={{ xs: 'flex-start', sm: 'center' }}
+                    gap={1}
+                    mb={1}
+                  >
+                    <Box>
+                      <Typography component="h2" variant="h6" fontWeight={600}>
+                        {formatMessage({ id: 'yearly.chartTitle' })}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {settings.defaultCurrency}
+                      </Typography>
+                    </Box>
+                    <Stack
+                      direction="row"
+                      gap={2}
+                      aria-label={formatMessage({ id: 'yearly.chartLegend' })}
+                    >
+                      {series.map((item) => (
+                        <Stack
+                          key={item.id}
+                          direction="row"
+                          alignItems="center"
+                          gap={0.75}
+                        >
+                          <Box
+                            aria-hidden
+                            sx={{
+                              width: 10,
+                              height: 10,
+                              bgcolor: item.color,
+                              borderRadius: '50%',
+                            }}
+                          />
+                          <Typography variant="body2" color="text.secondary">
+                            {item.label}
+                          </Typography>
+                        </Stack>
+                      ))}
+                    </Stack>
+                  </Stack>
                   {mobile && (
                     <ToggleButtonGroup
                       exclusive
@@ -185,37 +244,32 @@ export default function YearlyStatsContent() {
                     </Typography>
                   ) : (
                     <BarChart
-                      height={mobile ? 300 : 350}
-                      margin={{ top: 16, right: 8, bottom: 8, left: 0 }}
+                      height={mobile ? 280 : 320}
+                      hideLegend
+                      margin={{ top: 8, right: 8, bottom: 4, left: 0 }}
                       grid={{ horizontal: true }}
-                      series={[
-                        {
-                          id: 'income',
-                          data: visibleMonths.map((month) =>
-                            month.missing ? null : month.income,
-                          ),
-                          label: formatMessage({ id: 'yearly.income' }),
-                          color: '#399F65',
-                          valueFormatter: (value) =>
-                            value === null ? '—' : money(value),
-                        },
-                        {
-                          id: 'expense',
-                          data: visibleMonths.map((month) =>
-                            month.missing ? null : month.expense,
-                          ),
-                          label: formatMessage({ id: 'yearly.expense' }),
-                          color: '#3982E4',
-                          valueFormatter: (value) =>
-                            value === null ? '—' : money(value),
-                        },
-                      ]}
+                      series={series}
                       xAxis={[
                         {
                           data: visibleMonths.map((month) => month.month),
                           scaleType: 'band',
-                          valueFormatter: (month, context) =>
-                            monthLabel(month, context.location === 'tick'),
+                          valueFormatter: (month, context) => {
+                            const entry = presentation.months[month];
+                            const label = monthLabel(
+                              month,
+                              context.location === 'tick',
+                            );
+
+                            if (context.location === 'tick') {
+                              return `${label}${entry.incomplete ? '*' : entry.missing ? ' —' : ''}`;
+                            }
+
+                            return entry.incomplete
+                              ? `${label} · ${incompleteLabel}`
+                              : entry.missing
+                                ? `${label} · ${formatMessage({ id: 'yearly.noRecordsYet' })}`
+                                : label;
+                          },
                           tickLabelInterval: () => true,
                           tickLabelStyle: { angle: 0 },
                           height: 32,
@@ -233,14 +287,32 @@ export default function YearlyStatsContent() {
                             }).format(value),
                         },
                       ]}
-                      slotProps={{
-                        legend: {
-                          direction: 'horizontal',
-                          position: { vertical: 'top', horizontal: 'end' },
+                      sx={{
+                        '& .MuiChartsAxis-line, & .MuiChartsAxis-tick': {
+                          stroke: '#D8DFE8',
                         },
+                        '& .MuiChartsAxis-tickLabel': {
+                          fill: historyColors.secondary,
+                        },
+                        '& .MuiChartsGrid-line': { stroke: '#EEF1F5' },
                       }}
                     />
                   )}
+                  {!!presentation.rows.length &&
+                    (showIncomplete || showMissing) && (
+                      <Stack direction="row" flexWrap="wrap" gap={2}>
+                        {showIncomplete && (
+                          <Typography variant="caption" color="text.secondary">
+                            * {incompleteLabel}
+                          </Typography>
+                        )}
+                        {showMissing && (
+                          <Typography variant="caption" color="text.secondary">
+                            — {formatMessage({ id: 'yearly.noRecordsYet' })}
+                          </Typography>
+                        )}
+                      </Stack>
+                    )}
                 </Box>
                 {!!presentation.rows.length && (
                   <Box sx={{ ...cardStyles, p: { xs: 2, sm: 3 } }}>
@@ -288,7 +360,15 @@ export default function YearlyStatsContent() {
                         ))}
                       </Stack>
                     ) : (
-                      <Table size="small">
+                      <Table
+                        size="small"
+                        sx={{
+                          fontVariantNumeric: 'tabular-nums',
+                          '& .MuiTableCell-root': {
+                            borderColor: 'rgba(100, 112, 132, 0.12)',
+                          },
+                        }}
+                      >
                         <TableHead>
                           <TableRow>
                             {[
@@ -312,10 +392,13 @@ export default function YearlyStatsContent() {
 
                             return (
                               <TableRow key={month.month}>
-                                <TableCell
-                                  sx={{ textTransform: 'capitalize', py: 2 }}
-                                >
-                                  {monthLabel(month.month)}{' '}
+                                <TableCell sx={{ py: 2 }}>
+                                  <Box
+                                    component="span"
+                                    sx={{ textTransform: 'capitalize' }}
+                                  >
+                                    {monthLabel(month.month)}
+                                  </Box>{' '}
                                   {month.incomplete && (
                                     <Chip
                                       size="small"

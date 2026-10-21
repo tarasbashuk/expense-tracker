@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import {
   Box,
+  Chip,
   Stack,
   Typography,
   ToggleButton,
@@ -13,24 +14,23 @@ import { PieValueType } from '@mui/x-charts';
 import { TransactionType } from '@prisma/client';
 import { useIntl } from 'react-intl';
 import { BarChartIcon, PieChartIcon } from './shared/icons';
-import YearMonthSelect from './shared/YearMonthSelect';
+import StatisticsPeriodNavigation from './statistics/StatisticsPeriodNavigation';
+import CategoryBreakdown from './statistics/CategoryBreakdown';
+import useAnalyticsCurrency from './statistics/useAnalyticsCurrency';
 import TransactionTypeButtonGroup from './shared/TransactionTypeButtonGroup';
 import AdditionalBalanceInfo from './AdditionalBalanceInfo';
-import CategoryIcon from './history/CategoryIcon';
 import TransactionSkeleton from './history/TransactionSkeleton';
-import { cardStyles, historyColors } from './history/tokens';
+import { cardStyles } from './history/tokens';
 import StatisticsLayout from './statistics/StatisticsLayout';
 import getStats from '@/app/actions/getStats';
 import getIncomeExpense from '@/app/actions/getIncomeExpense';
 import { ChartType, TransactionCategory } from '@/constants/types';
 import { useCategoryI18n } from '@/lib/useCategoryI18n';
-import { useSettings } from '@/context/SettingsContexts';
-import { formatCurrency } from '@/lib/formatCurrency';
 import { COLOR_MAP } from '@/lib/getCategoryColor';
 
 export default function Stats() {
-  const { settings } = useSettings();
-  const { formatMessage, formatNumber } = useIntl();
+  const money = useAnalyticsCurrency();
+  const { formatMessage } = useIntl();
   const { getLabel } = useCategoryI18n();
   const [month, setMonth] = useState(() => String(new Date().getMonth()));
   const [year, setYear] = useState(() => String(new Date().getFullYear()));
@@ -119,16 +119,23 @@ export default function Stats() {
           gap={2}
           justifyContent="space-between"
         >
-          <YearMonthSelect
-            year={year}
-            month={month}
-            setYear={setYear}
-            setMonth={setMonth}
-            sx={{
-              '& .MuiFormControl-root': { minWidth: 0, flex: 1 },
-              width: { xs: '100%', md: 340 },
-            }}
-          />
+          <Stack gap={1} sx={{ width: { xs: '100%', md: 340 }, flexShrink: 0 }}>
+            <StatisticsPeriodNavigation
+              year={Number(year)}
+              month={Number(month)}
+              onChange={(date) => {
+                setYear(String(date.getFullYear()));
+                setMonth(String(date.getMonth()));
+              }}
+            />
+            {incomplete && (
+              <Chip
+                size="small"
+                label={formatMessage({ id: 'stats.incompleteMonth' })}
+                sx={{ alignSelf: 'flex-start' }}
+              />
+            )}
+          </Stack>
           <Stack direction="row" gap={2}>
             <TransactionTypeButtonGroup
               size="small"
@@ -171,10 +178,9 @@ export default function Stats() {
               income={income}
               expense={expense}
               loading={loading}
-              incomplete={incomplete}
             />
             <Box sx={{ ...cardStyles, p: { xs: 2, sm: 3 }, minWidth: 0 }}>
-              <Typography component="h2" variant="h6" fontWeight={600} mb={2}>
+              <Typography component="h2" variant="h6" fontWeight={600} mb={1}>
                 {heading}
               </Typography>
               {loading ? (
@@ -201,7 +207,9 @@ export default function Stats() {
                   {chartType === 'pie' && (
                     <Box
                       sx={{
-                        position: 'relative',
+                        position: { xs: 'relative', md: 'sticky' },
+                        top: { md: 16 },
+                        alignSelf: 'start',
                         width: '100%',
                         maxWidth: 300,
                         mx: 'auto',
@@ -222,11 +230,7 @@ export default function Stats() {
                               highlight: 'item',
                               fade: 'global',
                             },
-                            valueFormatter: (item) =>
-                              formatCurrency(
-                                item.value,
-                                settings.defaultCurrency,
-                              ),
+                            valueFormatter: (item) => money(item.value),
                           },
                         ]}
                         highlightedItem={
@@ -260,125 +264,18 @@ export default function Stats() {
                           fontWeight={600}
                           sx={{ overflowWrap: 'anywhere' }}
                         >
-                          {formatCurrency(total, settings.defaultCurrency)}
+                          {money(total)}
                         </Typography>
                       </Box>
                     </Box>
                   )}
-                  <Box
-                    component="ul"
-                    sx={{ listStyle: 'none', m: 0, p: 0, minWidth: 0 }}
-                  >
-                    {chartData.map((item) => {
-                      const share = total > 0 ? item.value / total : 0;
-                      const selected =
-                        chartType === 'pie' && activeCategory === item.category;
-
-                      return (
-                        <Box
-                          component="li"
-                          key={item.category}
-                          aria-current={selected ? 'true' : undefined}
-                          sx={{
-                            display: 'flex',
-                            gap: 1.5,
-                            py: 1.5,
-                            borderBottom: `1px solid ${historyColors.divider}`,
-                            bgcolor: selected ? 'action.selected' : undefined,
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              pt: 0.25,
-                              flexShrink: 0,
-                              color:
-                                chartType === 'pie'
-                                  ? item.color
-                                  : 'text.secondary',
-                            }}
-                          >
-                            <CategoryIcon category={item.category} />
-                          </Box>
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                gap: 1,
-                                flexWrap: 'wrap',
-                                alignItems: 'baseline',
-                              }}
-                            >
-                              <Typography
-                                sx={{
-                                  flex: '1 1 120px',
-                                  overflowWrap: 'anywhere',
-                                }}
-                              >
-                                {item.label}
-                              </Typography>
-                              <Typography
-                                sx={{ whiteSpace: 'nowrap', fontWeight: 600 }}
-                              >
-                                {formatCurrency(
-                                  item.value,
-                                  settings.defaultCurrency,
-                                )}
-                              </Typography>
-                            </Box>
-                            <Stack
-                              direction="row"
-                              alignItems="center"
-                              gap={1}
-                              mt={0.75}
-                            >
-                              {chartType === 'bar' ? (
-                                <Box
-                                  sx={{
-                                    flex: 1,
-                                    height: 6,
-                                    bgcolor: historyColors.divider,
-                                    borderRadius: 3,
-                                  }}
-                                >
-                                  <Box
-                                    sx={{
-                                      width: `${Math.min(100, Math.max(0, share * 100))}%`,
-                                      height: '100%',
-                                      borderRadius: 3,
-                                      bgcolor: isExpense
-                                        ? '#3982E4'
-                                        : historyColors.income,
-                                    }}
-                                  />
-                                </Box>
-                              ) : (
-                                <Box
-                                  sx={{
-                                    width: 10,
-                                    height: 10,
-                                    borderRadius: '50%',
-                                    bgcolor: item.color,
-                                  }}
-                                />
-                              )}
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{ minWidth: 56, textAlign: 'right' }}
-                              >
-                                {formatNumber(share, {
-                                  style: 'percent',
-                                  minimumFractionDigits: 1,
-                                  maximumFractionDigits: 1,
-                                })}
-                              </Typography>
-                            </Stack>
-                          </Box>
-                        </Box>
-                      );
-                    })}
-                  </Box>
+                  <CategoryBreakdown
+                    items={chartData}
+                    total={total}
+                    chartType={chartType}
+                    activeCategory={activeCategory}
+                    isExpense={isExpense}
+                  />
                 </Box>
               )}
             </Box>
