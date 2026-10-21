@@ -286,5 +286,16 @@
   "history.retry": "Try again",
   "common.saving": "Saving…",
   "common.saveFailed": "Unable to save. Please try again.",
-  "common.notifications": "Notifications"
+  "common.notifications": "Notifications",
+  "stats.incompleteMonth": "Incomplete month",
+  "stats.loadError": "Unable to load statistics. Please try again.",
+  "stats.expenseCategories": "Expenses by category",
+  "stats.incomeCategories": "Income by category",
+  "stats.displayMode": "Display mode",
+  "stats.barMode": "Chart",
+  "yearly.chartTitle": "Income and expenses",
+  "yearly.byMonth": "By month",
+  "yearly.halfYear": "Chart half-year",
+  "yearly.firstHalf": "Jan–Jun",
+  "yearly.secondHalf": "Jul–Dec"
 }

@@ -287,5 +287,16 @@
   "history.retry": "Спробувати ще",
   "common.saving": "Збереження…",
   "common.saveFailed": "Не вдалося зберегти. Спробуйте ще раз.",
-  "common.notifications": "Сповіщення"
+  "common.notifications": "Сповіщення",
+  "stats.incompleteMonth": "Неповний місяць",
+  "stats.loadError": "Не вдалося завантажити статистику. Спробуйте ще раз.",
+  "stats.expenseCategories": "Витрати за категоріями",
+  "stats.incomeCategories": "Доходи за категоріями",
+  "stats.displayMode": "Режим відображення",
+  "stats.barMode": "Графік",
+  "yearly.chartTitle": "Доходи та витрати",
+  "yearly.byMonth": "За місяцями",
+  "yearly.halfYear": "Півріччя графіка",
+  "yearly.firstHalf": "Січ–Чер",
+  "yearly.secondHalf": "Лип–Гру"
 }

@@ -30,7 +30,7 @@ export const convertToChartData = (
 ): PieValueType[] =>
   Object.entries(groupedData).map(([category, amount], index) => ({
     id: index,
-    value: amount.toDecimalPlaces(0).toNumber(),
+    value: amount.toNumber(),
     label: category, // Use category key instead of translated label
     color: COLOR_MAP[category as TransactionCategory],
   }));

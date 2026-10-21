@@ -98,7 +98,7 @@ test('more menu preserves access to recurring payments, yearly stats, settings a
 });
 
 test('other pages retain the floating add and import actions', async () => {
-  mocks.pathname = '/stats';
+  mocks.pathname = '/recurring';
   const user = userEvent.setup();
   renderNavigation();
 
@@ -128,7 +128,7 @@ test('home is active at the root route and always navigates to the absolute home
   expect(mocks.push).toHaveBeenCalledExactlyOnceWith('/');
 });
 
-test.each(['/', '/transactions', '/settings'])(
+test.each(['/', '/transactions', '/settings', '/stats', '/yearly-stats'])(
   'redesigned page %s has no duplicate floating actions',
   (pathname) => {
     mocks.pathname = pathname;

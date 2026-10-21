@@ -227,7 +227,9 @@ const MobileAppBar = () => {
               display:
                 pathname === NavigationPath.Transactions ||
                 pathname === NavigationPath.Home ||
-                pathname === NavigationPath.Settings
+                pathname === NavigationPath.Settings ||
+                pathname === NavigationPath.Stats ||
+                pathname === NavigationPath.YearlyStats
                   ? 'none'
                   : 'flex',
             }}
