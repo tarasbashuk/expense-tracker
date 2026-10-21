@@ -33,6 +33,7 @@ import {
 import AdditionalBalanceInfo from './AdditionalBalanceInfo';
 import StatisticsLayout from './statistics/StatisticsLayout';
 import PeriodAmounts from './statistics/PeriodAmounts';
+import ChartLegendMarker from './statistics/ChartLegendMarker';
 import { cardStyles, historyColors } from './history/tokens';
 import TransactionSkeleton from './history/TransactionSkeleton';
 
@@ -201,15 +202,7 @@ export default function YearlyStatsContent() {
                           alignItems="center"
                           gap={0.75}
                         >
-                          <Box
-                            aria-hidden
-                            sx={{
-                              width: 10,
-                              height: 10,
-                              bgcolor: item.color,
-                              borderRadius: '50%',
-                            }}
-                          />
+                          <ChartLegendMarker color={item.color} />
                           <Typography variant="body2" color="text.secondary">
                             {item.label}
                           </Typography>

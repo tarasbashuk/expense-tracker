@@ -118,6 +118,7 @@ export default function Stats() {
           direction={{ xs: 'column', md: 'row' }}
           gap={2}
           justifyContent="space-between"
+          alignItems={{ xs: 'stretch', md: 'flex-start' }}
         >
           <Stack gap={1} sx={{ width: { xs: '100%', md: 340 }, flexShrink: 0 }}>
             <StatisticsPeriodNavigation
@@ -136,7 +137,11 @@ export default function Stats() {
               />
             )}
           </Stack>
-          <Stack direction="row" gap={2}>
+          <Stack
+            direction="row"
+            gap={2}
+            sx={{ '& > .MuiToggleButtonGroup-root': { height: { md: 44 } } }}
+          >
             <TransactionTypeButtonGroup
               size="small"
               transactionType={transactionType}

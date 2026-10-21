@@ -6,6 +6,7 @@ import { ChartType } from '@/constants/types';
 import CategoryIcon from '../history/CategoryIcon';
 import { historyColors } from '../history/tokens';
 import useAnalyticsCurrency from './useAnalyticsCurrency';
+import ChartLegendMarker from './ChartLegendMarker';
 
 interface CategoryItem {
   category: string;
@@ -54,8 +55,8 @@ export default function CategoryBreakdown({
               rowGap: 0.5,
               gridTemplateColumns: donut
                 ? {
-                    xs: '24px minmax(0, 1fr) auto',
-                    md: '24px minmax(0, 1fr) 10px 64px 140px',
+                    xs: 'minmax(0, 1fr) max-content',
+                    md: 'minmax(0, 1fr) 64px minmax(140px, max-content)',
                   }
                 : '24px minmax(0, 1fr) auto',
               py: donut ? { xs: 1, md: 0.75 } : 0.875,
@@ -66,64 +67,83 @@ export default function CategoryBreakdown({
               fontVariantNumeric: 'tabular-nums',
             }}
           >
-            <Box
-              sx={{
-                gridColumn: 1,
-                gridRow: 1,
-                color: 'text.secondary',
-                display: 'flex',
-              }}
-            >
-              <CategoryIcon category={item.category} />
-            </Box>
+            {donut ? (
+              <Box
+                sx={{
+                  gridColumn: 1,
+                  gridRow: { xs: '1 / 3', md: 1 },
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  minWidth: 0,
+                }}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexShrink: 0,
+                    color: 'text.secondary',
+                  }}
+                >
+                  <CategoryIcon category={item.category} />
+                </Box>
+                <ChartLegendMarker color={item.color} />
+                <Typography noWrap title={item.label} sx={{ minWidth: 0 }}>
+                  {item.label}
+                </Typography>
+              </Box>
+            ) : (
+              <>
+                <Box
+                  sx={{
+                    gridColumn: 1,
+                    gridRow: 1,
+                    color: 'text.secondary',
+                    display: 'flex',
+                  }}
+                >
+                  <CategoryIcon category={item.category} />
+                </Box>
+                <Typography
+                  sx={{
+                    gridColumn: 2,
+                    gridRow: 1,
+                    minWidth: 0,
+                    overflowWrap: 'anywhere',
+                  }}
+                >
+                  {item.label}
+                </Typography>
+              </>
+            )}
             <Typography
               sx={{
-                gridColumn: 2,
-                gridRow: 1,
-                minWidth: 0,
-                overflowWrap: 'anywhere',
-              }}
-            >
-              {item.label}
-            </Typography>
-            <Typography
-              sx={{
-                gridColumn: donut ? { xs: 3, md: 5 } : 3,
+                gridColumn: donut ? { xs: 2, md: 3 } : 3,
                 gridRow: 1,
                 whiteSpace: 'nowrap',
                 textAlign: 'right',
                 fontWeight: 600,
-                color: isExpense ? historyColors.expense : historyColors.income,
+                color:
+                  donut || isExpense
+                    ? historyColors.expense
+                    : historyColors.income,
               }}
             >
               {money(item.value)}
             </Typography>
             {donut ? (
-              <>
-                <Box
-                  aria-hidden
-                  sx={{
-                    gridColumn: { xs: 2, md: 3 },
-                    gridRow: { xs: 2, md: 1 },
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    bgcolor: item.color,
-                  }}
-                />
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{
-                    gridColumn: { xs: 3, md: 4 },
-                    gridRow: { xs: 2, md: 1 },
-                    textAlign: 'right',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {percentage}
-                </Typography>
-              </>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  gridColumn: 2,
+                  gridRow: { xs: 2, md: 1 },
+                  textAlign: 'right',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {percentage}
+              </Typography>
             ) : (
               <Box
                 sx={{
