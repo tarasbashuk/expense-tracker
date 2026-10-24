@@ -18,6 +18,13 @@ const mocks = vi.hoisted(() => ({
   pie: vi.fn(),
 }));
 
+// Keep server-only Prisma and Clerk dependencies out of component tests.
+vi.mock('@/app/actions/customCategories', () => ({
+  getCustomCategories: vi.fn().mockResolvedValue({ categories: [] }),
+  saveCustomCategory: vi.fn(),
+  archiveCustomCategory: vi.fn(),
+}));
+
 vi.mock('@/app/actions/getStats', () => ({ default: mocks.stats }));
 
 vi.mock('@/app/actions/getIncomeExpense', () => ({ default: mocks.totals }));
