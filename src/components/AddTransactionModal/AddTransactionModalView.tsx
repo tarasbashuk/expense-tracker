@@ -107,21 +107,21 @@ const AddTransactionModalView: React.FC<Props> = ({
   handleRecurringEndDateChange,
   handleAmountDefaultCurrencyChange,
 }) => {
-  const { categories: customCategories, error: categoryError } =
-    useCategoryCatalog();
+  const {
+    categories: customCategories,
+    error: categoryError,
+    loading: categoriesLoading,
+  } = useCategoryCatalog();
   const activeCategories = categoryOptions(
     customCategories,
     transactionType,
     creditCardTrackingEnabled,
-    false,
-    !isRecurring,
   );
   const allCategories = categoryOptions(
     customCategories,
     transactionType,
     true,
-    isEditMode,
-    !isRecurring,
+    true,
   );
   const selectedLegacyCategory = allCategories.find(
     ({ value }) => value === category,
@@ -131,6 +131,19 @@ const AddTransactionModalView: React.FC<Props> = ({
     !activeCategories.some(({ value }) => value === category)
       ? [...activeCategories, selectedLegacyCategory]
       : activeCategories;
+
+  const selectedCategoryUnavailable =
+    isCustomCategory(category) &&
+    !categoriesLoading &&
+    !categoryError &&
+    !(isEditMode ? allCategories : activeCategories).some(
+      ({ value }) => value === category,
+    );
+  const categoryNotReady =
+    isCustomCategory(category) &&
+    (categoriesLoading ||
+      Boolean(categoryError) ||
+      selectedCategoryUnavailable);
 
   const { formatMessage } = useIntl();
   const { getLabel } = useCategoryI18n();
@@ -158,6 +171,11 @@ const AddTransactionModalView: React.FC<Props> = ({
             {formatMessage({ id: categoryError })}
           </Alert>
         )}
+        {selectedCategoryUnavailable && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            {formatMessage({ id: 'customCategories.chooseActive' })}
+          </Alert>
+        )}
         {saveError && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {saveError}
@@ -168,7 +186,7 @@ const AddTransactionModalView: React.FC<Props> = ({
           onSubmit={(event) => {
             event.preventDefault();
 
-            if (!isSubmitDisabled) onSubmit();
+            if (!isSubmitDisabled && !categoryNotReady) onSubmit();
           }}
         >
           <Grid container spacing={2} justifyContent="space-between">
@@ -285,20 +303,29 @@ const AddTransactionModalView: React.FC<Props> = ({
 
             <Grid item xs={12}>
               <FormControl fullWidth variant="outlined">
-                <InputLabel>
+                <InputLabel id="transaction-category-label">
                   <FormattedMessage
                     id="addTransaction.category"
                     defaultMessage="Category"
                   />
                 </InputLabel>
                 <Select
+                  labelId="transaction-category-label"
                   label={formatMessage({ id: 'addTransaction.category' })}
                   name="category"
                   value={category as string}
                   onChange={handleCategoryChange}
                 >
                   {categories.map(({ value }) => (
-                    <MenuItem key={value} value={value}>
+                    <MenuItem
+                      key={value}
+                      value={value}
+                      disabled={
+                        isCustomCategory(value) &&
+                        !isEditMode &&
+                        !activeCategories.some((item) => item.value === value)
+                      }
+                    >
                       <Stack
                         direction="row"
                         alignItems="center"
@@ -380,7 +407,6 @@ const AddTransactionModalView: React.FC<Props> = ({
                       }}
                       control={
                         <Switch
-                          disabled={isCustomCategory(category)}
                           checked={isRecurring || false}
                           onChange={handleIsRecurringChange}
                           inputProps={{ role: 'switch' }}
@@ -394,16 +420,6 @@ const AddTransactionModalView: React.FC<Props> = ({
                       }
                     />
                   </Grid>
-
-                  {isCustomCategory(category) && (
-                    <Grid item xs={12}>
-                      <Alert severity="info">
-                        {formatMessage({
-                          id: 'customCategories.recurringUnavailable',
-                        })}
-                      </Alert>
-                    </Grid>
-                  )}
 
                   {isRecurring && (
                     <Grid item xs={12}>
@@ -440,7 +456,7 @@ const AddTransactionModalView: React.FC<Props> = ({
           type="submit"
           form="transaction-form"
           variant="contained"
-          disabled={isSubmitDisabled}
+          disabled={isSubmitDisabled || categoryNotReady}
           aria-busy={isSubmitDisabled}
           startIcon={
             isSubmitDisabled ? (

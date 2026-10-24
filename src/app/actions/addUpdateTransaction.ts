@@ -130,7 +130,6 @@ export async function addUpdateTransaction(
     const transactionData = await db.$transaction(async (tx) => {
       await validateTransactionCategory(tx, userId, category, formData.type, {
         existingCategory: existingTransaction?.category,
-        recurring: isRecurring,
       });
 
       const tags = await ownedTagConnections(tx, userId, tagIds);

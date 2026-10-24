@@ -198,3 +198,44 @@ test('custom category backup restores archived labels before transactions and re
     }),
   ).toThrow('Invalid category owner');
 });
+
+test('custom shortcut categories are restored and their owner/type links are checked before writes', async () => {
+  const category = {
+    id: 'custom-id',
+    userId: 'owner',
+    name: 'Pottery',
+    type: 'Expense',
+    icon: 'palette',
+    archived: true,
+  };
+  const snapshot = {
+    ...data,
+    customCategories: [category],
+    quickTransactionTemplates: [
+      {
+        ...data.quickTransactionTemplates[0],
+        category: 'custom:custom-id',
+        type: 'Expense',
+      },
+    ],
+  };
+  const { tx, prisma } = database();
+
+  await restoreBackupData(prisma, snapshot);
+
+  expect(tx.quickTransactionTemplate.createMany).toHaveBeenCalledWith({
+    data: snapshot.quickTransactionTemplates,
+  });
+  expect(tx.customCategory.createMany.mock.invocationCallOrder[0]).toBeLessThan(
+    tx.quickTransactionTemplate.createMany.mock.invocationCallOrder[0],
+  );
+  expect(() =>
+    validateBackupData({ ...snapshot, customCategories: [] }),
+  ).toThrow('Invalid custom category relation');
+  expect(() =>
+    validateBackupData({
+      ...snapshot,
+      customCategories: [{ ...category, type: 'Income' }],
+    }),
+  ).toThrow('Invalid custom category relation');
+});

@@ -4,6 +4,7 @@ import {
   getCustomCategories,
   saveCustomCategory,
 } from '@/app/actions/customCategories';
+import { saveQuickTransactionTemplate } from '@/app/actions/quickTransactionTemplates';
 import { addUpdateTransaction } from '@/app/actions/addUpdateTransaction';
 import { validateTransactionCategory } from '@/lib/categoryOwnership';
 import {
@@ -27,6 +28,12 @@ const mocks = vi.hoisted(() => ({
     create: vi.fn(),
     update: vi.fn(),
   },
+  templates: {
+    findFirst: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    aggregate: vi.fn(),
+  },
   settings: { findUnique: vi.fn() },
   atomic: vi.fn(),
 }));
@@ -35,10 +42,13 @@ vi.mock('@clerk/nextjs/server', () => ({ currentUser: mocks.user }));
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
+vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
+
 vi.mock('@/lib/db', () => ({
   db: {
     customCategory: mocks.categories,
     transaction: mocks.transactions,
+    quickTransactionTemplate: mocks.templates,
     settings: mocks.settings,
     $transaction: mocks.atomic,
   },
@@ -84,10 +94,27 @@ beforeEach(() => {
     isCreditTransaction: false,
   });
   mocks.transactions.findUnique.mockResolvedValue(null);
+  mocks.templates.findFirst.mockResolvedValue({
+    id: 'template',
+    category: 'custom:one',
+  });
+  mocks.templates.aggregate.mockResolvedValue({
+    _count: 0,
+    _max: { position: null },
+  });
+  mocks.templates.create.mockResolvedValue({
+    id: 'template',
+    category: 'custom:one',
+  });
+  mocks.templates.update.mockResolvedValue({
+    id: 'template',
+    category: 'custom:one',
+  });
   mocks.atomic.mockImplementation(async (callback) =>
     callback({
       customCategory: mocks.categories,
       transaction: mocks.transactions,
+      quickTransactionTemplate: mocks.templates,
     }),
   );
 });
@@ -253,14 +280,30 @@ test('editing an existing archived category is allowed, but assigning it to anot
   expect(mocks.transactions.update).toHaveBeenCalledOnce();
 });
 
-test('custom recurrence and mismatched system types are rejected before writes', async () => {
+test('custom categories can create recurring transactions and reject mismatched system types', async () => {
+  const recurringEndDate = new Date(input.date.getTime() + 86400000 * 90);
+
   expect(
-    (await addUpdateTransaction({ ...input, isRecurring: true }, false)).error,
-  ).toBe('customCategories.recurringUnavailable');
+    (
+      await addUpdateTransaction(
+        { ...input, isRecurring: true, recurringEndDate },
+        false,
+      )
+    ).error,
+  ).toBeUndefined();
+  expect(mocks.transactions.create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({
+        category: 'custom:one',
+        isRecurring: true,
+        recurringEndDate,
+      }),
+    }),
+  );
   expect(
     (await addUpdateTransaction({ ...input, category: 'salary' }, false)).error,
   ).toBe('customCategories.unavailable');
-  expect(mocks.transactions.create).not.toHaveBeenCalled();
+  expect(mocks.transactions.create).toHaveBeenCalledOnce();
 });
 
 test('the shared validator checks the requested type and handles a missing match', async () => {
@@ -287,4 +330,100 @@ test('CSV uses current category names and escapes spreadsheet formulas', () => {
 
   expect(csv).toContain('"\'=1+1"');
   expect(csv).not.toContain('custom:one');
+});
+
+const templateInput = {
+  label: 'Class',
+  text: 'Pottery class',
+  amount: 10,
+  currency: 'EUR' as const,
+  type: 'Expense' as const,
+  category: 'custom:one',
+};
+
+test('shortcuts accept active custom categories with owner and type validation', async () => {
+  const result = await saveQuickTransactionTemplate(templateInput);
+
+  expect(result.error).toBeUndefined();
+  expect(mocks.categories.findFirst).toHaveBeenCalledWith({
+    where: { id: 'one', userId: 'owner', type: 'Expense' },
+  });
+  expect(mocks.templates.create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({
+        category: 'custom:one',
+        userId: 'owner',
+        position: 0,
+      }),
+    }),
+  );
+});
+
+test.each([null, { ...category, archived: true }])(
+  'new shortcuts reject missing/foreign/wrong-type or archived categories',
+  async (found) => {
+    mocks.categories.findFirst.mockResolvedValue(found);
+
+    const result = await saveQuickTransactionTemplate(templateInput);
+
+    expect(result.error).toBe('customCategories.unavailable');
+    expect(mocks.templates.create).not.toHaveBeenCalled();
+  },
+);
+
+test('editing a shortcut preserves its archived category, but cannot assign a different archived one', async () => {
+  mocks.categories.findFirst.mockResolvedValue({ ...category, archived: true });
+
+  expect(
+    (
+      await saveQuickTransactionTemplate({
+        ...templateInput,
+        id: 'template',
+        label: 'Renamed',
+      })
+    ).error,
+  ).toBeUndefined();
+  expect(
+    (
+      await saveQuickTransactionTemplate({
+        ...templateInput,
+        id: 'template',
+        category: 'custom:other',
+      })
+    ).error,
+  ).toBe('customCategories.unavailable');
+  expect(mocks.templates.update).toHaveBeenCalledOnce();
+  expect(mocks.templates.findFirst).toHaveBeenCalledWith({
+    where: { id: 'template', userId: 'owner' },
+  });
+});
+
+test('a forged template ID cannot bypass archived category checks or edit another owner’s shortcut', async () => {
+  mocks.templates.findFirst.mockResolvedValue(null);
+
+  expect(
+    (await saveQuickTransactionTemplate({ ...templateInput, id: 'foreign' }))
+      .error,
+  ).toBe('Template not found');
+  expect(mocks.templates.update).not.toHaveBeenCalled();
+  expect(mocks.categories.findFirst).not.toHaveBeenCalled();
+});
+
+test('recurring edits retain archived categories but new recurring transactions must use active ones', async () => {
+  mocks.categories.findFirst.mockResolvedValue({ ...category, archived: true });
+
+  expect(
+    (
+      await addUpdateTransaction(
+        { ...input, isRecurring: true },
+        false,
+        'existing',
+      )
+    ).error,
+  ).toBeUndefined();
+  expect(
+    (await addUpdateTransaction({ ...input, isRecurring: true }, false)).error,
+  ).toBe('customCategories.unavailable');
+  expect(mocks.transactions.update).toHaveBeenCalledOnce();
+  expect(mocks.transactions.create).not.toHaveBeenCalled();
 });

@@ -314,7 +314,7 @@
   "customCategories.archived": "Archived",
   "customCategories.empty": "No custom categories yet.",
   "customCategories.loading": "Loading categories…",
-  "customCategories.hint": "Create categories for one-off transactions. Archived categories remain in history and reports.",
+  "customCategories.hint": "Create categories for transactions, recurring payments, and shortcuts. Archiving keeps history and existing recurring payments. Shortcuts with archived categories require an active category for new transactions.",
   "customCategories.invalid": "Enter a name of up to 40 characters and select a type and icon.",
   "customCategories.duplicate": "A category with this name and type already exists, possibly in the archive.",
   "customCategories.notFound": "Category not found or its type cannot be changed.",
@@ -323,7 +323,6 @@
   "customCategories.unauthorized": "Sign in to manage categories.",
   "customCategories.unknown": "Custom category",
   "customCategories.unavailable": "This category is unavailable for this transaction. Select an active category of the correct type.",
-  "customCategories.recurringUnavailable": "Custom categories are currently available for one-off transactions only.",
   "customCategories.icons.tag": "Tag",
   "customCategories.icons.baby": "Baby",
   "customCategories.icons.heart": "Heart",
@@ -371,5 +370,7 @@
   "customCategories.icons.banknote": "Banknote",
   "customCategories.icons.piggybank": "Piggybank",
   "customCategories.icons.tools": "Tools",
-  "customCategories.icons.sparkles": "Sparkles"
+  "customCategories.icons.sparkles": "Sparkles",
+  "customCategories.chooseActive": "This category is archived or unavailable. Choose an active category to create this transaction.",
+  "customCategories.archivedTemplate": "This shortcut uses an archived category. You can keep it when editing the shortcut, but new transactions require an active category."
 }

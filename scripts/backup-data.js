@@ -91,7 +91,10 @@ export function validateBackupData(data) {
     if (!users.has(category.userId)) throw new Error('Invalid category owner');
   }
 
-  for (const row of data.transactions) {
+  for (const row of [
+    ...data.transactions,
+    ...(data.quickTransactionTemplates || []),
+  ]) {
     if (typeof row.category !== 'string' || !row.category.startsWith('custom:'))
       continue;
 

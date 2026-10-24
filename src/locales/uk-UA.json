@@ -315,7 +315,7 @@
   "customCategories.archived": "В архіві",
   "customCategories.empty": "Власних категорій поки немає.",
   "customCategories.loading": "Завантаження категорій…",
-  "customCategories.hint": "Створюйте категорії для разових операцій. Архівовані категорії залишаються в історії та звітах.",
+  "customCategories.hint": "Створюйте категорії для операцій, повторюваних платежів і швидких шаблонів. Архівування зберігає історію та чинні повторювані платежі. Для нової операції з шаблону з архівованою категорією потрібно обрати активну категорію.",
   "customCategories.invalid": "Введіть назву до 40 символів та оберіть тип й іконку.",
   "customCategories.duplicate": "Категорія з такою назвою й типом уже існує, можливо, в архіві.",
   "customCategories.notFound": "Категорію не знайдено або її тип не можна змінити.",
@@ -324,7 +324,6 @@
   "customCategories.unauthorized": "Увійдіть, щоб керувати категоріями.",
   "customCategories.unknown": "Власна категорія",
   "customCategories.unavailable": "Ця категорія недоступна для операції. Оберіть активну категорію відповідного типу.",
-  "customCategories.recurringUnavailable": "Власні категорії наразі доступні лише для разових операцій.",
   "customCategories.icons.tag": "Мітка",
   "customCategories.icons.baby": "Дитина",
   "customCategories.icons.heart": "Серце",
@@ -372,5 +371,7 @@
   "customCategories.icons.banknote": "Банкнота",
   "customCategories.icons.piggybank": "Скарбничка",
   "customCategories.icons.tools": "Інструменти",
-  "customCategories.icons.sparkles": "Іскри"
+  "customCategories.icons.sparkles": "Іскри",
+  "customCategories.chooseActive": "Ця категорія архівована або недоступна. Оберіть активну категорію для створення цієї операції.",
+  "customCategories.archivedTemplate": "Цей шаблон використовує архівовану категорію. Її можна залишити під час редагування шаблону, але для нових операцій потрібна активна категорія."
 }

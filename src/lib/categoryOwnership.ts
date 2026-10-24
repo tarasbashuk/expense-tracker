@@ -6,7 +6,7 @@ export async function validateTransactionCategory(
   userId: string,
   category: string,
   type: TransactionType,
-  options: { existingCategory?: string; recurring?: boolean } = {},
+  options: { existingCategory?: string } = {},
 ) {
   if (!Object.values(TransactionType).includes(type))
     throw new Error('customCategories.invalid');
@@ -20,9 +20,6 @@ export async function validateTransactionCategory(
 
     return;
   }
-
-  if (options.recurring)
-    throw new Error('customCategories.recurringUnavailable');
 
   const owned = await tx.customCategory.findFirst({
     where: { id: category.slice('custom:'.length), userId, type },
