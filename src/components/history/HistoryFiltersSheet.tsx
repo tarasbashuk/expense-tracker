@@ -23,35 +23,21 @@ import {
 } from '@mui/material';
 import { Search, X } from 'lucide-react';
 import { TransactionType } from '@prisma/client';
+import { useCategoryCatalog } from '../categories/useCategoryCatalog';
+import { categoryOptions } from '@/lib/customCategories';
+import { useCategoryI18n } from '@/lib/useCategoryI18n';
 import { useIntl } from 'react-intl';
-import { TransactionCategory } from '@/constants/types';
-import {
-  EXPENSE_CATEGORIES,
-  INCOME_CATEGORIES,
-  EXPENSE_CATEGORIES_LIST,
-  INCOME_CATEGORIES_LIST,
-  isCreditCardCategory,
-} from '@/constants/constants';
 import CategoryIcon from './CategoryIcon';
 import { selectedSegmentStyles } from './tokens';
 
 export interface HistoryFilters {
   tagIds?: string[];
   type: TransactionType | 'all';
-  category: TransactionCategory | 'all';
+  category: string;
   recurringOnly: boolean;
   search: string;
 }
 
-const allCategories = Object.entries({
-  ...INCOME_CATEGORIES,
-  ...EXPENSE_CATEGORIES,
-}).map(([value, label]) => ({ value, label }));
-export const categoriesByType = {
-  all: allCategories,
-  Income: INCOME_CATEGORIES_LIST,
-  Expense: EXPENSE_CATEGORIES_LIST,
-};
 const emptyFilters: HistoryFilters = {
   type: 'all',
   category: 'all',
@@ -95,9 +81,13 @@ export default function HistoryFiltersSheet({
   }, [value.search]);
 
   const { formatMessage } = useIntl();
-  const categories = categoriesByType[draft.type].filter(
-    (category) =>
-      creditCardTrackingEnabled || !isCreditCardCategory(category.value),
+  const { categories: customCategories } = useCategoryCatalog();
+  const { getLabel } = useCategoryI18n();
+  const categories = categoryOptions(
+    customCategories,
+    draft.type,
+    creditCardTrackingEnabled,
+    true,
   );
 
   return (
@@ -185,10 +175,7 @@ export default function HistoryFiltersSheet({
                     }}
                   >
                     <CategoryIcon category={category.value} />
-                    {formatMessage({
-                      id: `categories.${category.value}`,
-                      defaultMessage: category.label,
-                    })}
+                    {getLabel(category.value)}
                   </Box>
                 </MenuItem>
               ))}

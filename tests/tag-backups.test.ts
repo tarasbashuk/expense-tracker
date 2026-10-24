@@ -36,6 +36,7 @@ const data = {
 function database() {
   const tx = Object.fromEntries(
     [
+      'customCategory',
       'user',
       'settings',
       'transaction',
@@ -74,6 +75,7 @@ test('v2 snapshot includes all model rows and both sets of tag connections', asy
   expect(validateBackupData(parsed)).toEqual({
     ...data,
     merchantCategoryRules: [],
+    customCategories: [],
   });
   expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
     isolationLevel: 'RepeatableRead',
@@ -154,4 +156,45 @@ test('migration only creates tag structures and cascades from tags to links', ()
   expect(sql).toContain('REFERENCES "Tag"("id") ON DELETE CASCADE');
   expect(sql).not.toMatch(/ALTER TABLE "Transaction"/);
   expect(sql).toContain('UNIQUE INDEX "Tag_userId_normalizedName_key"');
+});
+
+test('custom category backup restores archived labels before transactions and rejects broken ownership', async () => {
+  const category = {
+    id: 'custom-id',
+    userId: 'owner',
+    name: 'Pottery',
+    type: 'Expense',
+    icon: 'palette',
+    archived: true,
+  };
+  const snapshot = {
+    ...data,
+    customCategories: [category],
+    transactions: [
+      {
+        ...data.transactions[0],
+        category: 'custom:custom-id',
+        type: 'Expense',
+      },
+    ],
+  };
+  const { tx, prisma } = database();
+
+  await restoreBackupData(prisma, snapshot);
+
+  expect(tx.customCategory.createMany).toHaveBeenCalledWith({
+    data: [category],
+  });
+  expect(tx.customCategory.createMany.mock.invocationCallOrder[0]).toBeLessThan(
+    tx.transaction.createMany.mock.invocationCallOrder[0],
+  );
+  expect(() =>
+    validateBackupData({ ...snapshot, customCategories: [] }),
+  ).toThrow('Invalid custom category relation');
+  expect(() =>
+    validateBackupData({
+      ...snapshot,
+      customCategories: [{ ...category, userId: 'foreign' }],
+    }),
+  ).toThrow('Invalid category owner');
 });

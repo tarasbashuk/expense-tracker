@@ -1,4 +1,5 @@
 'use client';
+import { isCustomCategory } from '@/lib/customCategories';
 import { MoreHorizIcon } from '@/components/shared/icons';
 
 import { useId, useState } from 'react';
@@ -175,17 +176,19 @@ export default function TransactionActionsMenu({
             </ListItemText>
           </MenuItem>
         )}
-        <MenuItem onClick={() => runAction(() => setTemplateOpen(true))}>
-          <ListItemIcon>
-            <BookmarkPlus size={20} />
-          </ListItemIcon>
-          <ListItemText>
-            {formatMessage({
-              id: 'template.fromTransaction',
-              defaultMessage: 'Save as shortcut',
-            })}
-          </ListItemText>
-        </MenuItem>
+        {!isCustomCategory(transaction.category) && (
+          <MenuItem onClick={() => runAction(() => setTemplateOpen(true))}>
+            <ListItemIcon>
+              <BookmarkPlus size={20} />
+            </ListItemIcon>
+            <ListItemText>
+              {formatMessage({
+                id: 'template.fromTransaction',
+                defaultMessage: 'Save as shortcut',
+              })}
+            </ListItemText>
+          </MenuItem>
+        )}
         <Divider />
         <MenuItem
           className="transaction-delete"

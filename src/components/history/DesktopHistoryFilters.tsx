@@ -12,9 +12,11 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
+import { useCategoryCatalog } from '../categories/useCategoryCatalog';
+import { categoryOptions } from '@/lib/customCategories';
+import { useCategoryI18n } from '@/lib/useCategoryI18n';
 import { useIntl } from 'react-intl';
-import { categoriesByType, type HistoryFilters } from './HistoryFiltersSheet';
-import { isCreditCardCategory } from '@/constants/constants';
+import { type HistoryFilters } from './HistoryFiltersSheet';
 import { useTagCatalog } from '../tags/useTagCatalog';
 import CategoryIcon from './CategoryIcon';
 import { selectedSegmentStyles } from './tokens';
@@ -34,9 +36,13 @@ export default function DesktopHistoryFilters({
   const { formatMessage } = useIntl();
   const { tags, loading, error } = useTagCatalog();
   const selected = value.tagIds || [];
-  const categories = categoriesByType[value.type].filter(
-    (category) =>
-      creditCardTrackingEnabled || !isCreditCardCategory(category.value),
+  const { categories: customCategories } = useCategoryCatalog();
+  const { getLabel } = useCategoryI18n();
+  const categories = categoryOptions(
+    customCategories,
+    value.type,
+    creditCardTrackingEnabled,
+    true,
   );
 
   return (
@@ -119,10 +125,7 @@ export default function DesktopHistoryFilters({
                   sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}
                 >
                   <CategoryIcon category={category.value} />
-                  {formatMessage({
-                    id: `categories.${category.value}`,
-                    defaultMessage: category.label,
-                  })}
+                  {getLabel(category.value)}
                 </Box>
               </MenuItem>
             ))}

@@ -1,3 +1,8 @@
+'use client';
+
+import { useCategoryCatalog } from '../categories/useCategoryCatalog';
+import { getCustomCategoryIcon } from '../categories/categoryIcons';
+import { customCategoryKey } from '@/lib/customCategories';
 import {
   ShoppingCart,
   Utensils,
@@ -57,9 +62,15 @@ const icons: Record<TransactionCategory, LucideIcon> = {
 };
 
 export default function CategoryIcon({ category }: { category: string }) {
-  const Icon = Object.hasOwn(icons, category)
-    ? icons[category as TransactionCategory]
-    : CircleEllipsis;
+  const { categories } = useCategoryCatalog();
+  const custom = categories.find(
+    ({ id }) => customCategoryKey(id) === category,
+  );
+  const Icon = custom
+    ? getCustomCategoryIcon(custom.icon)
+    : Object.hasOwn(icons, category)
+      ? icons[category as TransactionCategory]
+      : CircleEllipsis;
 
   return <Icon size={22} strokeWidth={1.75} aria-hidden="true" />;
 }

@@ -1,4 +1,5 @@
 'use client';
+import { CategoryCatalogProvider } from '@/components/categories/useCategoryCatalog';
 import { useAuth } from '@clerk/nextjs';
 import { TagCatalogProvider } from '@/components/tags/useTagCatalog';
 import { ThemeProvider } from '@mui/material/styles';
@@ -26,7 +27,12 @@ export const ClientProviders = ({
           key={userId || 'signed-out'}
           enabled={Boolean(userId)}
         >
-          {children}
+          <CategoryCatalogProvider
+            key={userId || 'signed-out'}
+            enabled={Boolean(userId)}
+          >
+            {children}
+          </CategoryCatalogProvider>
         </TagCatalogProvider>
       </IntlProvider>
     </ThemeProvider>

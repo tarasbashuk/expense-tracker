@@ -1,4 +1,6 @@
 'use client';
+import { useCategoryCatalog } from '../categories/useCategoryCatalog';
+import { categoryOptions, isCustomCategory } from '@/lib/customCategories';
 import { CreditCardIcon } from '@/components/shared/icons';
 import ResponsiveDialog, { FormTitle } from '../shared/ResponsiveDialog';
 import TagsAndRecurrence from './TagsAndRecurrence';
@@ -26,14 +28,7 @@ import {
   Switch,
 } from '@mui/material';
 
-import {
-  CURRENCY_SYMBOL_MAP,
-  DATE_FORMATS,
-  EXPENSE_CATEGORIES_LIST,
-  getExpenseCategoriesList,
-  getIncomeCategoriesList,
-  INCOME_CATEGORIES_LIST,
-} from '@/constants/constants';
+import { CURRENCY_SYMBOL_MAP, DATE_FORMATS } from '@/constants/constants';
 import { Currency, TransactionType } from '@prisma/client';
 import { TransactionCategory } from '@/constants/types';
 import CategoryIcon from '../history/CategoryIcon';
@@ -112,14 +107,22 @@ const AddTransactionModalView: React.FC<Props> = ({
   handleRecurringEndDateChange,
   handleAmountDefaultCurrencyChange,
 }) => {
-  const activeCategories =
-    transactionType === TransactionType.Income
-      ? getIncomeCategoriesList(creditCardTrackingEnabled)
-      : getExpenseCategoriesList(creditCardTrackingEnabled);
-  const allCategories =
-    transactionType === TransactionType.Income
-      ? INCOME_CATEGORIES_LIST
-      : EXPENSE_CATEGORIES_LIST;
+  const { categories: customCategories, error: categoryError } =
+    useCategoryCatalog();
+  const activeCategories = categoryOptions(
+    customCategories,
+    transactionType,
+    creditCardTrackingEnabled,
+    false,
+    !isRecurring,
+  );
+  const allCategories = categoryOptions(
+    customCategories,
+    transactionType,
+    true,
+    isEditMode,
+    !isRecurring,
+  );
   const selectedLegacyCategory = allCategories.find(
     ({ value }) => value === category,
   );
@@ -150,6 +153,11 @@ const AddTransactionModalView: React.FC<Props> = ({
         })}
       </FormTitle>
       <DialogContent>
+        {categoryError && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {formatMessage({ id: categoryError })}
+          </Alert>
+        )}
         {saveError && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {saveError}
@@ -372,6 +380,7 @@ const AddTransactionModalView: React.FC<Props> = ({
                       }}
                       control={
                         <Switch
+                          disabled={isCustomCategory(category)}
                           checked={isRecurring || false}
                           onChange={handleIsRecurringChange}
                           inputProps={{ role: 'switch' }}
@@ -385,6 +394,16 @@ const AddTransactionModalView: React.FC<Props> = ({
                       }
                     />
                   </Grid>
+
+                  {isCustomCategory(category) && (
+                    <Grid item xs={12}>
+                      <Alert severity="info">
+                        {formatMessage({
+                          id: 'customCategories.recurringUnavailable',
+                        })}
+                      </Alert>
+                    </Grid>
+                  )}
 
                   {isRecurring && (
                     <Grid item xs={12}>

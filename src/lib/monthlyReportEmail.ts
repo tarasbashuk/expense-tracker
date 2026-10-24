@@ -255,7 +255,7 @@ export async function sendMonthlyReportEmail(
                 <div class="expense-item">
                     <div class="expense-text">
                         <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(expense.text)}</div>
-                        <div style="color: #6c757d; font-size: 14px;">${data.expenseCategories[expense.category] || expense.category} • ${expense.date.toLocaleDateString(
+                        <div style="color: #6c757d; font-size: 14px;">${escapeHtml(data.expenseCategories[expense.category] || expense.category)} • ${expense.date.toLocaleDateString(
                           'en-US',
                           {
                             year: 'numeric',
@@ -283,7 +283,7 @@ export async function sendMonthlyReportEmail(
               .map(
                 (category) => `
                 <div class="category-item">
-                    <span class="category-name">${data.expenseCategories[category.category] || category.category}</span>
+                    <span class="category-name">${escapeHtml(data.expenseCategories[category.category] || category.category)}</span>
                     <span class="category-count">${category.count} transactions</span>
                 </div>
             `,

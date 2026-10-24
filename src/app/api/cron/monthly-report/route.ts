@@ -1,3 +1,4 @@
+import { customCategoryLabels } from '@/lib/customCategoryLabels';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
@@ -135,12 +136,29 @@ export async function GET(request: NextRequest) {
         const topCategories = [...summary.categories]
           .sort((a, b) => b.count - a.count)
           .slice(0, 5);
+        const categoryLabels = await customCategoryLabels(
+          user.clerkUserId,
+          readableTransactions,
+        );
         const analysisInput = buildAnalysisInput(
           transactions,
           previousTransactions,
           user.settings?.defaultCurrency || Currency.EUR,
           lastMonth.toISOString().slice(0, 7),
         );
+        analysisInput.summary.categories = analysisInput.summary.categories.map(
+          (entry) => ({
+            ...entry,
+            category: categoryLabels[entry.category] || entry.category,
+          }),
+        );
+        analysisInput.transactions = analysisInput.transactions.map(
+          (entry) => ({
+            ...entry,
+            category: categoryLabels[entry.category] || entry.category,
+          }),
+        );
+
         const language = user.settings?.language || 'ENG';
         const analysis =
           Date.now() + MONTHLY_ANALYSIS_TIMEOUT_MS < analysisDeadline
@@ -164,8 +182,8 @@ export async function GET(request: NextRequest) {
           totalDonations,
           topExpenses,
           topCategories,
-          expenseCategories: EXPENSE_CATEGORIES,
-          incomeCategories: INCOME_CATEGORIES,
+          expenseCategories: { ...EXPENSE_CATEGORIES, ...categoryLabels },
+          incomeCategories: { ...INCOME_CATEGORIES, ...categoryLabels },
           defaultCurrency: user.settings?.defaultCurrency,
         };
         const deliveries = await Promise.all(
