@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { installUrlTest } from './url-test-helpers';
 import { createElement, type ComponentProps } from 'react';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -15,6 +16,10 @@ import getIncomeExpense from '@/app/actions/getIncomeExpense';
 import type DatePeriodFilter from '@/components/shared/DatePeriodFilter';
 import { messages } from '@/locales';
 import { transaction } from './fixtures';
+
+vi.mock('next/navigation', async () => ({
+  useSearchParams: (await import('./url-test-helpers')).useTestSearchParams,
+}));
 
 // TagPicker imports TagEditor even when only filter controls are rendered.
 // Keep its server actions (Clerk/Prisma/Next) outside this UI test module graph.
@@ -87,6 +92,7 @@ function deferred<T>() {
 }
 
 beforeEach(() => {
+  installUrlTest('/transactions');
   vi.mocked(getTransactions).mockResolvedValue({
     transactions: [transaction({ text: 'Loaded transaction' })],
   });
@@ -207,13 +213,14 @@ test('initial request or summary failure offers retry and never masquerades as a
   expect(await screen.findByText('Loaded transaction')).toBeTruthy();
 });
 
-test('desktop reset clears search and extra filters without changing the selected period or refetching', async () => {
+test('desktop reset clears search and extra filters without changing the selected period while reloading the matching results', async () => {
   const user = userEvent.setup();
   show();
   await screen.findByText('Loaded transaction');
   await user.click(screen.getByRole('button', { name: 'Next month' }));
   await waitFor(() => expect(getTransactions).toHaveBeenCalledTimes(2));
   await screen.findByText('Loaded transaction');
+  const periodRequest = vi.mocked(getTransactions).mock.calls.at(-1);
   const search = screen.getByRole('textbox', {
     name: 'Search by description or amount',
   });
@@ -230,7 +237,8 @@ test('desktop reset clears search and extra filters without changing the selecte
 
   expect(await screen.findByText('Loaded transaction')).toBeTruthy();
   expect((search as HTMLInputElement).value).toBe('');
-  expect(getTransactions).toHaveBeenCalledTimes(2);
+  expect(vi.mocked(getTransactions).mock.calls.at(-1)).toEqual(periodRequest);
+  expect(new URLSearchParams(window.location.search).get('q')).toBeNull();
 });
 
 test('desktop CSV export downloads the loaded filtered history and releases its URL', async () => {
@@ -290,4 +298,86 @@ test('desktop CSV export downloads the loaded filtered history and releases its 
     click.mockRestore();
     vi.unstubAllGlobals();
   }
+});
+
+test('a direct category link loads its period first and never displays other transaction types or categories', async () => {
+  window.history.replaceState(
+    null,
+    '',
+    '/transactions?period=month&date=2025-08-01&type=Expense&category=education',
+  );
+  vi.mocked(getTransactions).mockResolvedValue({
+    transactions: [
+      transaction({
+        id: 'school',
+        text: 'School',
+        category: 'education',
+        type: 'Expense',
+        amountDefaultCurrency: 42.25,
+      }),
+      transaction({
+        id: 'income',
+        text: 'Income row',
+        category: 'education',
+        type: 'Income',
+      }),
+      transaction({
+        id: 'other',
+        text: 'Other row',
+        category: 'dining',
+        type: 'Expense',
+      }),
+    ],
+  });
+  const view = show();
+
+  expect(screen.queryByText('Other row')).toBeNull();
+  expect(await screen.findByText('School')).toBeTruthy();
+  expect(getTransactions).toHaveBeenCalledExactlyOnceWith(
+    '2025-08-01',
+    '2025-08-31',
+    true,
+  );
+  expect(screen.queryByText('Income row')).toBeNull();
+  expect(screen.queryByText('Other row')).toBeNull();
+  expect(
+    screen.getByRole('combobox', { name: 'Category' }).textContent,
+  ).toContain('Education');
+
+  view.unmount();
+  show();
+
+  expect(await screen.findByText('School')).toBeTruthy();
+  expect(vi.mocked(getTransactions).mock.calls.at(-1)).toEqual([
+    '2025-08-01',
+    '2025-08-31',
+    true,
+  ]);
+});
+
+test('an explicit credit category remains visible and selectable even when credit tracking is off', async () => {
+  window.history.replaceState(
+    null,
+    '',
+    '/transactions?period=month&date=2025-08-01&type=Expense&category=CCRepayment',
+  );
+  vi.mocked(getTransactions).mockResolvedValue({
+    transactions: [
+      transaction({ text: 'Credit repayment', category: 'CCRepayment' }),
+    ],
+  });
+  show();
+
+  expect(await screen.findByText('Credit repayment')).toBeTruthy();
+  expect(getTransactions).toHaveBeenCalledExactlyOnceWith(
+    '2025-08-01',
+    '2025-08-31',
+    false,
+  );
+  expect(
+    screen.getByRole('combobox', { name: 'Category' }).textContent,
+  ).toContain('Credit Card Repayment');
+  expect(new URLSearchParams(window.location.search).get('category')).toBe(
+    'CCRepayment',
+  );
 });

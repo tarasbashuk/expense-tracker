@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { installUrlTest } from './url-test-helpers';
 import { createElement, ReactNode } from 'react';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -9,6 +10,10 @@ import Stats from '@/components/Stats';
 import YearlyStatsContent from '@/components/YearlyStatsContent';
 import { messages } from '@/locales';
 import { EXPENSE_CATEGORIES_LIST } from '@/constants/constants';
+
+vi.mock('next/navigation', async () => ({
+  useSearchParams: (await import('./url-test-helpers')).useTestSearchParams,
+}));
 
 const mocks = vi.hoisted(() => ({
   stats: vi.fn(),
@@ -80,6 +85,7 @@ function show(
 }
 
 beforeEach(() => {
+  installUrlTest('/stats');
   vi.stubGlobal('matchMedia', () => ({
     matches: true,
     addEventListener: vi.fn(),
@@ -206,7 +212,9 @@ test('desktop yearly view renders all months and a non-navigating monthly table'
   expect(mocks.bar.mock.lastCall?.[0].series[0].data).toHaveLength(12);
   expect(screen.getByText('-25.25 €')).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'Jan–Jun' })).toBeNull();
-  expect(view.container.querySelector('a')).toBeNull();
+  expect(view.container.querySelector('a')?.getAttribute('href')).toContain(
+    '/transactions?',
+  );
 });
 
 test('all expense categories remain visible in both modes with a badge independent of summary visibility', async () => {
@@ -234,7 +242,7 @@ test('all expense categories remain visible in both modes with a badge independe
     categories.length,
   );
   expect(screen.getByText('Incomplete month')).toBeTruthy();
-  expect(screen.queryByRole('link')).toBeNull();
+  expect(screen.getAllByRole('link')).toHaveLength(categories.length);
 });
 
 test('the month and year picker applies only on confirmation and preserves the expanded summary', async () => {
@@ -322,4 +330,35 @@ test('yearly chart labels incomplete and missing months and formats precise tool
       chart.xAxis[0].valueFormatter(currentMonth + 1, { location: 'tick' }),
     ).toMatch(/—$/);
   }
+});
+
+test('category links carry the selected month, type and category while clicking a sector only selects it', async () => {
+  window.history.replaceState(
+    null,
+    '',
+    '/stats?year=2025&month=8&chart=pie&type=Expense',
+  );
+  show(Stats);
+  const link = await screen.findByRole('link', { name: /Education/ });
+  const destination = new URL(
+    link.getAttribute('href')!,
+    'https://example.test',
+  );
+  const source = window.location.href;
+
+  expect(mocks.stats).toHaveBeenCalledExactlyOnceWith(2025, 7);
+  expect(destination.pathname).toBe('/transactions');
+  expect(destination.searchParams.get('date')).toBe('2025-08-01');
+  expect(destination.searchParams.get('category')).toBe('education');
+  expect(destination.searchParams.get('type')).toBe('Expense');
+  expect(destination.searchParams.has('q')).toBe(false);
+  expect(destination.searchParams.has('tag')).toBe(false);
+
+  act(() => mocks.pie.mock.lastCall?.[0].onItemClick(null, { dataIndex: 0 }));
+
+  expect(window.location.href).toBe(source);
+  expect(mocks.pie.mock.lastCall?.[0].highlightedItem).toEqual({
+    seriesId: 'categories',
+    dataIndex: 0,
+  });
 });

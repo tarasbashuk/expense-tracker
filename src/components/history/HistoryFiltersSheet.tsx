@@ -22,9 +22,7 @@ import {
   ToggleButtonGroup,
 } from '@mui/material';
 import { Search, X } from 'lucide-react';
-import { TransactionType } from '@prisma/client';
 import { useIntl } from 'react-intl';
-import { TransactionCategory } from '@/constants/types';
 import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
@@ -34,14 +32,9 @@ import {
 } from '@/constants/constants';
 import CategoryIcon from './CategoryIcon';
 import { selectedSegmentStyles } from './tokens';
+import { HistoryFilters, emptyHistoryFilters } from '@/lib/historyQuery';
 
-export interface HistoryFilters {
-  tagIds?: string[];
-  type: TransactionType | 'all';
-  category: TransactionCategory | 'all';
-  recurringOnly: boolean;
-  search: string;
-}
+export type { HistoryFilters } from '@/lib/historyQuery';
 
 const allCategories = Object.entries({
   ...INCOME_CATEGORIES,
@@ -52,13 +45,28 @@ export const categoriesByType = {
   Income: INCOME_CATEGORIES_LIST,
   Expense: EXPENSE_CATEGORIES_LIST,
 };
-const emptyFilters: HistoryFilters = {
-  type: 'all',
-  category: 'all',
-  recurringOnly: false,
-  search: '',
-  tagIds: [],
-};
+
+export function availableHistoryCategories(
+  value: HistoryFilters,
+  creditCardTrackingEnabled: boolean,
+) {
+  const categories = categoriesByType[value.type];
+  const selected = allCategories.find(
+    (category) => category.value === value.category,
+  );
+  const withSelected =
+    selected &&
+    !categories.some((category) => category.value === selected.value)
+      ? [...categories, selected]
+      : categories;
+
+  return withSelected.filter(
+    (category) =>
+      creditCardTrackingEnabled ||
+      category.value === value.category ||
+      !isCreditCardCategory(category.value),
+  );
+}
 
 export function hasActiveHistoryFilters(value: HistoryFilters): boolean {
   return (
@@ -95,9 +103,9 @@ export default function HistoryFiltersSheet({
   }, [value.search]);
 
   const { formatMessage } = useIntl();
-  const categories = categoriesByType[draft.type].filter(
-    (category) =>
-      creditCardTrackingEnabled || !isCreditCardCategory(category.value),
+  const categories = availableHistoryCategories(
+    draft,
+    creditCardTrackingEnabled,
   );
 
   return (
@@ -117,7 +125,7 @@ export default function HistoryFiltersSheet({
             disabled={!hasActiveHistoryFilters(draft)}
             onClick={() => {
               allTypesButton.current?.focus();
-              setDraft(emptyFilters);
+              setDraft(emptyHistoryFilters);
             }}
           >
             {formatMessage({ id: 'history.resetDraft' })}

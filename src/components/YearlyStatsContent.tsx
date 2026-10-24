@@ -34,6 +34,11 @@ import AdditionalBalanceInfo from './AdditionalBalanceInfo';
 import StatisticsLayout from './statistics/StatisticsLayout';
 import PeriodAmounts from './statistics/PeriodAmounts';
 import ChartLegendMarker from './statistics/ChartLegendMarker';
+import AnalyticsHistoryLink from './statistics/AnalyticsHistoryLink';
+import useAnalyticsQuery from '@/lib/hooks/useAnalyticsQuery';
+import useAnalyticsScrollRestore from '@/lib/hooks/useAnalyticsScrollRestore';
+import { historyMonthHref } from '@/lib/historyQuery';
+import { ChevronRight } from 'lucide-react';
 import { cardStyles, historyColors } from './history/tokens';
 import TransactionSkeleton from './history/TransactionSkeleton';
 
@@ -53,8 +58,7 @@ const ukrainianMonths = [
 ];
 
 export default function YearlyStatsContent() {
-  const [year, setYear] = useState(() => new Date().getFullYear());
-  const [half, setHalf] = useState(() => initialHalfYear(year));
+  const { year, half, update } = useAnalyticsQuery('year');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [data, setData] = useState<YearlyStatsData | null>(null);
@@ -93,6 +97,8 @@ export default function YearlyStatsContent() {
       cancelled = true;
     };
   }, [year, formatMessage]);
+
+  useAnalyticsScrollRestore(!loading && !error);
 
   const presentation = yearlyPresentation(
     data?.monthlyIncome ?? [],
@@ -148,8 +154,10 @@ export default function YearlyStatsContent() {
             label={formatMessage({ id: 'filters.year' })}
             onChange={(event) => {
               const selectedYear = Number(event.target.value);
-              setYear(selectedYear);
-              setHalf(initialHalfYear(selectedYear));
+              update({
+                year: selectedYear,
+                half: initialHalfYear(selectedYear),
+              });
             }}
           >
             {YEAR_LIST.map((value) => (
@@ -218,7 +226,7 @@ export default function YearlyStatsContent() {
                       value={half}
                       onChange={(_, value) => {
                         if (value !== null) {
-                          setHalf(value);
+                          update({ half: value });
                         }
                       }}
                       aria-label={formatMessage({ id: 'yearly.halfYear' })}
@@ -320,8 +328,9 @@ export default function YearlyStatsContent() {
                     {mobile ? (
                       <Stack spacing={2}>
                         {presentation.rows.map((month) => (
-                          <Box
+                          <AnalyticsHistoryLink
                             key={month.month}
+                            href={historyMonthHref(year, month.month)}
                             sx={{
                               border: `1px solid ${historyColors.divider}`,
                               borderRadius: 2,
@@ -341,15 +350,22 @@ export default function YearlyStatsContent() {
                               >
                                 {monthLabel(month.month)}
                               </Typography>
-                              {month.incomplete && (
-                                <Chip size="small" label={incompleteLabel} />
-                              )}
+                              <Stack
+                                direction="row"
+                                alignItems="center"
+                                gap={1}
+                              >
+                                {month.incomplete && (
+                                  <Chip size="small" label={incompleteLabel} />
+                                )}
+                                <ChevronRight size={16} aria-hidden="true" />
+                              </Stack>
                             </Stack>
                             <PeriodAmounts
                               income={month.income}
                               expense={month.expense}
                             />
-                          </Box>
+                          </AnalyticsHistoryLink>
                         ))}
                       </Stack>
                     ) : (
@@ -377,6 +393,7 @@ export default function YearlyStatsContent() {
                                 {formatMessage({ id })}
                               </TableCell>
                             ))}
+                            <TableCell padding="none" />
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -384,14 +401,31 @@ export default function YearlyStatsContent() {
                             const difference = month.income - month.expense;
 
                             return (
-                              <TableRow key={month.month}>
+                              <TableRow
+                                key={month.month}
+                                sx={{
+                                  position: 'relative',
+                                  '&:hover': { bgcolor: 'action.hover' },
+                                  '&:focus-within': {
+                                    outline: '2px solid',
+                                    outlineColor: 'primary.main',
+                                  },
+                                }}
+                              >
                                 <TableCell sx={{ py: 2 }}>
-                                  <Box
-                                    component="span"
-                                    sx={{ textTransform: 'capitalize' }}
+                                  <AnalyticsHistoryLink
+                                    href={historyMonthHref(year, month.month)}
+                                    sx={{
+                                      textTransform: 'capitalize',
+                                      '&::after': {
+                                        content: '""',
+                                        position: 'absolute',
+                                        inset: 0,
+                                      },
+                                    }}
                                   >
                                     {monthLabel(month.month)}
-                                  </Box>{' '}
+                                  </AnalyticsHistoryLink>{' '}
                                   {month.incomplete && (
                                     <Chip
                                       size="small"
@@ -430,6 +464,9 @@ export default function YearlyStatsContent() {
                                 >
                                   {difference > 0 ? '+' : ''}
                                   {money(difference)}
+                                </TableCell>
+                                <TableCell padding="none">
+                                  <ChevronRight size={16} aria-hidden="true" />
                                 </TableCell>
                               </TableRow>
                             );
