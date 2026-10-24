@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { installUrlTest } from './url-test-helpers';
 import { createElement, type ReactNode, type ComponentProps } from 'react';
 import type DatePeriodFilter from '@/components/shared/DatePeriodFilter';
 import {
@@ -130,8 +131,9 @@ vi.mock('@/components/ImportStatementModal', () => ({
 
 vi.mock('@/components/TransactionsDataGrid', () => ({ default: () => null }));
 
-vi.mock('next/navigation', () => ({
+vi.mock('next/navigation', async () => ({
   useRouter: () => ({ refresh: mocks.refresh }),
+  useSearchParams: (await import('./url-test-helpers')).useTestSearchParams,
 }));
 
 vi.mock('@/app/actions/deleteTransaction', () => ({
@@ -181,6 +183,7 @@ const renderRecent = () =>
   );
 
 beforeEach(() => {
+  installUrlTest('/transactions');
   vi.spyOn(window, 'confirm').mockReturnValue(true);
   mocks.deleteTransaction.mockResolvedValue({ message: 'Transaction deleted' });
   mocks.getTransactions.mockResolvedValue({ transactions: [transaction] });
@@ -343,10 +346,9 @@ test('transaction history keeps the record when deletion fails', async () => {
   expect(mocks.requestTransactionsRefresh).not.toHaveBeenCalled();
 });
 
-test('description search filters locally and clearing restores results without another fetch', async () => {
+test('description search is applied through the URL and clearing restores results', async () => {
   const user = userEvent.setup();
   await renderHistory();
-  const calls = mocks.getTransactions.mock.calls.length;
 
   await user.type(
     screen.getByRole('textbox', { name: 'Search by description or amount' }),
@@ -357,12 +359,12 @@ test('description search filters locally and clearing restores results without a
   expect(
     screen.getByText('No matching transactions in this period'),
   ).toBeTruthy();
-  expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
+  expect(new URLSearchParams(window.location.search).get('q')).toBe('missing');
 
   await user.click(screen.getByRole('button', { name: 'Clear search' }));
 
   expect(screen.getByText('Coffee')).toBeTruthy();
-  expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
+  expect(new URLSearchParams(window.location.search).get('q')).toBe(null);
 });
 
 test('saving a shortcut copies original currency and amount rather than the converted amount', async () => {
@@ -488,10 +490,9 @@ test.each([
   expect(mocks.getTransactions.mock.calls.at(-1)).toEqual(periodRequest);
 });
 
-test('desktop recurring filter applies immediately, preserves search and resets without refetching', async () => {
+test('desktop recurring filter applies through the URL and preserves the search draft', async () => {
   const user = userEvent.setup();
   await renderHistory();
-  const calls = mocks.getTransactions.mock.calls.length;
   const search = screen.getByRole('textbox', {
     name: 'Search by description or amount',
   });
@@ -503,7 +504,9 @@ test('desktop recurring filter applies immediately, preserves search and resets 
   expect(
     screen.getByText('No matching transactions in this period'),
   ).toBeTruthy();
-  expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
+  expect(new URLSearchParams(window.location.search).get('recurring')).toBe(
+    '1',
+  );
 
   await user.click(
     screen.getByRole('button', { name: 'Reset search and filters' }),
@@ -517,7 +520,9 @@ test('desktop recurring filter applies immediately, preserves search and resets 
     ).checked,
   ).toBe(false);
   expect(screen.getByText('Coffee')).toBeTruthy();
-  expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
+  expect(new URLSearchParams(window.location.search).get('recurring')).toBe(
+    null,
+  );
 });
 
 test('date groups share a heading per day and preserve transaction order and amounts', () => {
@@ -597,13 +602,11 @@ const useMobileViewport = (width = 390) => {
   );
 };
 
-test('mobile filter drafts are discarded on close and apply updates results without refetching', async () => {
+test('mobile filter drafts are discarded on close and Apply updates the URL', async () => {
   useMobileViewport();
   const user = userEvent.setup();
 
   await renderHistory();
-
-  const calls = mocks.getTransactions.mock.calls.length;
 
   await user.click(screen.getByRole('button', { name: 'Filters (0)' }));
   await user.type(
@@ -632,7 +635,7 @@ test('mobile filter drafts are discarded on close and apply updates results with
     screen.getByText('No matching transactions in this period'),
   ).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Filters (1)' })).toBeTruthy();
-  expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
+  expect(new URLSearchParams(window.location.search).get('q')).toBe('missing');
 
   await user.click(screen.getByRole('button', { name: 'Filters (1)' }));
 
@@ -898,10 +901,9 @@ test('desktop filter draft preserves a newer applied search', async () => {
   });
 });
 
-test('desktop tag filters update the net summary immediately, then reset', async () => {
+test('desktop tag filters update the URL and net summary, then reset', async () => {
   const user = userEvent.setup();
   await renderHistory();
-  const calls = mocks.getTransactions.mock.calls.length;
 
   await user.click(screen.getByRole('combobox', { name: 'Tags' }));
   await user.click(await screen.findByRole('option', { name: 'Trip' }));
@@ -914,7 +916,7 @@ test('desktop tag filters update the net summary immediately, then reset', async
   await waitFor(() => expect(screen.queryByText('Coffee')).toBeNull());
   expect(screen.getByText('Net total for matching transactions:')).toBeTruthy();
   expect(screen.getByText('+0.00 €')).toBeTruthy();
-  expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
+  expect(new URLSearchParams(window.location.search).get('tag')).toBe('trip');
 
   await user.click(
     screen.getByRole('button', { name: 'Reset search and filters' }),
@@ -927,13 +929,11 @@ test('desktop tag filters update the net summary immediately, then reset', async
   expect(screen.queryByText('Net total for matching transactions:')).toBeNull();
 });
 
-test('mobile reset clears applied filters immediately and disappears without refetching', async () => {
+test('mobile reset clears applied URL filters and disappears', async () => {
   useMobileViewport();
   const user = userEvent.setup();
 
   await renderHistory();
-
-  const calls = mocks.getTransactions.mock.calls.length;
 
   expect(screen.queryByRole('button', { name: 'Reset' })).toBeNull();
 
@@ -971,5 +971,5 @@ test('mobile reset clears applied filters immediately and disappears without ref
   expect(screen.getByText('Coffee')).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'Reset' })).toBeNull();
   expect(screen.getByRole('button', { name: 'Filters (0)' })).toBeTruthy();
-  expect(mocks.getTransactions).toHaveBeenCalledTimes(calls);
+  expect(new URLSearchParams(window.location.search).get('type')).toBe(null);
 });

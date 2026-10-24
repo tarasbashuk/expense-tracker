@@ -13,8 +13,10 @@ import {
   Typography,
 } from '@mui/material';
 import { useIntl } from 'react-intl';
-import { categoriesByType, type HistoryFilters } from './HistoryFiltersSheet';
-import { isCreditCardCategory } from '@/constants/constants';
+import {
+  availableHistoryCategories,
+  type HistoryFilters,
+} from './HistoryFiltersSheet';
 import { useTagCatalog } from '../tags/useTagCatalog';
 import CategoryIcon from './CategoryIcon';
 import { selectedSegmentStyles } from './tokens';
@@ -34,9 +36,9 @@ export default function DesktopHistoryFilters({
   const { formatMessage } = useIntl();
   const { tags, loading, error } = useTagCatalog();
   const selected = value.tagIds || [];
-  const categories = categoriesByType[value.type].filter(
-    (category) =>
-      creditCardTrackingEnabled || !isCreditCardCategory(category.value),
+  const categories = availableHistoryCategories(
+    value,
+    creditCardTrackingEnabled,
   );
 
   return (

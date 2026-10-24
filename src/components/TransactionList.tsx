@@ -41,19 +41,23 @@ import {
   pageStyles,
   pageHeaderStyles,
 } from './history/tokens';
-import getTransactions from '@/app/actions/getTransactions';
+import getHistoryTransactions from '@/app/actions/getHistoryTransactions';
+import useHistoryQuery from '@/lib/hooks/useHistoryQuery';
+import {
+  defaultHistoryQuery,
+  emptyHistoryFilters,
+  serializeHistoryQuery,
+} from '@/lib/historyQuery';
 import deleteTransaction from '@/app/actions/deleteTransaction';
 import { useTransactions } from '@/context/TranasctionsContext';
 import { useSettings } from '@/context/SettingsContexts';
 import DatePeriodFilter from './shared/DatePeriodFilter';
 import TransactionsDataGrid from './TransactionsDataGrid';
-import { TransactionCategory, ViewType } from '@/constants/types';
+import { ViewType } from '@/constants/types';
 import getIncomeExpense from '@/app/actions/getIncomeExpense';
 import { useIntl } from 'react-intl';
-import {
-  CURRENCY_SYMBOL_MAP,
-  isCreditCardCategory,
-} from '@/constants/constants';
+import { useCategoryI18n } from '@/lib/useCategoryI18n';
+import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
 import { TransactionType } from '@prisma/client';
 import {
   Button,
@@ -64,23 +68,7 @@ import {
   ToggleButtonGroup,
   ToggleButton,
 } from '@mui/material';
-import {
-  dateKeyFromLocalDate,
-  DateRangeValue,
-  getPeriodRange,
-  PeriodMode,
-  shiftPeriod,
-} from '@/lib/dateRange';
-
-const getDefaultPeriod = () => {
-  const anchorDate = dateKeyFromLocalDate(new Date());
-  const range = getPeriodRange('month', anchorDate, {
-    start: anchorDate,
-    end: anchorDate,
-  });
-
-  return { anchorDate, range, customRange: { ...range, end: anchorDate } };
-};
+import { getPeriodRange, PeriodMode, shiftPeriod } from '@/lib/dateRange';
 
 const TransactionList = () => {
   const theme = useTheme();
@@ -102,35 +90,61 @@ const TransactionList = () => {
   );
   const [loadedKey, setLoadedKey] = useState('');
   const [retry, setRetry] = useState(0);
-  const [periodMode, setPeriodMode] = useState<PeriodMode>('month');
-  const [anchorDate, setAnchorDate] = useState(
-    () => getDefaultPeriod().anchorDate,
-  );
-  const [customRange, setCustomRange] = useState<DateRangeValue>(
-    () => getDefaultPeriod().customRange,
-  );
+  const { filters, updateFilters } = useHistoryQuery();
+  const {
+    periodMode,
+    anchorDate,
+    customRange,
+    type: selectedTransactionType,
+    category: selectedCategory,
+    search,
+    tagIds = [],
+    recurringOnly,
+  } = filters;
   const [income, setIncome] = useState(0);
   const [expense, setExpense] = useState(0);
   const [viewType, setViewType] = useState(ViewType.List);
   const [isLoading, setIsloading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<
-    TransactionCategory | 'all'
-  >('all');
-  const [selectedTransactionType, setSelectedTransactionType] = useState<
-    TransactionType | 'all'
-  >('all');
   const [isExporting, setIsExporting] = useState(false);
   const exportInProgress = useRef(false);
-  const [search, setSearch] = useState('');
-  const [searchInput, setSearchInput] = useState('');
+  // Only the text being edited is local; the applied search belongs to the URL.
+  const [searchDraft, setSearchDraft] = useState<{
+    base: string;
+    text: string;
+  } | null>(null);
+  const searchInput = searchDraft?.base === search ? searchDraft.text : search;
+  const setSearchInput = (text: string) =>
+    setSearchDraft({ base: search, text });
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setSearch(searchInput), 300);
+    if (
+      !searchDraft ||
+      searchDraft.base !== search ||
+      searchDraft.text === search
+    ) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      updateFilters({ search: searchDraft.text });
+    }, 300);
 
     return () => window.clearTimeout(timer);
-  }, [searchInput]);
-  const [tagIds, setTagIds] = useState<string[]>([]);
-  const [recurringOnly, setRecurringOnly] = useState(false);
+  }, [searchDraft, search, updateFilters]);
+
+  useEffect(() => {
+    const discardDraft = () => setSearchDraft(null);
+    window.addEventListener('popstate', discardDraft);
+
+    return () => window.removeEventListener('popstate', discardDraft);
+  }, []);
+
+  useEffect(() => {
+    if (searchDraft && searchDraft.base !== search) {
+      setSearchDraft(null);
+    }
+  }, [search, searchDraft]);
+
   const [filtersOpen, setFiltersOpen] = useState(false);
   useEffect(() => {
     if (!isMobile) setFiltersOpen(false);
@@ -164,13 +178,14 @@ const TransactionList = () => {
   );
 
   const { formatMessage } = useIntl();
+  const { getLabel } = useCategoryI18n();
   const { settings } = useSettings();
   const selectedRange = useMemo(
     () => getPeriodRange(periodMode, anchorDate, customRange),
     [anchorDate, customRange, periodMode],
   );
 
-  const queryKey = `${selectedRange.start}/${selectedRange.end}`;
+  const queryKey = serializeHistoryQuery(filters);
   const hasCurrentData = loadedKey === queryKey;
   const currentError = error?.key === queryKey ? error.message : '';
   const pending = isLoading || (!hasCurrentData && !currentError);
@@ -201,11 +216,16 @@ const TransactionList = () => {
     }
   };
 
-  const defaultPeriod = getDefaultPeriod();
+  const defaultPeriod = defaultHistoryQuery();
+  const defaultRange = getPeriodRange(
+    defaultPeriod.periodMode,
+    defaultPeriod.anchorDate,
+    defaultPeriod.customRange,
+  );
   const isPeriodFiltered =
     periodMode !== 'month' ||
-    selectedRange.start !== defaultPeriod.range.start ||
-    selectedRange.end !== defaultPeriod.range.end;
+    selectedRange.start !== defaultRange.start ||
+    selectedRange.end !== defaultRange.end;
   const activeFilterCount =
     Number(isPeriodFiltered) +
     Number(selectedCategory !== 'all') +
@@ -223,48 +243,25 @@ const TransactionList = () => {
   });
 
   const resetFilters = () => {
-    setSearchInput('');
-    setSearch('');
-    setTagIds([]);
-    setRecurringOnly(false);
-    setSelectedCategory('all');
-    setSelectedTransactionType('all');
+    setSearchDraft(null);
+    updateFilters(emptyHistoryFilters);
   };
 
-  const shiftSelectedPeriod = useCallback(
-    (direction: -1 | 1) => {
-      const shifted = shiftPeriod(
-        periodMode,
-        anchorDate,
-        customRange,
-        direction,
-      );
+  const shiftSelectedPeriod = (direction: -1 | 1) => {
+    updateFilters(shiftPeriod(periodMode, anchorDate, customRange, direction));
+  };
 
-      setAnchorDate(shifted.anchorDate);
-      setCustomRange(shifted.customRange);
-    },
-    [anchorDate, customRange, periodMode],
-  );
-
-  const handlePeriodModeChange = useCallback(
-    (nextMode: PeriodMode) => {
-      if (periodMode === 'custom' && nextMode !== 'custom') {
-        setAnchorDate(customRange.start);
-      }
-
-      setPeriodMode(nextMode);
-    },
-    [customRange.start, periodMode],
-  );
+  const handlePeriodModeChange = (nextMode: PeriodMode) => {
+    updateFilters({
+      periodMode: nextMode,
+      ...(periodMode === 'custom' && nextMode !== 'custom'
+        ? { anchorDate: customRange.start }
+        : {}),
+    });
+  };
 
   const creditCardTrackingEnabled =
     settings?.creditCardTrackingEnabled ?? false;
-
-  useEffect(() => {
-    if (!creditCardTrackingEnabled && isCreditCardCategory(selectedCategory)) {
-      setSelectedCategory('all');
-    }
-  }, [creditCardTrackingEnabled, selectedCategory]);
 
   const handleEditTransaction = useCallback(
     (transactionId: string) => {
@@ -339,7 +336,7 @@ const TransactionList = () => {
       try {
         const [transactionsResponse, incomeExpenseResponse] = await Promise.all(
           [
-            getTransactions(selectedRange.start, selectedRange.end, true),
+            getHistoryTransactions(queryKey),
             getIncomeExpense(selectedRange.start, selectedRange.end),
           ],
         );
@@ -429,7 +426,9 @@ const TransactionList = () => {
             onModeChange={handlePeriodModeChange}
             onPrevious={() => shiftSelectedPeriod(-1)}
             onNext={() => shiftSelectedPeriod(1)}
-            onCustomRangeChange={setCustomRange}
+            onCustomRangeChange={(range) =>
+              updateFilters({ customRange: range })
+            }
           />
 
           <Box
@@ -472,8 +471,8 @@ const TransactionList = () => {
                           id: 'history.clearSearch',
                         })}
                         onClick={() => {
-                          setSearchInput('');
-                          setSearch('');
+                          setSearchDraft(null);
+                          updateFilters({ search: '' });
                         }}
                       >
                         <CloseIcon />
@@ -594,14 +593,31 @@ const TransactionList = () => {
               }}
               creditCardTrackingEnabled={creditCardTrackingEnabled}
               onChange={(filters) => {
-                setSelectedTransactionType(filters.type);
-                setSelectedCategory(filters.category);
-                setTagIds(filters.tagIds || []);
-                setRecurringOnly(filters.recurringOnly);
+                updateFilters({
+                  type: filters.type,
+                  category: filters.category,
+                  tagIds: filters.tagIds || [],
+                  recurringOnly: filters.recurringOnly,
+                });
               }}
             />
           )}
         </Box>
+        {isMobile &&
+          (selectedCategory !== 'all' || selectedTransactionType !== 'all') && (
+            <Typography variant="body2" color="text.secondary">
+              {[
+                selectedTransactionType !== 'all'
+                  ? formatMessage({
+                      id: `transactionType.${selectedTransactionType.toLowerCase()}`,
+                    })
+                  : '',
+                selectedCategory !== 'all' ? getLabel(selectedCategory) : '',
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </Typography>
+          )}
         {!isMobile && hasResettableFilters && (
           <Button onClick={resetFilters} sx={{ alignSelf: 'flex-start' }}>
             {formatMessage({ id: 'history.resetFilters' })}
@@ -625,15 +641,8 @@ const TransactionList = () => {
             creditCardTrackingEnabled={creditCardTrackingEnabled}
             onClose={() => setFiltersOpen(false)}
             onApply={(filters) => {
-              setSelectedTransactionType(filters.type);
-              setSelectedCategory(filters.category);
-              setRecurringOnly(filters.recurringOnly);
-              setTagIds(filters.tagIds || []);
-
-              if (isMobile) {
-                setSearchInput(filters.search);
-                setSearch(filters.search);
-              }
+              setSearchDraft(null);
+              updateFilters(filters);
 
               setFiltersOpen(false);
             }}
