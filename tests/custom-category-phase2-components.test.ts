@@ -22,6 +22,15 @@ const mocks = vi.hoisted(() => ({
   loading: false,
 }));
 
+// Component tests must never load server-side authentication or database modules.
+vi.mock('@clerk/nextjs/server', () => {
+  throw new Error('Server-side Clerk was imported by a component test');
+});
+
+vi.mock('@/lib/db', () => {
+  throw new Error('The database was imported by a component test');
+});
+
 vi.mock('@/components/categories/useCategoryCatalog', () => ({
   useCategoryCatalog: () => ({
     categories: [
@@ -43,6 +52,12 @@ vi.mock('@/components/categories/useCategoryCatalog', () => ({
     loading: mocks.loading,
     error: '',
   }),
+}));
+
+vi.mock('@/app/actions/tags', () => ({
+  getTags: vi.fn().mockResolvedValue({ tags: [] }),
+  saveTag: vi.fn(),
+  deleteTag: vi.fn(),
 }));
 
 vi.mock('@/components/tags/useTagCatalog', () => ({
