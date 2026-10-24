@@ -1,6 +1,8 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { validateTransactionCategory } from '@/lib/categoryOwnership';
+import { isCustomCategory } from '@/lib/customCategories';
 import { db } from '@/lib/db';
 import { addMonths, startOfDay, endOfDay, subMonths } from 'date-fns';
 import * as Sentry from '@sentry/nextjs';
@@ -111,6 +113,34 @@ export async function GET(request: NextRequest) {
     const createdTransactions = [];
 
     for (const transaction of recurringTransactions) {
+      if (isCustomCategory(transaction.category)) {
+        try {
+          // Archiving hides new choices; it does not cancel an existing schedule.
+          await validateTransactionCategory(
+            db,
+            transaction.userId,
+            transaction.category,
+            transaction.type,
+            {
+              existingCategory: transaction.category,
+            },
+          );
+        } catch (error) {
+          if (
+            !(error instanceof Error) ||
+            !error.message.startsWith('customCategories.')
+          )
+            throw error;
+
+          Sentry.captureMessage(
+            `Skipping recurring transaction with an unavailable category: id=${transaction.id}`,
+            'warning',
+          );
+
+          continue;
+        }
+      }
+
       // Create a new transaction for the current month based on a recurring transaction from the previous month
       let nextMonthDate = addMonths(transaction.date, 1);
 

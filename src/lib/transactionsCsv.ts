@@ -11,6 +11,7 @@ function csvCell(value: string | number): string {
 export function transactionsToCsv(
   transactions: Transaction[],
   defaultCurrency: string,
+  categoryLabels: Record<string, string> = {},
 ): string {
   const header = [
     'Date',
@@ -27,7 +28,7 @@ export function transactionsToCsv(
     new Date(transaction.date).toISOString().slice(0, 10),
     transaction.text,
     transaction.type,
-    transaction.category,
+    categoryLabels[transaction.category] || transaction.category,
     transaction.amount,
     transaction.currency,
     transaction.amountDefaultCurrency,
@@ -46,10 +47,14 @@ export function downloadTransactionsCsv(
   transactions: Transaction[],
   defaultCurrency: string,
   filename: string,
+  categoryLabels: Record<string, string> = {},
 ): void {
-  const blob = new Blob([transactionsToCsv(transactions, defaultCurrency)], {
-    type: 'text/csv;charset=utf-8;',
-  });
+  const blob = new Blob(
+    [transactionsToCsv(transactions, defaultCurrency, categoryLabels)],
+    {
+      type: 'text/csv;charset=utf-8;',
+    },
+  );
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
 

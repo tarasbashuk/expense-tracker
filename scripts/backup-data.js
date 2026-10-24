@@ -5,6 +5,7 @@ export async function readBackupData(prisma) {
       const users = await tx.user.findMany();
       const settings = await tx.settings.findMany();
       const merchantCategoryRules = await tx.merchantCategoryRule.findMany();
+      const customCategories = await tx.customCategory.findMany();
       const tags = await tx.tag.findMany();
       const taggedTransactions = await tx.transaction.findMany({
         include: { tags: { select: { id: true } } },
@@ -26,6 +27,7 @@ export async function readBackupData(prisma) {
       );
 
       return {
+        customCategories,
         users,
         transactions,
         settings,
@@ -51,6 +53,7 @@ export function validateBackupData(data) {
   }
 
   for (const key of [
+    'customCategories',
     'merchantCategoryRules',
     'quickTransactionTemplates',
     'tags',
@@ -76,6 +79,34 @@ export function validateBackupData(data) {
 
   const tags = new Map((data.tags || []).map((tag) => [tag.id, tag]));
   const users = new Set(data.users.map((user) => user.clerkUserId));
+
+  const customCategories = new Map(
+    (data.customCategories || []).map((category) => [
+      `custom:${category.id}`,
+      category,
+    ]),
+  );
+
+  for (const category of customCategories.values()) {
+    if (!users.has(category.userId)) throw new Error('Invalid category owner');
+  }
+
+  for (const row of [
+    ...data.transactions,
+    ...(data.quickTransactionTemplates || []),
+  ]) {
+    if (typeof row.category !== 'string' || !row.category.startsWith('custom:'))
+      continue;
+
+    const category = customCategories.get(row.category);
+
+    if (
+      !category ||
+      category.userId !== row.userId ||
+      category.type !== row.type
+    )
+      throw new Error('Invalid custom category relation');
+  }
 
   for (const tag of tags.values()) {
     if (!users.has(tag.userId)) throw new Error('Invalid tag owner');
@@ -127,6 +158,7 @@ export async function restoreBackupData(prisma, data) {
   await prisma.$transaction(
     async (tx) => {
       for (const model of [
+        'customCategory',
         'tag',
         'quickTransactionTemplate',
         'merchantCategoryRule',
@@ -139,6 +171,7 @@ export async function restoreBackupData(prisma, data) {
 
       for (const [model, key] of [
         ['user', 'users'],
+        ['customCategory', 'customCategories'],
         ['settings', 'settings'],
         ['transaction', 'transactions'],
         ['merchantCategoryRule', 'merchantCategoryRules'],

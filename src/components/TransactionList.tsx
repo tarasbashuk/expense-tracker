@@ -20,6 +20,8 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
+import { useCategoryCatalog } from './categories/useCategoryCatalog';
+import { customCategoryKey } from '@/lib/customCategories';
 import { downloadTransactionsCsv } from '@/lib/transactionsCsv';
 import { filterTransactions } from '@/lib/filterTransactions';
 
@@ -47,7 +49,7 @@ import { useTransactions } from '@/context/TranasctionsContext';
 import { useSettings } from '@/context/SettingsContexts';
 import DatePeriodFilter from './shared/DatePeriodFilter';
 import TransactionsDataGrid from './TransactionsDataGrid';
-import { TransactionCategory, ViewType } from '@/constants/types';
+import { ViewType } from '@/constants/types';
 import getIncomeExpense from '@/app/actions/getIncomeExpense';
 import { useIntl } from 'react-intl';
 import {
@@ -113,9 +115,7 @@ const TransactionList = () => {
   const [expense, setExpense] = useState(0);
   const [viewType, setViewType] = useState(ViewType.List);
   const [isLoading, setIsloading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<
-    TransactionCategory | 'all'
-  >('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedTransactionType, setSelectedTransactionType] = useState<
     TransactionType | 'all'
   >('all');
@@ -164,6 +164,7 @@ const TransactionList = () => {
   );
 
   const { formatMessage } = useIntl();
+  const { categories: customCategories } = useCategoryCatalog();
   const { settings } = useSettings();
   const selectedRange = useMemo(
     () => getPeriodRange(periodMode, anchorDate, customRange),
@@ -194,6 +195,12 @@ const TransactionList = () => {
         visibleTransactions,
         settings.defaultCurrency,
         `transactions_${selectedRange.start}_${selectedRange.end}.csv`,
+        Object.fromEntries(
+          customCategories.map((item) => [
+            customCategoryKey(item.id),
+            item.name,
+          ]),
+        ),
       );
     } finally {
       exportInProgress.current = false;

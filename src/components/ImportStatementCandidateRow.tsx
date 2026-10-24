@@ -1,4 +1,6 @@
 'use client';
+import { useCategoryCatalog } from './categories/useCategoryCatalog';
+import { categoryOptions } from '@/lib/customCategories';
 import { CreditCardIcon } from '@/components/shared/icons';
 
 import CategoryIcon from './history/CategoryIcon';
@@ -24,12 +26,7 @@ import { format, parseISO } from 'date-fns';
 import { useIntl } from 'react-intl';
 
 import type { ScreenshotImportCandidate } from '@/app/actions/analyzeStatementScreenshots';
-import {
-  CURRENCY_SYMBOL_MAP,
-  DATE_FORMATS,
-  getExpenseCategoriesList,
-  getIncomeCategoriesList,
-} from '@/constants/constants';
+import { CURRENCY_SYMBOL_MAP, DATE_FORMATS } from '@/constants/constants';
 import { TransactionCategory } from '@/constants/types';
 import { useSettings } from '@/context/SettingsContexts';
 import { useCategoryI18n } from '@/lib/useCategoryI18n';
@@ -62,18 +59,6 @@ const statusColorMap = {
   saved: 'success',
 } as const;
 
-const getCategoryOptions = (
-  type: TransactionType | null,
-  creditCardTrackingEnabled: boolean,
-) => {
-  const incomeCategories = getIncomeCategoriesList(creditCardTrackingEnabled);
-  const expenseCategories = getExpenseCategoriesList(creditCardTrackingEnabled);
-  if (type === TransactionType.Income) return incomeCategories;
-  if (type === TransactionType.Expense) return expenseCategories;
-
-  return [...expenseCategories, ...incomeCategories];
-};
-
 export default function ImportStatementCandidateRow({
   row,
   isSaving,
@@ -93,8 +78,10 @@ export default function ImportStatementCandidateRow({
   const {
     settings: { defaultCurrency, creditCardTrackingEnabled },
   } = useSettings();
-  const categoryOptions = getCategoryOptions(
-    row.type,
+  const { categories: customCategories } = useCategoryCatalog();
+  const options = categoryOptions(
+    customCategories,
+    row.type || 'all',
     creditCardTrackingEnabled,
   );
   const isBaseAmountShown = Boolean(
@@ -310,7 +297,7 @@ export default function ImportStatementCandidateRow({
               value={row.category}
               onChange={(event) => onCategoryChange(event.target.value)}
             >
-              {categoryOptions.map(({ value }, index) => (
+              {options.map(({ value }, index) => (
                 <MenuItem key={`${value}-${index}`} value={value}>
                   <Stack direction="row" alignItems="center" sx={{ gap: 1 }}>
                     <CategoryIcon category={value} />

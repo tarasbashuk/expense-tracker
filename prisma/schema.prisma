@@ -17,6 +17,7 @@ model User {
   imageUrl                  String?
   createdAt                 DateTime                   @default(now())
   updatedAt                 DateTime                   @updatedAt
+  customCategories          CustomCategory[]
   tags                      Tag[]
   settings                  Settings?
   transactions              Transaction[]
@@ -129,4 +130,19 @@ model Tag {
   templates      QuickTransactionTemplate[]
 
   @@unique([userId, normalizedName])
+}
+
+model CustomCategory {
+  id             String          @id @default(uuid())
+  userId         String
+  name           String          @db.VarChar(40)
+  normalizedName String          @db.VarChar(80)
+  type           TransactionType
+  icon           String
+  archived       Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  user           User            @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
+
+  @@unique([userId, type, normalizedName])
 }

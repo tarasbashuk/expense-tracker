@@ -60,7 +60,8 @@ export default function SaveTransactionTemplate({
 
       if (result.error || !result.template) {
         setError(
-          (result.error?.startsWith('tags.')
+          (result.error?.startsWith('tags.') ||
+          result.error?.startsWith('customCategories.')
             ? formatMessage({ id: result.error })
             : result.error) ||
             formatMessage({

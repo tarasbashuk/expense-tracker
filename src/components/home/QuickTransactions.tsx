@@ -5,7 +5,7 @@ import ResponsiveDialog, {
 } from '@/components/shared/ResponsiveDialog';
 
 import TagPicker from '../tags/TagPicker';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Currency, TransactionType } from '@prisma/client';
 import { QuickTransactionTemplate } from '@/lib/tags';
 import {
@@ -37,11 +37,8 @@ import {
   reorderQuickTransactionTemplates,
   saveQuickTransactionTemplate,
 } from '@/app/actions/quickTransactionTemplates';
-import {
-  getExpenseCategoriesList,
-  getIncomeCategoriesList,
-} from '@/constants/constants';
-import { TransactionCategory } from '@/constants/types';
+import { categoryOptions, isCustomCategory } from '@/lib/customCategories';
+import { useCategoryCatalog } from '../categories/useCategoryCatalog';
 import { useSettings } from '@/context/SettingsContexts';
 import { useTransactions } from '@/context/TranasctionsContext';
 import { formatCurrency } from '@/lib/formatCurrency';
@@ -87,6 +84,12 @@ function TemplateEditorDialog({
   const [currency, setCurrency] = useState<Currency>(defaultCurrency);
   const [type, setType] = useState<TransactionType>(TransactionType.Expense);
   const [isSaving, setIsSaving] = useState(false);
+  const saving = useRef(false);
+  const {
+    categories: customCategories,
+    loading: categoriesLoading,
+    error: catalogError,
+  } = useCategoryCatalog();
 
   useEffect(() => {
     if (!open) return;
@@ -101,10 +104,30 @@ function TemplateEditorDialog({
     setType(template?.type || TransactionType.Expense);
   }, [defaultCurrency, open, template]);
 
+  const activeCategories = categoryOptions(
+    customCategories,
+    type,
+    creditCardTrackingEnabled,
+  );
+  const previousCategory =
+    template?.type === type
+      ? categoryOptions(
+          customCategories,
+          type,
+          creditCardTrackingEnabled,
+          true,
+        ).find(({ value }) => value === template.category)
+      : undefined;
   const categories =
-    type === TransactionType.Income
-      ? getIncomeCategoriesList(creditCardTrackingEnabled)
-      : getExpenseCategoriesList(creditCardTrackingEnabled);
+    previousCategory &&
+    !activeCategories.some(({ value }) => value === previousCategory.value)
+      ? [...activeCategories, previousCategory]
+      : activeCategories;
+  const categoryNotReady =
+    isCustomCategory(category) &&
+    (categoriesLoading ||
+      Boolean(catalogError) ||
+      !categories.some(({ value }) => value === category));
 
   const handleTypeChange = (nextType: TransactionType) => {
     setType(nextType);
@@ -112,34 +135,45 @@ function TemplateEditorDialog({
   };
 
   const handleSave = async () => {
+    if (saving.current || categoryNotReady) return;
+
+    saving.current = true;
     setError('');
     setIsSaving(true);
-    const input: QuickTransactionTemplateInput = {
-      id: template?.id,
-      tagIds,
-      label,
-      text,
-      amount,
-      category,
-      currency,
-      type,
-    };
-    const result = await saveQuickTransactionTemplate(input);
-    setIsSaving(false);
 
-    if (result.error) {
-      setError(
-        result.error.startsWith('tags.')
-          ? formatMessage({ id: result.error })
-          : result.error,
-      );
+    try {
+      const input: QuickTransactionTemplateInput = {
+        id: template?.id,
+        tagIds,
+        label,
+        text,
+        amount,
+        category,
+        currency,
+        type,
+      };
+      const result = await saveQuickTransactionTemplate(input);
 
-      return;
-    }
+      if (result.error) {
+        setError(
+          result.error.startsWith('tags.') ||
+            result.error.startsWith('customCategories.')
+            ? formatMessage({ id: result.error })
+            : result.error,
+        );
 
-    if (result.template) {
-      onSaved(result.template);
-      onClose();
+        return;
+      }
+
+      if (result.template) {
+        onSaved(result.template);
+        onClose();
+      }
+    } catch {
+      setError(formatMessage({ id: 'common.saveFailed' }));
+    } finally {
+      saving.current = false;
+      setIsSaving(false);
     }
   };
 
@@ -147,7 +181,7 @@ function TemplateEditorDialog({
     <ResponsiveDialog
       open={open}
       onClose={(_, reason) => {
-        if (reason === 'backdropClick') return;
+        if (reason === 'backdropClick' || isSaving) return;
 
         onClose();
       }}
@@ -163,6 +197,20 @@ function TemplateEditorDialog({
         })}
       </FormTitle>
       <DialogContent>
+        {catalogError && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {formatMessage({ id: catalogError })}
+          </Alert>
+        )}
+        {previousCategory &&
+          isCustomCategory(previousCategory.value) &&
+          !activeCategories.some(
+            ({ value }) => value === previousCategory.value,
+          ) && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              {formatMessage({ id: 'customCategories.archivedTemplate' })}
+            </Alert>
+          )}
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -185,13 +233,14 @@ function TemplateEditorDialog({
             setTranasctionType={handleTypeChange}
           />
           <FormControl fullWidth>
-            <InputLabel>
+            <InputLabel id="template-category-label">
               {formatMessage({
                 id: 'addTransaction.category',
                 defaultMessage: 'Category',
               })}
             </InputLabel>
             <Select
+              labelId="template-category-label"
               value={category}
               label={formatMessage({
                 id: 'addTransaction.category',
@@ -201,7 +250,10 @@ function TemplateEditorDialog({
             >
               {categories.map(({ value }) => (
                 <MenuItem key={value} value={value}>
-                  {getLabel(value as TransactionCategory)}
+                  <Stack direction="row" alignItems="center" gap={1}>
+                    <CategoryIcon category={value} />
+                    {getLabel(value)}
+                  </Stack>
                 </MenuItem>
               ))}
             </Select>
@@ -248,7 +300,13 @@ function TemplateEditorDialog({
         <Button
           variant="contained"
           onClick={handleSave}
-          disabled={isSaving || !label.trim() || !text.trim() || !category}
+          disabled={
+            isSaving ||
+            categoryNotReady ||
+            !label.trim() ||
+            !text.trim() ||
+            !category
+          }
         >
           {formatMessage({ id: 'common.save', defaultMessage: 'Save' })}
         </Button>
