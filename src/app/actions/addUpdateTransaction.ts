@@ -1,4 +1,5 @@
 'use server';
+import { validateTransactionCategory } from '@/lib/categoryOwnership';
 import { ownedTagConnections } from '@/lib/tagOwnership';
 import { revalidatePath } from 'next/cache';
 import { currentUser } from '@clerk/nextjs/server';
@@ -127,6 +128,10 @@ export async function addUpdateTransaction(
 
   try {
     const transactionData = await db.$transaction(async (tx) => {
+      await validateTransactionCategory(tx, userId, category, formData.type, {
+        existingCategory: existingTransaction?.category,
+      });
+
       const tags = await ownedTagConnections(tx, userId, tagIds);
       let transactionData;
 
@@ -251,7 +256,9 @@ export async function addUpdateTransaction(
 
     return {
       error:
-        error instanceof Error && error.message.startsWith('tags.')
+        error instanceof Error &&
+        (error.message.startsWith('tags.') ||
+          error.message.startsWith('customCategories.'))
           ? error.message
           : 'Unable to save transaction',
     };

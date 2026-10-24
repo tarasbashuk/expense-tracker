@@ -1,5 +1,6 @@
 'use server';
 
+import { validateTransactionCategory } from '@/lib/categoryOwnership';
 import { ownedTagConnections } from '@/lib/tagOwnership';
 import { currentUser } from '@clerk/nextjs/server';
 import { Currency, TransactionType } from '@prisma/client';
@@ -9,11 +10,7 @@ import * as Sentry from '@sentry/nextjs';
 
 import { db } from '@/lib/db';
 import { decrypt, decryptFloat, encrypt, encryptFloat } from '@/lib/crypto';
-import {
-  EXPENSE_CATEGORIES_LIST,
-  INCOME_CATEGORIES_LIST,
-  isCreditCardCategory,
-} from '@/constants/constants';
+import { isCreditCardCategory } from '@/constants/constants';
 
 export type QuickTransactionTemplateInput = {
   id?: string;
@@ -27,15 +24,6 @@ export type QuickTransactionTemplateInput = {
 };
 
 const MAX_TEMPLATES = 12;
-
-const isValidCategory = (category: string, type: TransactionType) => {
-  const categories =
-    type === TransactionType.Income
-      ? INCOME_CATEGORIES_LIST
-      : EXPENSE_CATEGORIES_LIST;
-
-  return categories.some(({ value }) => value === category);
-};
 
 const getTemplateSettings = async (userId: string) =>
   db.settings.findUnique({
@@ -113,7 +101,8 @@ export async function saveQuickTransactionTemplate(
   if (
     !Object.values(Currency).includes(input.currency) ||
     !Object.values(TransactionType).includes(input.type) ||
-    !isValidCategory(input.category, input.type)
+    typeof input.category !== 'string' ||
+    !input.category
   ) {
     return { error: 'Template category, currency or type is invalid' };
   }
@@ -139,16 +128,28 @@ export async function saveQuickTransactionTemplate(
         : input.amount;
 
     const saved = await db.$transaction(async (tx) => {
+      const existing = input.id
+        ? await tx.quickTransactionTemplate.findFirst({
+            where: { id: input.id, userId },
+          })
+        : null;
+
+      if (input.id && !existing) return { error: 'Template not found' };
+
+      await validateTransactionCategory(
+        tx,
+        userId,
+        input.category,
+        input.type,
+        {
+          existingCategory: existing?.category,
+        },
+      );
+
       const tags = await ownedTagConnections(tx, userId, input.tagIds);
       let template: QuickTransactionTemplate;
 
       if (input.id) {
-        const existing = await tx.quickTransactionTemplate.findFirst({
-          where: { id: input.id, userId },
-        });
-
-        if (!existing) return { error: 'Template not found' };
-
         template = await tx.quickTransactionTemplate.update({
           include: { tags: true },
           where: { id: input.id, userId },
@@ -209,7 +210,9 @@ export async function saveQuickTransactionTemplate(
 
     return {
       error:
-        error instanceof Error && error.message.startsWith('tags.')
+        error instanceof Error &&
+        (error.message.startsWith('tags.') ||
+          error.message.startsWith('customCategories.'))
           ? error.message
           : 'Unable to save quick transaction',
     };
