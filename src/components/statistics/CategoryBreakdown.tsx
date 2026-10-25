@@ -8,7 +8,12 @@ import { historyColors } from '../history/tokens';
 import useAnalyticsCurrency from './useAnalyticsCurrency';
 import ChartLegendMarker from './ChartLegendMarker';
 import AnalyticsHistoryLink from './AnalyticsHistoryLink';
-import { historyMonthHref } from '@/lib/historyQuery';
+import {
+  emptyHistoryFilters,
+  historyMonthHref,
+  serializeHistoryQuery,
+} from '@/lib/historyQuery';
+import { DateRangeValue, PeriodMode } from '@/lib/dateRange';
 
 interface CategoryItem {
   category: string;
@@ -20,6 +25,8 @@ interface CategoryItem {
 export default function CategoryBreakdown({
   year,
   month,
+  range,
+  periodMode,
   items,
   total,
   chartType,
@@ -28,6 +35,8 @@ export default function CategoryBreakdown({
 }: {
   year: number;
   month: number;
+  range?: DateRangeValue;
+  periodMode?: PeriodMode;
   items: CategoryItem[];
   total: number;
   chartType: ChartType;
@@ -56,12 +65,23 @@ export default function CategoryBreakdown({
             aria-current={selected ? 'true' : undefined}
           >
             <AnalyticsHistoryLink
-              href={historyMonthHref(
-                year,
-                month,
-                isExpense ? 'Expense' : 'Income',
-                item.category as TransactionCategory,
-              )}
+              href={
+                range
+                  ? `/transactions?${serializeHistoryQuery({
+                      ...emptyHistoryFilters,
+                      periodMode: periodMode ?? 'custom',
+                      anchorDate: range.start,
+                      customRange: range,
+                      type: isExpense ? 'Expense' : 'Income',
+                      category: item.category,
+                    })}`
+                  : historyMonthHref(
+                      year,
+                      month,
+                      isExpense ? 'Expense' : 'Income',
+                      item.category as TransactionCategory,
+                    )
+              }
               sx={{
                 display: 'grid',
                 alignItems: 'center',

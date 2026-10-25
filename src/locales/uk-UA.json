@@ -171,7 +171,7 @@
   "incomeExpense.creditReturned": "кредит повернено",
 
   "common.plus": "плюс:",
-  "stats.noDataForMonth": "Немає транзакцій за обраний місяць.",
+  "stats.noDataForMonth": "Немає транзакцій за обраний період.",
   "mobile.warning": "Ця сторінка не оптимізована для мобільних екранів. Для кращого досвіду, будь ласка, переглядайте її на більшому пристрої.",
 
   "categories.salary": "Зарплата",
@@ -287,6 +287,7 @@
   "common.saving": "Збереження…",
   "common.saveFailed": "Не вдалося зберегти. Спробуйте ще раз.",
   "common.notifications": "Сповіщення",
+  "stats.incompletePeriod": "Неповний період",
   "stats.incompleteMonth": "Неповний місяць",
   "stats.loadError": "Не вдалося завантажити статистику. Спробуйте ще раз.",
   "stats.expenseCategories": "Витрати за категоріями",

@@ -171,7 +171,7 @@
   "incomeExpense.creditReturned": "credit back",
 
   "common.plus": "plus:",
-  "stats.noDataForMonth": "No transactions available for the selected month.",
+  "stats.noDataForMonth": "No transactions available for the selected period.",
   "mobile.warning": "This page is not optimized for mobile screens. For the best experience, please view it on a larger device.",
   "categories.salary": "Salary",
   "categories.gifts": "Gifts",
@@ -286,6 +286,7 @@
   "common.saving": "Saving…",
   "common.saveFailed": "Unable to save. Please try again.",
   "common.notifications": "Notifications",
+  "stats.incompletePeriod": "Incomplete period",
   "stats.incompleteMonth": "Incomplete month",
   "stats.loadError": "Unable to load statistics. Please try again.",
   "stats.expenseCategories": "Expenses by category",

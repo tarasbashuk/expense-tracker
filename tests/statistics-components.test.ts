@@ -53,12 +53,22 @@ vi.mock('@mui/x-date-pickers/LocalizationProvider', () => ({
   LocalizationProvider: ({ children }: { children: ReactNode }) => children,
 }));
 
-vi.mock('@mui/x-date-pickers/DateCalendar', () => ({
-  DateCalendar: ({ onChange }: { onChange: (_date: Date) => void }) =>
+vi.mock('@mui/x-date-pickers', () => ({
+  LocalizationProvider: ({ children }: { children: ReactNode }) => children,
+  DatePicker: ({
+    label,
+    onChange,
+  }: {
+    label: string;
+    onChange: (_date: Date) => void;
+  }) =>
     createElement(
       'button',
-      { onClick: () => onChange(new Date(2025, 7, 1)) },
-      'Choose August 2025',
+      {
+        onClick: () =>
+          onChange(new Date(2025, 7, label === 'Start date' ? 12 : 20)),
+      },
+      label,
     ),
 }));
 
@@ -252,28 +262,60 @@ test('all expense categories remain visible in both modes with a badge independe
   expect(screen.getAllByRole('link')).toHaveLength(categories.length);
 });
 
-test('the month and year picker applies only on confirmation and preserves the expanded summary', async () => {
+test('period controls update totals and category links and preserve the expanded summary', async () => {
+  window.history.replaceState(null, '', '/stats?year=2025&month=8');
   const user = userEvent.setup();
   show(Stats);
   await screen.findByText('75.25 €');
   await user.click(screen.getByRole('button', { name: 'Period summary' }));
-  await user.click(
-    screen.getByRole('button', { name: /Choose month and year:/ }),
+  await user.click(screen.getByRole('button', { name: 'Quarter' }));
+
+  await waitFor(() =>
+    expect(mocks.stats).toHaveBeenLastCalledWith('2025-07-01', '2025-09-30'),
   );
-  await user.click(screen.getByRole('button', { name: 'Choose August 2025' }));
+  expect(mocks.totals).toHaveBeenLastCalledWith('2025-07-01', '2025-09-30');
+  const link = await screen.findByRole('link', { name: /Education/ });
+  const destination = new URL(
+    link.getAttribute('href')!,
+    'https://example.test',
+  );
 
-  expect(mocks.stats).toHaveBeenCalledTimes(1);
-
-  await user.click(screen.getByRole('button', { name: 'Apply' }));
-  await waitFor(() => expect(mocks.stats).toHaveBeenLastCalledWith(2025, 7));
-
+  expect(destination.searchParams.get('period')).toBe('quarter');
+  expect(destination.searchParams.get('start')).toBe('2025-07-01');
+  expect(destination.searchParams.get('end')).toBe('2025-09-30');
   expect(
     screen
       .getByRole('button', { name: 'Period summary' })
       .getAttribute('aria-expanded'),
   ).toBe('true');
-  expect(screen.queryByText('Incomplete month')).toBeNull();
-  expect(await screen.findByText('+50.50 €')).toBeTruthy();
+
+  await user.click(screen.getByRole('button', { name: 'Next period' }));
+
+  await waitFor(() =>
+    expect(mocks.stats).toHaveBeenLastCalledWith('2025-10-01', '2025-12-31'),
+  );
+
+  await user.click(screen.getByRole('button', { name: 'Year' }));
+
+  await waitFor(() =>
+    expect(mocks.stats).toHaveBeenLastCalledWith('2025-01-01', '2025-12-31'),
+  );
+});
+
+test('custom date links restore the exact range for statistics and totals', async () => {
+  window.history.replaceState(
+    null,
+    '',
+    '/stats?period=custom&start=2025-08-12&end=2025-09-03',
+  );
+  show(Stats);
+  await screen.findByText('75.25 €');
+
+  expect(mocks.stats).toHaveBeenLastCalledWith('2025-08-12', '2025-09-03');
+  expect(mocks.totals).toHaveBeenLastCalledWith('2025-08-12', '2025-09-03');
+  expect(
+    screen.getByRole('button', { name: /Choose date range:/ }),
+  ).toBeTruthy();
 });
 
 test('Ukrainian analytics share the same two-decimal formatter across totals, categories and donut tooltip', async () => {
@@ -353,7 +395,10 @@ test('category links carry the selected month, type and category while clicking 
   );
   const source = window.location.href;
 
-  expect(mocks.stats).toHaveBeenCalledExactlyOnceWith(2025, 7);
+  expect(mocks.stats).toHaveBeenCalledExactlyOnceWith(
+    '2025-08-01',
+    '2025-08-31',
+  );
   expect(destination.pathname).toBe('/transactions');
   expect(destination.searchParams.get('date')).toBe('2025-08-01');
   expect(destination.searchParams.get('category')).toBe('education');
@@ -368,4 +413,23 @@ test('category links carry the selected month, type and category while clicking 
     seriesId: 'categories',
     dataIndex: 0,
   });
+});
+
+test('custom dates apply only on confirmation', async () => {
+  window.history.replaceState(null, '', '/stats?year=2025&month=8');
+  const user = userEvent.setup();
+  show(Stats);
+  await screen.findByText('75.25 €');
+  await user.click(screen.getByRole('button', { name: 'Custom' }));
+  await user.click(screen.getByRole('button', { name: /Choose date range:/ }));
+  await user.click(screen.getByRole('button', { name: 'Start date' }));
+  await user.click(screen.getByRole('button', { name: 'End date' }));
+
+  expect(mocks.stats).toHaveBeenLastCalledWith('2025-08-01', '2025-08-31');
+
+  await user.click(screen.getByRole('button', { name: 'Apply' }));
+
+  await waitFor(() =>
+    expect(mocks.stats).toHaveBeenLastCalledWith('2025-08-12', '2025-08-20'),
+  );
 });

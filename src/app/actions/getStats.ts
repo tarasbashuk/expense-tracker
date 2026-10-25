@@ -9,15 +9,21 @@ import { PieValueType } from '@mui/x-charts';
 import { dateKeyFromLocalDate } from '@/lib/dateRange';
 
 async function getStats(
-  year: number,
-  month: number,
+  year: number | string,
+  month: number | string,
 ): Promise<{
   expenseChartData?: PieValueType[];
   incomeChartData?: PieValueType[];
   error?: string;
 }> {
-  const startDate = dateKeyFromLocalDate(new Date(year, month, 1));
-  const endDate = dateKeyFromLocalDate(new Date(year, month + 1, 0));
+  const startDate =
+    typeof year === 'string'
+      ? year
+      : dateKeyFromLocalDate(new Date(year, Number(month), 1));
+  const endDate =
+    typeof month === 'string'
+      ? month
+      : dateKeyFromLocalDate(new Date(Number(year), month + 1, 0));
 
   const { transactions = [], error } = await getTransactions(
     startDate,
