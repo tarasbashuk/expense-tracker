@@ -9,7 +9,6 @@ import useAnalyticsCurrency from './useAnalyticsCurrency';
 import ChartLegendMarker from './ChartLegendMarker';
 import AnalyticsHistoryLink from './AnalyticsHistoryLink';
 import { historyMonthHref } from '@/lib/historyQuery';
-import { ChevronRight } from 'lucide-react';
 
 interface CategoryItem {
   category: string;
@@ -70,10 +69,10 @@ export default function CategoryBreakdown({
                 rowGap: 0.5,
                 gridTemplateColumns: donut
                   ? {
-                      xs: 'minmax(0, 1fr) max-content 16px',
-                      md: 'minmax(0, 1fr) 64px minmax(140px, max-content) 16px',
+                      xs: 'minmax(0, 1fr) max-content',
+                      md: 'minmax(0, 1fr) 64px minmax(140px, max-content)',
                     }
-                  : '24px minmax(0, 1fr) auto 16px',
+                  : '24px minmax(0, 1fr) auto',
                 py: donut ? { xs: 1, md: 0.75 } : 0.875,
                 minHeight: donut ? 44 : 62,
                 borderBottom: '1px solid',
@@ -162,7 +161,7 @@ export default function CategoryBreakdown({
               ) : (
                 <Box
                   sx={{
-                    gridColumn: '2 / -2',
+                    gridColumn: '2 / -1',
                     display: 'flex',
                     gap: 1,
                     alignItems: 'center',
@@ -194,16 +193,6 @@ export default function CategoryBreakdown({
                   </Typography>
                 </Box>
               )}
-              <Box
-                sx={{
-                  gridColumn: '-2 / -1',
-                  gridRow: donut ? { xs: '1 / 3', md: 1 } : '1 / 3',
-                  color: 'text.secondary',
-                  display: 'flex',
-                }}
-              >
-                <ChevronRight size={16} aria-hidden="true" />
-              </Box>
             </AnalyticsHistoryLink>
           </Box>
         );

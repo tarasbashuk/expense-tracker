@@ -38,7 +38,6 @@ import AnalyticsHistoryLink from './statistics/AnalyticsHistoryLink';
 import useAnalyticsQuery from '@/lib/hooks/useAnalyticsQuery';
 import useAnalyticsScrollRestore from '@/lib/hooks/useAnalyticsScrollRestore';
 import { historyMonthHref } from '@/lib/historyQuery';
-import { ChevronRight } from 'lucide-react';
 import { cardStyles, historyColors } from './history/tokens';
 import TransactionSkeleton from './history/TransactionSkeleton';
 
@@ -350,16 +349,9 @@ export default function YearlyStatsContent() {
                               >
                                 {monthLabel(month.month)}
                               </Typography>
-                              <Stack
-                                direction="row"
-                                alignItems="center"
-                                gap={1}
-                              >
-                                {month.incomplete && (
-                                  <Chip size="small" label={incompleteLabel} />
-                                )}
-                                <ChevronRight size={16} aria-hidden="true" />
-                              </Stack>
+                              {month.incomplete && (
+                                <Chip size="small" label={incompleteLabel} />
+                              )}
                             </Stack>
                             <PeriodAmounts
                               income={month.income}
@@ -393,7 +385,6 @@ export default function YearlyStatsContent() {
                                 {formatMessage({ id })}
                               </TableCell>
                             ))}
-                            <TableCell padding="none" />
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -464,9 +455,6 @@ export default function YearlyStatsContent() {
                                 >
                                   {difference > 0 ? '+' : ''}
                                   {money(difference)}
-                                </TableCell>
-                                <TableCell padding="none">
-                                  <ChevronRight size={16} aria-hidden="true" />
                                 </TableCell>
                               </TableRow>
                             );
