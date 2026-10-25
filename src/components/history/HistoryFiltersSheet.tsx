@@ -22,29 +22,36 @@ import {
   ToggleButtonGroup,
 } from '@mui/material';
 import { Search, X } from 'lucide-react';
-import { TransactionType } from '@prisma/client';
 import { useCategoryCatalog } from '../categories/useCategoryCatalog';
-import { categoryOptions } from '@/lib/customCategories';
+import { categoryOptions, type CategoryRecord } from '@/lib/customCategories';
 import { useCategoryI18n } from '@/lib/useCategoryI18n';
 import { useIntl } from 'react-intl';
 import CategoryIcon from './CategoryIcon';
 import { selectedSegmentStyles } from './tokens';
+import { HistoryFilters, emptyHistoryFilters } from '@/lib/historyQuery';
 
-export interface HistoryFilters {
-  tagIds?: string[];
-  type: TransactionType | 'all';
-  category: string;
-  recurringOnly: boolean;
-  search: string;
+export type { HistoryFilters } from '@/lib/historyQuery';
+
+export function availableHistoryCategories(
+  value: HistoryFilters,
+  creditCardTrackingEnabled: boolean,
+  customCategories: CategoryRecord[] = [],
+) {
+  const categories = categoryOptions(
+    customCategories,
+    value.type,
+    creditCardTrackingEnabled,
+    true,
+  );
+  const selected = categoryOptions(customCategories, 'all', true, true).find(
+    (category) => category.value === value.category,
+  );
+
+  return selected &&
+    !categories.some((category) => category.value === selected.value)
+    ? [...categories, selected]
+    : categories;
 }
-
-const emptyFilters: HistoryFilters = {
-  type: 'all',
-  category: 'all',
-  recurringOnly: false,
-  search: '',
-  tagIds: [],
-};
 
 export function hasActiveHistoryFilters(value: HistoryFilters): boolean {
   return (
@@ -83,11 +90,10 @@ export default function HistoryFiltersSheet({
   const { formatMessage } = useIntl();
   const { categories: customCategories } = useCategoryCatalog();
   const { getLabel } = useCategoryI18n();
-  const categories = categoryOptions(
-    customCategories,
-    draft.type,
+  const categories = availableHistoryCategories(
+    draft,
     creditCardTrackingEnabled,
-    true,
+    customCategories,
   );
 
   return (
@@ -107,7 +113,7 @@ export default function HistoryFiltersSheet({
             disabled={!hasActiveHistoryFilters(draft)}
             onClick={() => {
               allTypesButton.current?.focus();
-              setDraft(emptyFilters);
+              setDraft(emptyHistoryFilters);
             }}
           >
             {formatMessage({ id: 'history.resetDraft' })}

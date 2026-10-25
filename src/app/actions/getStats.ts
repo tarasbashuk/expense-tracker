@@ -5,7 +5,6 @@ import {
   groupTransactionsByCategory,
 } from '@/lib/pieChartUtils';
 import getTransactions from './getTransactions';
-import getSettings from './getSettings';
 import { PieValueType } from '@mui/x-charts';
 import { dateKeyFromLocalDate } from '@/lib/dateRange';
 
@@ -17,19 +16,13 @@ async function getStats(
   incomeChartData?: PieValueType[];
   error?: string;
 }> {
-  const { settings, error: settingsError } = await getSettings();
-
-  if (settingsError) {
-    return { error: settingsError };
-  }
-
   const startDate = dateKeyFromLocalDate(new Date(year, month, 1));
   const endDate = dateKeyFromLocalDate(new Date(year, month + 1, 0));
 
   const { transactions = [], error } = await getTransactions(
     startDate,
     endDate,
-    !settings?.creditCardTrackingEnabled,
+    true,
   );
 
   if (error) {

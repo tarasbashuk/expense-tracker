@@ -13,10 +13,12 @@ import {
   Typography,
 } from '@mui/material';
 import { useCategoryCatalog } from '../categories/useCategoryCatalog';
-import { categoryOptions } from '@/lib/customCategories';
 import { useCategoryI18n } from '@/lib/useCategoryI18n';
 import { useIntl } from 'react-intl';
-import { type HistoryFilters } from './HistoryFiltersSheet';
+import {
+  availableHistoryCategories,
+  type HistoryFilters,
+} from './HistoryFiltersSheet';
 import { useTagCatalog } from '../tags/useTagCatalog';
 import CategoryIcon from './CategoryIcon';
 import { selectedSegmentStyles } from './tokens';
@@ -38,11 +40,10 @@ export default function DesktopHistoryFilters({
   const selected = value.tagIds || [];
   const { categories: customCategories } = useCategoryCatalog();
   const { getLabel } = useCategoryI18n();
-  const categories = categoryOptions(
-    customCategories,
-    value.type,
+  const categories = availableHistoryCategories(
+    value,
     creditCardTrackingEnabled,
-    true,
+    customCategories,
   );
 
   return (

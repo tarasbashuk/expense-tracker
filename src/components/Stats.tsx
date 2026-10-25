@@ -24,26 +24,24 @@ import { cardStyles } from './history/tokens';
 import StatisticsLayout from './statistics/StatisticsLayout';
 import getStats from '@/app/actions/getStats';
 import getIncomeExpense from '@/app/actions/getIncomeExpense';
-import { ChartType, TransactionCategory } from '@/constants/types';
+import { TransactionCategory } from '@/constants/types';
 import { useCategoryI18n } from '@/lib/useCategoryI18n';
 import { COLOR_MAP } from '@/lib/getCategoryColor';
+import useAnalyticsQuery from '@/lib/hooks/useAnalyticsQuery';
+import useAnalyticsScrollRestore from '@/lib/hooks/useAnalyticsScrollRestore';
 
 export default function Stats() {
   const money = useAnalyticsCurrency();
   const { formatMessage } = useIntl();
   const { getLabel } = useCategoryI18n();
-  const [month, setMonth] = useState(() => String(new Date().getMonth()));
-  const [year, setYear] = useState(() => String(new Date().getFullYear()));
+  const { year, month, transactionType, chartType, update } =
+    useAnalyticsQuery('month');
   const [income, setIncome] = useState(0);
   const [expense, setExpense] = useState(0);
   const [expenseData, setExpenseData] = useState<PieValueType[]>([]);
   const [incomeData, setIncomeData] = useState<PieValueType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [transactionType, setTransactionType] = useState<TransactionType>(
-    TransactionType.Expense,
-  );
-  const [chartType, setChartType] = useState<ChartType>('bar');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   useEffect(() => {
@@ -86,6 +84,8 @@ export default function Stats() {
     };
   }, [year, month, formatMessage]);
 
+  useAnalyticsScrollRestore(!loading && !error);
+
   const isExpense = transactionType === TransactionType.Expense;
   const chartData = [...(isExpense ? expenseData : incomeData)]
     .sort((a, b) => b.value - a.value)
@@ -125,8 +125,7 @@ export default function Stats() {
               year={Number(year)}
               month={Number(month)}
               onChange={(date) => {
-                setYear(String(date.getFullYear()));
-                setMonth(String(date.getMonth()));
+                update({ year: date.getFullYear(), month: date.getMonth() });
               }}
             />
             {incomplete && (
@@ -146,7 +145,7 @@ export default function Stats() {
               size="small"
               transactionType={transactionType}
               setTranasctionType={(type) => {
-                setTransactionType(type);
+                update({ transactionType: type });
                 setActiveCategory(null);
               }}
             />
@@ -156,7 +155,7 @@ export default function Stats() {
               size="small"
               onChange={(_, value) => {
                 if (value) {
-                  setChartType(value);
+                  update({ chartType: value });
                 }
               }}
               aria-label={formatMessage({ id: 'stats.displayMode' })}
@@ -275,6 +274,8 @@ export default function Stats() {
                     </Box>
                   )}
                   <CategoryBreakdown
+                    year={year}
+                    month={month}
                     items={chartData}
                     total={total}
                     chartType={chartType}
