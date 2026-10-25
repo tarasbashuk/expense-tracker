@@ -77,7 +77,7 @@ test('fresh category and month links cannot inherit search, tags or recurring fi
   });
 });
 
-test('category drill-down matches the exact statistics records, including credit and converted amounts', async () => {
+test('category drill-down matches statistics and excludes credit categories', async () => {
   const records = [
     transaction({
       id: 'school',
@@ -140,11 +140,14 @@ test('category drill-down matches the exact statistics records, including credit
   ).toBeCloseTo(
     stats.expenseChartData!.find((item) => item.label === 'education')!.value,
   );
-  expect(credit.transactions?.map((row) => row.id)).toEqual(['credit']);
+  expect(credit.transactions).toEqual([]);
+  expect(
+    stats.expenseChartData?.some((item) => item.label === 'CCRepayment'),
+  ).toBe(false);
   expect(getTransactions).toHaveBeenCalledWith(
     '2026-10-01',
     '2026-10-31',
-    false,
+    true,
   );
   expect(month.transactions?.some((row) => row.id === 'credit')).toBe(false);
   expect(

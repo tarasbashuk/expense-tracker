@@ -35,7 +35,7 @@ beforeEach(() => {
 });
 
 test.each([false, true])(
-  'statistics respects credit tracking enabled=%s',
+  'statistics excludes credit categories even when credit tracking enabled=%s',
   async (enabled) => {
     vi.mocked(getSettings).mockResolvedValue({
       settings: { ...DEFAULT_SETTINGS, creditCardTrackingEnabled: enabled },
@@ -45,14 +45,14 @@ test.each([false, true])(
 
     expect(
       result.expenseChartData?.reduce((sum, item) => sum + item.value, 0),
-    ).toBe(enabled ? 125.75 : 25.75);
+    ).toBe(25.75);
     expect(
       result.incomeChartData?.reduce((sum, item) => sum + item.value, 0),
-    ).toBe(enabled ? 600 : 500);
+    ).toBe(500);
     expect(getTransactions).toHaveBeenCalledWith(
       '2026-10-01',
       '2026-10-31',
-      !enabled,
+      true,
     );
   },
 );
@@ -66,11 +66,10 @@ test('missing settings defaults to disabled credit tracking', async () => {
   expect(result.incomeChartData?.map((item) => item.value)).toEqual([500]);
 });
 
-test('settings errors do not produce misleading statistics', async () => {
-  vi.mocked(getSettings).mockResolvedValue({ error: 'Database error' });
+test('transaction errors do not produce misleading statistics', async () => {
+  vi.mocked(getTransactions).mockResolvedValue({ error: 'Database error' });
 
   const result = await getStats(2026, 9);
 
   expect(result).toEqual({ error: 'Database error' });
-  expect(getTransactions).not.toHaveBeenCalled();
 });

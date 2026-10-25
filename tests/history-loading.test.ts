@@ -362,24 +362,28 @@ test('a direct category link loads its period first and never displays other tra
   ]);
 });
 
-test('an explicit credit category remains visible and selectable even when credit tracking is off', async () => {
+test('an explicit credit category URL cannot enable excluded credit records', async () => {
   window.history.replaceState(
     null,
     '',
     '/transactions?period=month&date=2025-08-01&type=Expense&category=CCRepayment',
   );
-  vi.mocked(getTransactions).mockResolvedValue({
-    transactions: [
-      transaction({ text: 'Credit repayment', category: 'CCRepayment' }),
-    ],
-  });
+  vi.mocked(getTransactions).mockImplementation(
+    async (_start, _end, excludeCredit) => ({
+      transactions: excludeCredit
+        ? []
+        : [transaction({ text: 'Credit repayment', category: 'CCRepayment' })],
+    }),
+  );
   show();
 
-  expect(await screen.findByText('Credit repayment')).toBeTruthy();
+  await waitFor(() => expect(getTransactions).toHaveBeenCalled());
+
+  expect(screen.queryByText('Credit repayment')).toBeNull();
   expect(getTransactions).toHaveBeenCalledExactlyOnceWith(
     '2025-08-01',
     '2025-08-31',
-    false,
+    true,
   );
   expect(
     screen.getByRole('combobox', { name: 'Category' }).textContent,
