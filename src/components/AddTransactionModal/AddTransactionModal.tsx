@@ -290,7 +290,9 @@ const AddTransactionModal: React.FC = () => {
 
       if (error) {
         setSaveError(
-          error.startsWith('tags.') ? formatMessage({ id: error }) : error,
+          error.startsWith('tags.') || error.startsWith('customCategories.')
+            ? formatMessage({ id: error })
+            : error,
         );
       } else if (data) {
         toast.success(

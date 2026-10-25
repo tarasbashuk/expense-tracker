@@ -1,3 +1,4 @@
+import { escapeHtml } from './monthlyReport/renderAnalysis';
 import nodemailer from 'nodemailer';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { Currency } from '@prisma/client';
@@ -282,7 +283,7 @@ export async function sendYearlyReportEmail(data: YearlyReportData) {
                 (cat) => `
                 <div class="category-item">
                     <div class="category-info">
-                        <div class="category-name">${data.incomeCategoriesMap[cat.category] || cat.category}</div>
+                        <div class="category-name">${escapeHtml(data.incomeCategoriesMap[cat.category] || cat.category)}</div>
                         <div class="category-meta">${cat.count} transaction${cat.count !== 1 ? 's' : ''}</div>
                     </div>
                     <div class="category-amounts">
@@ -308,7 +309,7 @@ export async function sendYearlyReportEmail(data: YearlyReportData) {
                 (cat) => `
                 <div class="category-item">
                     <div class="category-info">
-                        <div class="category-name">${data.expenseCategoriesMap[cat.category] || cat.category}</div>
+                        <div class="category-name">${escapeHtml(data.expenseCategoriesMap[cat.category] || cat.category)}</div>
                         <div class="category-meta">${cat.count} transaction${cat.count !== 1 ? 's' : ''}</div>
                     </div>
                     <div class="category-amounts">
@@ -335,14 +336,14 @@ export async function sendYearlyReportEmail(data: YearlyReportData) {
                 <div class="transaction-item">
                     <div class="transaction-text">
                         <div style="font-weight: 600; margin-bottom: 4px;">${income.text}</div>
-                        <div style="color: #6c757d; font-size: 13px;">${data.incomeCategoriesMap[income.category] || income.category} • ${income.date.toLocaleDateString(
-                  'en-US',
-                  {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                  },
-                )}</div>
+                        <div style="color: #6c757d; font-size: 13px;">${escapeHtml(data.incomeCategoriesMap[income.category] || income.category)} • ${income.date.toLocaleDateString(
+                          'en-US',
+                          {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          },
+                        )}</div>
                     </div>
                     <div class="transaction-amount income">${formatCurrencyForEmail(income.amountDefaultCurrency)}</div>
                 </div>
@@ -365,14 +366,14 @@ export async function sendYearlyReportEmail(data: YearlyReportData) {
                 <div class="transaction-item">
                     <div class="transaction-text">
                         <div style="font-weight: 600; margin-bottom: 4px;">${expense.text}</div>
-                        <div style="color: #6c757d; font-size: 13px;">${data.expenseCategoriesMap[expense.category] || expense.category} • ${expense.date.toLocaleDateString(
-                  'en-US',
-                  {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                  },
-                )}</div>
+                        <div style="color: #6c757d; font-size: 13px;">${escapeHtml(data.expenseCategoriesMap[expense.category] || expense.category)} • ${expense.date.toLocaleDateString(
+                          'en-US',
+                          {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          },
+                        )}</div>
                     </div>
                     <div class="transaction-amount expense">${formatCurrencyForEmail(expense.amountDefaultCurrency)}</div>
                 </div>

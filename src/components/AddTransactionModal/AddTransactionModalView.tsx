@@ -1,4 +1,6 @@
 'use client';
+import { useCategoryCatalog } from '../categories/useCategoryCatalog';
+import { categoryOptions, isCustomCategory } from '@/lib/customCategories';
 import { CreditCardIcon } from '@/components/shared/icons';
 import ResponsiveDialog, { FormTitle } from '../shared/ResponsiveDialog';
 import TagsAndRecurrence from './TagsAndRecurrence';
@@ -26,14 +28,7 @@ import {
   Switch,
 } from '@mui/material';
 
-import {
-  CURRENCY_SYMBOL_MAP,
-  DATE_FORMATS,
-  EXPENSE_CATEGORIES_LIST,
-  getExpenseCategoriesList,
-  getIncomeCategoriesList,
-  INCOME_CATEGORIES_LIST,
-} from '@/constants/constants';
+import { CURRENCY_SYMBOL_MAP, DATE_FORMATS } from '@/constants/constants';
 import { Currency, TransactionType } from '@prisma/client';
 import { TransactionCategory } from '@/constants/types';
 import CategoryIcon from '../history/CategoryIcon';
@@ -112,14 +107,22 @@ const AddTransactionModalView: React.FC<Props> = ({
   handleRecurringEndDateChange,
   handleAmountDefaultCurrencyChange,
 }) => {
-  const activeCategories =
-    transactionType === TransactionType.Income
-      ? getIncomeCategoriesList(creditCardTrackingEnabled)
-      : getExpenseCategoriesList(creditCardTrackingEnabled);
-  const allCategories =
-    transactionType === TransactionType.Income
-      ? INCOME_CATEGORIES_LIST
-      : EXPENSE_CATEGORIES_LIST;
+  const {
+    categories: customCategories,
+    error: categoryError,
+    loading: categoriesLoading,
+  } = useCategoryCatalog();
+  const activeCategories = categoryOptions(
+    customCategories,
+    transactionType,
+    creditCardTrackingEnabled,
+  );
+  const allCategories = categoryOptions(
+    customCategories,
+    transactionType,
+    true,
+    true,
+  );
   const selectedLegacyCategory = allCategories.find(
     ({ value }) => value === category,
   );
@@ -128,6 +131,19 @@ const AddTransactionModalView: React.FC<Props> = ({
     !activeCategories.some(({ value }) => value === category)
       ? [...activeCategories, selectedLegacyCategory]
       : activeCategories;
+
+  const selectedCategoryUnavailable =
+    isCustomCategory(category) &&
+    !categoriesLoading &&
+    !categoryError &&
+    !(isEditMode ? allCategories : activeCategories).some(
+      ({ value }) => value === category,
+    );
+  const categoryNotReady =
+    isCustomCategory(category) &&
+    (categoriesLoading ||
+      Boolean(categoryError) ||
+      selectedCategoryUnavailable);
 
   const { formatMessage } = useIntl();
   const { getLabel } = useCategoryI18n();
@@ -150,6 +166,16 @@ const AddTransactionModalView: React.FC<Props> = ({
         })}
       </FormTitle>
       <DialogContent>
+        {categoryError && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {formatMessage({ id: categoryError })}
+          </Alert>
+        )}
+        {selectedCategoryUnavailable && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            {formatMessage({ id: 'customCategories.chooseActive' })}
+          </Alert>
+        )}
         {saveError && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {saveError}
@@ -160,7 +186,7 @@ const AddTransactionModalView: React.FC<Props> = ({
           onSubmit={(event) => {
             event.preventDefault();
 
-            if (!isSubmitDisabled) onSubmit();
+            if (!isSubmitDisabled && !categoryNotReady) onSubmit();
           }}
         >
           <Grid container spacing={2} justifyContent="space-between">
@@ -277,20 +303,29 @@ const AddTransactionModalView: React.FC<Props> = ({
 
             <Grid item xs={12}>
               <FormControl fullWidth variant="outlined">
-                <InputLabel>
+                <InputLabel id="transaction-category-label">
                   <FormattedMessage
                     id="addTransaction.category"
                     defaultMessage="Category"
                   />
                 </InputLabel>
                 <Select
+                  labelId="transaction-category-label"
                   label={formatMessage({ id: 'addTransaction.category' })}
                   name="category"
                   value={category as string}
                   onChange={handleCategoryChange}
                 >
                   {categories.map(({ value }) => (
-                    <MenuItem key={value} value={value}>
+                    <MenuItem
+                      key={value}
+                      value={value}
+                      disabled={
+                        isCustomCategory(value) &&
+                        !isEditMode &&
+                        !activeCategories.some((item) => item.value === value)
+                      }
+                    >
                       <Stack
                         direction="row"
                         alignItems="center"
@@ -421,7 +456,7 @@ const AddTransactionModalView: React.FC<Props> = ({
           type="submit"
           form="transaction-form"
           variant="contained"
-          disabled={isSubmitDisabled}
+          disabled={isSubmitDisabled || categoryNotReady}
           aria-busy={isSubmitDisabled}
           startIcon={
             isSubmitDisabled ? (

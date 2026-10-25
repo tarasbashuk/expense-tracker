@@ -22,6 +22,7 @@ import { useSettings } from '@/context/SettingsContexts';
 import CurrencySelect from '@/components/CurrencySelect';
 import LanguageSelect from '@/components/LanguageSelect';
 import { CURRENCY_SYMBOL_MAP } from '@/constants/constants';
+import CategoryManager from '@/components/categories/CategoryManager';
 import TagManager from '@/components/tags/TagManager';
 import HistoryHeaderActions from '@/components/history/HistoryHeaderActions';
 import {
@@ -167,6 +168,17 @@ const SettingsPage = () => {
                 <FormattedMessage id="settings.currencyWarning" />
               </Alert>
             )}
+          </CardContent>
+        </Card>
+
+        <Card sx={cardStyles}>
+          <CardContent
+            sx={{
+              p: { xs: 2, sm: 3 },
+              '&:last-child': { pb: { xs: 2, sm: 3 } },
+            }}
+          >
+            <CategoryManager />
           </CardContent>
         </Card>
 

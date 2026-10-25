@@ -6,11 +6,22 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, expect, test, vi } from 'vitest';
 import { IntlProvider } from 'react-intl';
 import DesktopHistoryFilters from '@/components/history/DesktopHistoryFilters';
-import type { HistoryFilters } from '@/components/history/HistoryFiltersSheet';
+import {
+  availableHistoryCategories,
+  type HistoryFilters,
+} from '@/components/history/HistoryFiltersSheet';
+import { emptyHistoryFilters } from '@/lib/historyQuery';
 import { messages } from '@/locales';
 
 // TagPicker imports TagEditor even when only filter controls are rendered.
 // Keep its server actions (Clerk/Prisma/Next) outside this UI test module graph.
+// Keep server-only Prisma and Clerk dependencies out of component tests.
+vi.mock('@/app/actions/customCategories', () => ({
+  getCustomCategories: vi.fn().mockResolvedValue({ categories: [] }),
+  saveCustomCategory: vi.fn(),
+  archiveCustomCategory: vi.fn(),
+}));
+
 vi.mock('@/app/actions/tags', () => ({
   getTags: vi.fn(),
   saveTag: vi.fn(),
@@ -80,4 +91,27 @@ test('tags apply immediately, keep the dropdown open, and allow more than two se
   expect(screen.getByRole('combobox', { name: 'Tags' }).textContent).toContain(
     'Tags: 2',
   );
+});
+
+test('history options retain archived custom categories and an explicit category from another type', () => {
+  const custom = [
+    {
+      id: 'archived',
+      name: 'Archived income',
+      type: 'Income' as const,
+      icon: 'tag',
+      archived: true,
+    },
+  ];
+
+  const all = availableHistoryCategories(emptyHistoryFilters, false, custom);
+  const selected = availableHistoryCategories(
+    { ...emptyHistoryFilters, type: 'Expense', category: 'custom:archived' },
+    false,
+    custom,
+  );
+
+  expect(all.some((item) => item.value === 'custom:archived')).toBe(true);
+  expect(selected.some((item) => item.value === 'custom:archived')).toBe(true);
+  expect(all.some((item) => item.value === 'CCRepayment')).toBe(false);
 });

@@ -3,7 +3,6 @@ import {
   ExpenseCategory,
   IncomeCategory,
   NavigationPath,
-  TransactionCategory,
 } from '@/constants/types';
 import {
   dateKeyFromLocalDate,
@@ -15,7 +14,7 @@ import {
 
 export interface HistoryFilters {
   type: TransactionType | 'all';
-  category: TransactionCategory | 'all';
+  category: string;
   recurringOnly: boolean;
   search: string;
   tagIds?: string[];
@@ -95,9 +94,11 @@ export function parseHistoryQuery(
       type === TransactionType.Income || type === TransactionType.Expense
         ? type
         : 'all',
-    category: categories.has(category ?? '')
-      ? (category as TransactionCategory)
-      : 'all',
+    category:
+      category &&
+      (categories.has(category) || /^custom:[\w-]{1,128}$/.test(category))
+        ? category
+        : 'all',
     search: params.get('q') ?? '',
     recurringOnly: params.get('recurring') === '1',
     tagIds,

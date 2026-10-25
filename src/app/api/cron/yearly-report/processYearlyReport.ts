@@ -1,3 +1,4 @@
+import { customCategoryLabels } from '@/lib/customCategoryLabels';
 import { db } from '@/lib/db';
 import { startOfYear, endOfYear, subYears } from 'date-fns';
 import * as Sentry from '@sentry/nextjs';
@@ -128,15 +129,18 @@ export async function processYearlyReportForUsers(users: User[]) {
         }));
 
       // Top 10 incomes by amount
-      const topIncomes = incomes
-        .slice(0, 10)
-        .map((t) => ({
-          text: t.text,
-          amountDefaultCurrency: t.amountDefaultCurrency,
-          currency: t.currency,
-          date: t.date,
-          category: t.category,
-        }));
+      const topIncomes = incomes.slice(0, 10).map((t) => ({
+        text: t.text,
+        amountDefaultCurrency: t.amountDefaultCurrency,
+        currency: t.currency,
+        date: t.date,
+        category: t.category,
+      }));
+
+      const categoryLabels = await customCategoryLabels(
+        user.clerkUserId,
+        transactions,
+      );
 
       // Send yearly report email
       await sendYearlyReportEmail({
@@ -152,8 +156,8 @@ export async function processYearlyReportForUsers(users: User[]) {
         incomeCategories,
         topExpenses,
         topIncomes,
-        expenseCategoriesMap: EXPENSE_CATEGORIES,
-        incomeCategoriesMap: INCOME_CATEGORIES,
+        expenseCategoriesMap: { ...EXPENSE_CATEGORIES, ...categoryLabels },
+        incomeCategoriesMap: { ...INCOME_CATEGORIES, ...categoryLabels },
         defaultCurrency: user.settings?.defaultCurrency ?? undefined,
       });
 

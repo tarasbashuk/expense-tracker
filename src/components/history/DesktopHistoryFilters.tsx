@@ -12,6 +12,8 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
+import { useCategoryCatalog } from '../categories/useCategoryCatalog';
+import { useCategoryI18n } from '@/lib/useCategoryI18n';
 import { useIntl } from 'react-intl';
 import {
   availableHistoryCategories,
@@ -36,9 +38,12 @@ export default function DesktopHistoryFilters({
   const { formatMessage } = useIntl();
   const { tags, loading, error } = useTagCatalog();
   const selected = value.tagIds || [];
+  const { categories: customCategories } = useCategoryCatalog();
+  const { getLabel } = useCategoryI18n();
   const categories = availableHistoryCategories(
     value,
     creditCardTrackingEnabled,
+    customCategories,
   );
 
   return (
@@ -121,10 +126,7 @@ export default function DesktopHistoryFilters({
                   sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}
                 >
                   <CategoryIcon category={category.value} />
-                  {formatMessage({
-                    id: `categories.${category.value}`,
-                    defaultMessage: category.label,
-                  })}
+                  {getLabel(category.value)}
                 </Box>
               </MenuItem>
             ))}

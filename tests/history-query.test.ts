@@ -10,11 +10,16 @@ import getStats from '@/app/actions/getStats';
 import { getYearlyStats } from '@/app/actions/getYearlyStats';
 import getTransactions from '@/app/actions/getTransactions';
 import { getPeriodRange } from '@/lib/dateRange';
-import { isCreditCardCategory } from '@/constants/constants';
+import { DEFAULT_SETTINGS, isCreditCardCategory } from '@/constants/constants';
 import { ExpenseCategory } from '@/constants/types';
 import { transaction } from './fixtures';
 
 vi.mock('@/app/actions/getTransactions', () => ({ default: vi.fn() }));
+vi.mock('@/app/actions/getSettings', () => ({
+  default: vi.fn(async () => ({
+    settings: { ...DEFAULT_SETTINGS, creditCardTrackingEnabled: true },
+  })),
+}));
 
 const now = new Date(2026, 9, 21);
 
@@ -185,5 +190,25 @@ test('the first history action response already intersects all applied filters',
     '2026-10-01',
     '2026-10-31',
     true,
+  );
+});
+
+test('custom category filters survive URL parsing and filter history records', async () => {
+  const category = 'custom:category-123';
+  const filters = { ...defaultHistoryQuery(now), category };
+  const query = serializeHistoryQuery(filters);
+  const matching = transaction({ id: 'custom', category });
+  vi.mocked(getTransactions).mockResolvedValue({
+    transactions: [matching, transaction({ id: 'other' })],
+  });
+
+  const parsed = parseHistoryQuery(query, now);
+  const result = await getHistoryTransactions(query);
+
+  expect(parsed.category).toBe(category);
+  expect(result.transactions).toEqual([matching]);
+  expect(parseHistoryQuery('category=custom:', now).category).toBe('all');
+  expect(parseHistoryQuery('category=custom:%3Cbad%3E', now).category).toBe(
+    'all',
   );
 });

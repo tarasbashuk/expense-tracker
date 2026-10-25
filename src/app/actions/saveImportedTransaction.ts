@@ -1,5 +1,6 @@
 'use server';
 
+import { validateTransactionCategory } from '@/lib/categoryOwnership';
 import { revalidatePath } from 'next/cache';
 import { currentUser } from '@clerk/nextjs/server';
 import { Currency, Transaction, TransactionType } from '@prisma/client';
@@ -98,6 +99,12 @@ export default async function saveImportedTransaction(
 
   if (!settings.creditCardTrackingEnabled && isCreditCardCategory(category)) {
     return { error: 'Credit card accounting is disabled' };
+  }
+
+  try {
+    await validateTransactionCategory(db, userId, category, type);
+  } catch {
+    return { error: 'Category is unavailable for this transaction' };
   }
 
   const hasProvidedDefaultAmount =

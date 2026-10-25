@@ -22,50 +22,35 @@ import {
   ToggleButtonGroup,
 } from '@mui/material';
 import { Search, X } from 'lucide-react';
+import { useCategoryCatalog } from '../categories/useCategoryCatalog';
+import { categoryOptions, type CategoryRecord } from '@/lib/customCategories';
+import { useCategoryI18n } from '@/lib/useCategoryI18n';
 import { useIntl } from 'react-intl';
-import {
-  EXPENSE_CATEGORIES,
-  INCOME_CATEGORIES,
-  EXPENSE_CATEGORIES_LIST,
-  INCOME_CATEGORIES_LIST,
-  isCreditCardCategory,
-} from '@/constants/constants';
 import CategoryIcon from './CategoryIcon';
 import { selectedSegmentStyles } from './tokens';
 import { HistoryFilters, emptyHistoryFilters } from '@/lib/historyQuery';
 
 export type { HistoryFilters } from '@/lib/historyQuery';
 
-const allCategories = Object.entries({
-  ...INCOME_CATEGORIES,
-  ...EXPENSE_CATEGORIES,
-}).map(([value, label]) => ({ value, label }));
-export const categoriesByType = {
-  all: allCategories,
-  Income: INCOME_CATEGORIES_LIST,
-  Expense: EXPENSE_CATEGORIES_LIST,
-};
-
 export function availableHistoryCategories(
   value: HistoryFilters,
   creditCardTrackingEnabled: boolean,
+  customCategories: CategoryRecord[] = [],
 ) {
-  const categories = categoriesByType[value.type];
-  const selected = allCategories.find(
+  const categories = categoryOptions(
+    customCategories,
+    value.type,
+    creditCardTrackingEnabled,
+    true,
+  );
+  const selected = categoryOptions(customCategories, 'all', true, true).find(
     (category) => category.value === value.category,
   );
-  const withSelected =
-    selected &&
-    !categories.some((category) => category.value === selected.value)
-      ? [...categories, selected]
-      : categories;
 
-  return withSelected.filter(
-    (category) =>
-      creditCardTrackingEnabled ||
-      category.value === value.category ||
-      !isCreditCardCategory(category.value),
-  );
+  return selected &&
+    !categories.some((category) => category.value === selected.value)
+    ? [...categories, selected]
+    : categories;
 }
 
 export function hasActiveHistoryFilters(value: HistoryFilters): boolean {
@@ -103,9 +88,12 @@ export default function HistoryFiltersSheet({
   }, [value.search]);
 
   const { formatMessage } = useIntl();
+  const { categories: customCategories } = useCategoryCatalog();
+  const { getLabel } = useCategoryI18n();
   const categories = availableHistoryCategories(
     draft,
     creditCardTrackingEnabled,
+    customCategories,
   );
 
   return (
@@ -193,10 +181,7 @@ export default function HistoryFiltersSheet({
                     }}
                   >
                     <CategoryIcon category={category.value} />
-                    {formatMessage({
-                      id: `categories.${category.value}`,
-                      defaultMessage: category.label,
-                    })}
+                    {getLabel(category.value)}
                   </Box>
                 </MenuItem>
               ))}

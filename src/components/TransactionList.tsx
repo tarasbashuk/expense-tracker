@@ -20,6 +20,8 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
+import { useCategoryCatalog } from './categories/useCategoryCatalog';
+import { customCategoryKey } from '@/lib/customCategories';
 import { downloadTransactionsCsv } from '@/lib/transactionsCsv';
 import { filterTransactions } from '@/lib/filterTransactions';
 
@@ -179,6 +181,7 @@ const TransactionList = () => {
 
   const { formatMessage } = useIntl();
   const { getLabel } = useCategoryI18n();
+  const { categories: customCategories } = useCategoryCatalog();
   const { settings } = useSettings();
   const selectedRange = useMemo(
     () => getPeriodRange(periodMode, anchorDate, customRange),
@@ -209,6 +212,12 @@ const TransactionList = () => {
         visibleTransactions,
         settings.defaultCurrency,
         `transactions_${selectedRange.start}_${selectedRange.end}.csv`,
+        Object.fromEntries(
+          customCategories.map((item) => [
+            customCategoryKey(item.id),
+            item.name,
+          ]),
+        ),
       );
     } finally {
       exportInProgress.current = false;

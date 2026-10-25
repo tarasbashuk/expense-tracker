@@ -37,6 +37,13 @@ const tags = ['Trip 🏖️', 'Work', 'Family'].map((name, i) => ({
 }));
 
 // Exercise our description-cell renderer without the grid's browser layout engine.
+// Keep server-only Prisma and Clerk dependencies out of component tests.
+vi.mock('@/app/actions/customCategories', () => ({
+  getCustomCategories: vi.fn().mockResolvedValue({ categories: [] }),
+  saveCustomCategory: vi.fn(),
+  archiveCustomCategory: vi.fn(),
+}));
+
 vi.mock('@mui/x-data-grid', () => ({
   DataGrid: ({
     rows,
