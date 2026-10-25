@@ -14,7 +14,12 @@ import { PieValueType } from '@mui/x-charts';
 import { TransactionType } from '@prisma/client';
 import { useIntl } from 'react-intl';
 import { BarChartIcon, PieChartIcon } from './shared/icons';
-import StatisticsPeriodNavigation from './statistics/StatisticsPeriodNavigation';
+import DatePeriodFilter from './shared/DatePeriodFilter';
+import {
+  dateKeyFromLocalDate,
+  localDateFromKey,
+  shiftPeriod,
+} from '@/lib/dateRange';
 import CategoryBreakdown from './statistics/CategoryBreakdown';
 import useAnalyticsCurrency from './statistics/useAnalyticsCurrency';
 import TransactionTypeButtonGroup from './shared/TransactionTypeButtonGroup';
@@ -34,8 +39,17 @@ export default function Stats() {
   const money = useAnalyticsCurrency();
   const { formatMessage } = useIntl();
   const { getLabel } = useCategoryI18n();
-  const { year, month, transactionType, chartType, update } =
-    useAnalyticsQuery('month');
+  const {
+    year,
+    month,
+    transactionType,
+    chartType,
+    periodMode,
+    customRange,
+    anchorDate,
+    range,
+    update,
+  } = useAnalyticsQuery('month');
   const [income, setIncome] = useState(0);
   const [expense, setExpense] = useState(0);
   const [expenseData, setExpenseData] = useState<PieValueType[]>([]);
@@ -53,8 +67,8 @@ export default function Stats() {
     const fetchData = async () => {
       try {
         const [stats, totals] = await Promise.all([
-          getStats(Number(year), Number(month)),
-          getIncomeExpense(Number(year), Number(month)),
+          getStats(range.start, range.end),
+          getIncomeExpense(range.start, range.end),
         ]);
 
         if (cancelled) {
@@ -82,7 +96,7 @@ export default function Stats() {
     return () => {
       cancelled = true;
     };
-  }, [year, month, formatMessage]);
+  }, [range.start, range.end, formatMessage]);
 
   useAnalyticsScrollRestore(!loading && !error);
 
@@ -106,36 +120,67 @@ export default function Stats() {
   );
   const now = new Date();
   const incomplete =
-    Number(year) === now.getFullYear() && Number(month) === now.getMonth();
+    range.start <= dateKeyFromLocalDate(now) &&
+    range.end > dateKeyFromLocalDate(now);
   const heading = formatMessage({
     id: isExpense ? 'stats.expenseCategories' : 'stats.incomeCategories',
   });
 
+  const changePeriod = (direction: -1 | 1) => {
+    const next = shiftPeriod(periodMode, anchorDate, customRange, direction);
+    const date = localDateFromKey(next.anchorDate);
+
+    update({
+      year: date.getFullYear(),
+      month: date.getMonth(),
+      customRange: next.customRange,
+    });
+  };
+
   return (
     <StatisticsLayout titleId="navigation.stats">
       <Stack spacing={2}>
+        <DatePeriodFilter
+          compact
+          horizontal
+          mode={periodMode}
+          range={range}
+          onModeChange={(nextMode) => {
+            const date = localDateFromKey(range.start);
+
+            update({
+              periodMode: nextMode,
+              year: date.getFullYear(),
+              month: date.getMonth(),
+              customRange: range,
+            });
+          }}
+          onPrevious={() => changePeriod(-1)}
+          onNext={() => changePeriod(1)}
+          onCustomRangeChange={(nextRange) =>
+            update({ customRange: nextRange })
+          }
+        />
         <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          gap={2}
+          direction={{ xs: 'column', sm: 'row' }}
+          gap={1}
           justifyContent="space-between"
-          alignItems={{ xs: 'stretch', md: 'flex-start' }}
         >
-          <Stack gap={1} sx={{ width: { xs: '100%', md: 340 }, flexShrink: 0 }}>
-            <StatisticsPeriodNavigation
-              year={Number(year)}
-              month={Number(month)}
-              onChange={(date) => {
-                update({ year: date.getFullYear(), month: date.getMonth() });
+          {incomplete && (
+            <Chip
+              size="small"
+              label={formatMessage({
+                id:
+                  periodMode === 'month'
+                    ? 'stats.incompleteMonth'
+                    : 'stats.incompletePeriod',
+              })}
+              sx={{
+                display: { xs: 'none', sm: 'inline-flex' },
+                alignSelf: 'flex-start',
               }}
             />
-            {incomplete && (
-              <Chip
-                size="small"
-                label={formatMessage({ id: 'stats.incompleteMonth' })}
-                sx={{ alignSelf: 'flex-start' }}
-              />
-            )}
-          </Stack>
+          )}
           <Stack
             direction="row"
             gap={2}
@@ -276,6 +321,8 @@ export default function Stats() {
                   <CategoryBreakdown
                     year={year}
                     month={month}
+                    range={range}
+                    periodMode={periodMode}
                     items={chartData}
                     total={total}
                     chartType={chartType}

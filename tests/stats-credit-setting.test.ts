@@ -73,3 +73,13 @@ test('transaction errors do not produce misleading statistics', async () => {
 
   expect(result).toEqual({ error: 'Database error' });
 });
+
+test('statistics queries the full inclusive custom range', async () => {
+  await getStats('2025-12-15', '2026-02-03');
+
+  expect(getTransactions).toHaveBeenCalledWith(
+    '2025-12-15',
+    '2026-02-03',
+    true,
+  );
+});
