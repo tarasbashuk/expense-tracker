@@ -19,6 +19,7 @@ export type HomeMonthlySummary = {
   income: number;
   expense: number;
   net: number;
+  plannedExpense: number;
   expenseChangePercent: number | null;
 };
 
@@ -115,6 +116,41 @@ export default async function getHomeDashboard(): Promise<{
     const previousTransactions = readableMonthlyTransactions.filter(
       ({ date }) => date < previousPeriodEndUtc,
     );
+    const today = getUtcDate(current.end);
+    const monthEnd = new Date(
+      Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 0),
+    );
+    const plannedExpense = readableMonthlyTransactions.reduce(
+      (total, transaction) => {
+        if (
+          !transaction.isRecurring ||
+          transaction.type !== TransactionType.Expense ||
+          isLegacyCreditEntry(transaction) ||
+          transaction.date >= currentMonthStartUtc
+        ) {
+          return total;
+        }
+
+        const dueDate = new Date(
+          Date.UTC(
+            today.getUTCFullYear(),
+            today.getUTCMonth(),
+            Math.min(transaction.date.getUTCDate(), monthEnd.getUTCDate()),
+          ),
+        );
+
+        if (
+          dueDate <= today ||
+          (transaction.recurringEndDate &&
+            dueDate > transaction.recurringEndDate)
+        ) {
+          return total;
+        }
+
+        return total.plus(transaction.amountDefaultCurrency);
+      },
+      new Decimal(0),
+    );
     const currentTotals = getTotals(currentTransactions);
     const previousTotals = getTotals(previousTransactions);
     const expenseChangePercent = previousTotals.expense.isZero()
@@ -133,6 +169,7 @@ export default async function getHomeDashboard(): Promise<{
           expense: currentTotals.expense.toNumber(),
           net: currentTotals.income.minus(currentTotals.expense).toNumber(),
           expenseChangePercent,
+          plannedExpense: plannedExpense.toNumber(),
         },
         recentTransactions: recentTransactions.map(decryptTransaction),
       },

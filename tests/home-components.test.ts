@@ -173,6 +173,7 @@ test('monthly summary retains large formatted totals, comparison and history lin
         income: 105412.48,
         expense: 100000,
         net: 5412.48,
+        plannedExpense: 1250,
         expenseChangePercent: -10,
       },
     }),
@@ -181,6 +182,8 @@ test('monthly summary retains large formatted totals, comparison and history lin
   expect(screen.getByText('105 412.48 €')).toBeTruthy();
   expect(screen.getByText('100 000 €')).toBeTruthy();
   expect(screen.getByText('+5 412.48 €')).toBeTruthy();
+  expect(screen.getByText('1 250 €')).toBeTruthy();
+  expect(screen.getByText('Still planned')).toBeTruthy();
   expect(screen.getByText(/10% less/)).toBeTruthy();
   expect(
     screen

@@ -115,6 +115,7 @@ test('dashboard compares matching inclusive days and excludes future transaction
     income: 200,
     expense: 50,
     net: 150,
+    plannedExpense: 0,
     expenseChangePercent: -50,
   });
   expect(
@@ -135,6 +136,7 @@ test('zero previous expenses produce no percentage; decimal amounts stay accurat
     income: 0,
     expense: 0.3,
     net: -0.3,
+    plannedExpense: 0,
     expenseChangePercent: null,
   });
 });
@@ -145,6 +147,7 @@ test('empty dashboard returns zero totals and no recent transactions', async () 
     income: 0,
     expense: 0,
     net: 0,
+    plannedExpense: 0,
     expenseChangePercent: null,
   });
   expect(result.data!.recentTransactions).toEqual([]);
@@ -176,4 +179,44 @@ test('database failure returns a dashboard error', async () => {
   expect(await getHomeDashboard()).toEqual({
     error: 'Unable to load dashboard',
   });
+});
+
+test('planned expenses include only future recurring expenses before their recurrence ends', async () => {
+  records = [
+    transaction('2026-08-21', 0.1, { isRecurring: true }),
+    transaction('2026-08-31', 0.2, { isRecurring: true }),
+    transaction('2026-08-20', 100, { isRecurring: true }),
+    transaction('2026-08-25', 200),
+    transaction('2026-08-25', 300, { isRecurring: true, type: 'Income' }),
+    transaction('2026-08-25', 400, {
+      isRecurring: true,
+      category: 'CCRepayment',
+    }),
+    transaction('2026-08-25', 500, {
+      isRecurring: true,
+      recurringEndDate: new Date('2026-09-24T00:00:00Z'),
+    }),
+    transaction('2026-09-10', 600, { isRecurring: true }),
+  ];
+
+  const result = await getHomeDashboard();
+
+  expect(result.data!.monthlySummary.plannedExpense).toBe(0.3);
+});
+
+test('planned expenses decrypt amounts and include the recurrence end day', async () => {
+  mocks.findSettings.mockResolvedValue({ encryptData: true });
+  records = [
+    transaction('2026-08-25', 10, {
+      isRecurring: true,
+      text: encrypt('Subscription', 'test-key'),
+      amount: encryptFloat(10, 'test-key'),
+      amountDefaultCurrency: encryptFloat(9, 'test-key'),
+      recurringEndDate: new Date('2026-09-25T00:00:00Z'),
+    }),
+  ];
+
+  const result = await getHomeDashboard();
+
+  expect(result.data!.monthlySummary.plannedExpense).toBe(9);
 });
