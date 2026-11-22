@@ -147,7 +147,7 @@ export default function HomeMonthlySummary({ summary }: { summary: Summary }) {
             <Typography variant="body1" color="text.secondary">
               {formatMessage({
                 id: 'home.plannedExpense',
-                defaultMessage: 'Planned by month end',
+                defaultMessage: 'Still planned',
               })}
             </Typography>
             <Typography

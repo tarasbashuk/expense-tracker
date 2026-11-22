@@ -183,7 +183,7 @@ test('monthly summary retains large formatted totals, comparison and history lin
   expect(screen.getByText('100 000 €')).toBeTruthy();
   expect(screen.getByText('+5 412.48 €')).toBeTruthy();
   expect(screen.getByText('1 250 €')).toBeTruthy();
-  expect(screen.getByText('Planned by month end')).toBeTruthy();
+  expect(screen.getByText('Still planned')).toBeTruthy();
   expect(screen.getByText(/10% less/)).toBeTruthy();
   expect(
     screen
