@@ -1,4 +1,5 @@
 {
+  "home.plannedExpense": "Planned by month end",
   "tags.all": "All tags",
   "tags.selectedCount": "Tags: {count}",
   "home.allTransactions": "All",

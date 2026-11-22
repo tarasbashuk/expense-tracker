@@ -1,14 +1,6 @@
-'use client';
-import dynamic from 'next/dynamic';
-import React from 'react';
-
-const YearlyStatsContent = dynamic(
-  () => import('../../components/YearlyStatsContent'),
-  {
-    ssr: false,
-  },
-);
+import Balance from '@/components/Balance';
+import YearlyStats from '@/components/YearlyStats';
 
 export default function Page() {
-  return <YearlyStatsContent />;
+  return <YearlyStats balance={<Balance />} />;
 }

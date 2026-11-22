@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -56,7 +56,11 @@ const ukrainianMonths = [
   'Гру',
 ];
 
-export default function YearlyStatsContent() {
+export default function YearlyStatsContent({
+  balance,
+}: {
+  balance?: ReactNode;
+}) {
   const { year, half, update } = useAnalyticsQuery('year');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -143,6 +147,7 @@ export default function YearlyStatsContent() {
   return (
     <StatisticsLayout titleId="yearly.title">
       <Stack spacing={2}>
+        {balance}
         <FormControl sx={{ width: 160 }} size="small">
           <InputLabel id="year-select-label">
             {formatMessage({ id: 'filters.year' })}

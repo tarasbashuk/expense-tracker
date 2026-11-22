@@ -5,7 +5,6 @@ import { Box, Card, CardContent, Stack, Typography } from '@mui/material';
 import { TrendingDown, TrendingUp } from 'lucide-react';
 import { cardStyles, historyColors } from '../history/tokens';
 import { useIntl } from 'react-intl';
-
 import { HomeMonthlySummary as Summary } from '@/app/actions/getHomeDashboard';
 import { NavigationPath } from '@/constants/types';
 import { useSettings } from '@/context/SettingsContexts';
@@ -16,12 +15,15 @@ export default function HomeMonthlySummary({ summary }: { summary: Summary }) {
   const {
     settings: { defaultCurrency },
   } = useSettings();
-  const formattedAmounts = [summary.income, summary.expense, summary.net].map(
-    (amount) => formatCurrency(amount, defaultCurrency),
-  );
+  const formattedAmounts = [
+    summary.income,
+    summary.expense,
+    summary.net,
+    summary.plannedExpense,
+  ].map((amount) => formatCurrency(amount, defaultCurrency));
   const columnWidth = Math.max(
-    90,
-    ...formattedAmounts.map((amount) => amount.length * 11 + 12),
+    160,
+    ...formattedAmounts.map((amount) => amount.length * 16 + 16),
   );
   const monthLabel = new Intl.DateTimeFormat(locale, { month: 'long' }).format(
     new Date(),
@@ -95,33 +97,42 @@ export default function HomeMonthlySummary({ summary }: { summary: Summary }) {
           }}
         >
           <Box flex={1}>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body1" color="text.secondary">
               {formatMessage({
                 id: 'incomeExpense.income',
                 defaultMessage: 'Income',
               })}
             </Typography>
-            <Typography variant="h6" color={historyColors.income}>
+            <Typography
+              variant="h5"
+              sx={{ fontSize: { xs: 26, sm: 30 }, fontWeight: 600 }}
+              color={historyColors.income}
+            >
               {formatCurrency(summary.income, defaultCurrency)}
             </Typography>
           </Box>
           <Box flex={1}>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body1" color="text.secondary">
               {formatMessage({
                 id: 'incomeExpense.expense',
                 defaultMessage: 'Expense',
               })}
             </Typography>
-            <Typography variant="h6" color={historyColors.expense}>
+            <Typography
+              variant="h5"
+              sx={{ fontSize: { xs: 26, sm: 30 }, fontWeight: 600 }}
+              color={historyColors.expense}
+            >
               {formatCurrency(summary.expense, defaultCurrency)}
             </Typography>
           </Box>
           <Box flex={1}>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body1" color="text.secondary">
               {formatMessage({ id: 'home.net', defaultMessage: 'Net' })}
             </Typography>
             <Typography
-              variant="h6"
+              variant="h5"
+              sx={{ fontSize: { xs: 26, sm: 30 }, fontWeight: 600 }}
               color={
                 summary.net >= 0
                   ? historyColors.income
@@ -130,6 +141,20 @@ export default function HomeMonthlySummary({ summary }: { summary: Summary }) {
             >
               {summary.net > 0 ? '+' : ''}
               {formatCurrency(summary.net, defaultCurrency)}
+            </Typography>
+          </Box>
+          <Box flex={1}>
+            <Typography variant="body1" color="text.secondary">
+              {formatMessage({
+                id: 'home.plannedExpense',
+                defaultMessage: 'Planned by month end',
+              })}
+            </Typography>
+            <Typography
+              variant="h5"
+              sx={{ fontSize: { xs: 26, sm: 30 }, fontWeight: 600 }}
+            >
+              {formatCurrency(summary.plannedExpense, defaultCurrency)}
             </Typography>
           </Box>
         </Box>

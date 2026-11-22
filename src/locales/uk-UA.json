@@ -1,4 +1,5 @@
 {
+  "home.plannedExpense": "Заплановано до кінця місяця",
   "tags.all": "Усі теги",
   "tags.selectedCount": "Теги: {count}",
   "home.allTransactions": "Усі",
