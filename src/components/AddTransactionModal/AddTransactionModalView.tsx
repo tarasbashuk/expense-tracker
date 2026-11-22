@@ -3,6 +3,7 @@ import { useCategoryCatalog } from '../categories/useCategoryCatalog';
 import { categoryOptions, isCustomCategory } from '@/lib/customCategories';
 import { CreditCardIcon } from '@/components/shared/icons';
 import ResponsiveDialog, { FormTitle } from '../shared/ResponsiveDialog';
+import type { RecurrenceEndMode } from '@/lib/recurrence';
 import TagsAndRecurrence from './TagsAndRecurrence';
 import TagPicker from '../tags/TagPicker';
 import {
@@ -55,6 +56,10 @@ interface Props {
   creditCardTrackingEnabled: boolean;
   isRecurring?: boolean;
   recurringEndDate?: Date;
+  recurrenceEndMode?: RecurrenceEndMode;
+  onRecurrenceEndModeChange?: (value: RecurrenceEndMode) => void;
+  paymentCount?: string;
+  onPaymentCountChange?: (value: string) => void;
   amountDefaultCurrency?: number;
   transactionType: TransactionType;
   handleClose: () => void;
@@ -93,6 +98,10 @@ const AddTransactionModalView: React.FC<Props> = ({
   creditCardTrackingEnabled,
   isRecurring,
   recurringEndDate,
+  recurrenceEndMode = 'never',
+  onRecurrenceEndModeChange,
+  paymentCount = '10',
+  onPaymentCountChange,
   amountDefaultCurrency,
   onSubmit,
   handleClose,
@@ -423,25 +432,64 @@ const AddTransactionModalView: React.FC<Props> = ({
 
                   {isRecurring && (
                     <Grid item xs={12}>
-                      <DatePicker
-                        label={formatMessage({
-                          id: 'addTransaction.endDate',
-                          defaultMessage: 'End date',
-                        })}
-                        name="recurringEndDate"
-                        value={recurringEndDate || null}
-                        onChange={handleRecurringEndDateChange}
-                        format={DATE_FORMATS.YYYY_MM_DD}
-                        slotProps={{
-                          textField: {
-                            helperText: formatMessage({
-                              id: 'addTransaction.recurringHint',
-                              defaultMessage:
-                                'Leave empty if you want the transaction to repeat indefinitely',
-                            }),
-                          },
-                        }}
-                      />
+                      <Stack spacing={2}>
+                        <TextField
+                          select
+                          fullWidth
+                          label={formatMessage({ id: 'recurrence.ending' })}
+                          value={recurrenceEndMode}
+                          onChange={(event) =>
+                            onRecurrenceEndModeChange?.(
+                              event.target.value as RecurrenceEndMode,
+                            )
+                          }
+                        >
+                          {(['never', 'count', 'date'] as const).map((mode) => (
+                            <MenuItem key={mode} value={mode}>
+                              {formatMessage({ id: `recurrence.${mode}` })}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                        {recurrenceEndMode === 'count' && (
+                          <TextField
+                            type="number"
+                            label={formatMessage({ id: 'recurrence.payments' })}
+                            value={paymentCount}
+                            onChange={(event) =>
+                              onPaymentCountChange?.(event.target.value)
+                            }
+                            inputProps={{ min: 1, max: 1200, step: 1 }}
+                            required
+                            error={!recurringEndDate}
+                            helperText={
+                              recurringEndDate
+                                ? formatMessage(
+                                    { id: 'recurrence.summary' },
+                                    {
+                                      count: Number(paymentCount),
+                                      date: recurringEndDate,
+                                    },
+                                  )
+                                : formatMessage({
+                                    id: 'recurrence.invalidCount',
+                                  })
+                            }
+                          />
+                        )}
+                        {recurrenceEndMode === 'date' && (
+                          <DatePicker
+                            label={formatMessage({
+                              id: 'addTransaction.endDate',
+                            })}
+                            name="recurringEndDate"
+                            value={recurringEndDate || null}
+                            onChange={handleRecurringEndDateChange}
+                            minDate={date}
+                            format={DATE_FORMATS.YYYY_MM_DD}
+                            slotProps={{ textField: { required: true } }}
+                          />
+                        )}
+                      </Stack>
                     </Grid>
                   )}
                 </Grid>

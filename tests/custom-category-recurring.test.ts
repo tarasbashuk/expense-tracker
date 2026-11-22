@@ -215,3 +215,27 @@ test('unauthorized requests never read or create transactions', async () => {
   expect(mocks.sources).not.toHaveBeenCalled();
   expect(mocks.create).not.toHaveBeenCalled();
 });
+
+test('cron includes the final payment on its end date', async () => {
+  mocks.sources.mockResolvedValue([
+    { ...source, recurringEndDate: new Date('2026-10-24T00:00:00Z') },
+  ]);
+
+  const response = await GET(request());
+
+  expect((await response.json()).created).toBe(1);
+  expect(mocks.sources.mock.calls[0][0].where.OR).toContainEqual({
+    recurringEndDate: { gte: new Date(2026, 9, 24) },
+  });
+});
+
+test('cron does not create a payment after the end date', async () => {
+  mocks.sources.mockResolvedValue([
+    { ...source, recurringEndDate: new Date('2026-10-23T00:00:00Z') },
+  ]);
+
+  const response = await GET(request());
+
+  expect((await response.json()).created).toBe(0);
+  expect(mocks.create).not.toHaveBeenCalled();
+});

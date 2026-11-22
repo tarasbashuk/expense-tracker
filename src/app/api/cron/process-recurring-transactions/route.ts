@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         // Check if the recurrence period hasn't ended
         OR: [
           { recurringEndDate: null }, // Infinite
-          { recurringEndDate: { gt: new Date() } }, // Not ended yet
+          { recurringEndDate: { gte: startOfDay(new Date()) } }, // Not ended yet
         ],
         NOT: {
           category: IncomeCategory.CreditReceived,
@@ -166,7 +166,7 @@ export async function GET(request: NextRequest) {
       // Check if we haven't exceeded the end date
       if (
         transaction.recurringEndDate &&
-        nextMonthDate > transaction.recurringEndDate
+        startOfDay(nextMonthDate) > startOfDay(transaction.recurringEndDate)
       ) {
         continue;
       }

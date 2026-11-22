@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   copy: true,
   save: vi.fn(),
   success: vi.fn(),
+  view: vi.fn(),
 }));
 const source = transaction({
   tags: [
@@ -62,14 +63,12 @@ vi.mock('@/lib/toast', () => ({
 }));
 
 vi.mock('@/components/AddTransactionModal/AddTransactionModalView', () => ({
-  default: ({
-    isEditMode,
-    isCopyMode,
-    onSubmit,
-    isSubmitDisabled,
-    saveError,
-  }: ComponentProps<typeof AddTransactionModalView>) =>
-    createElement(
+  default: (props: ComponentProps<typeof AddTransactionModalView>) => {
+    mocks.view(props);
+    const { isEditMode, isCopyMode, onSubmit, isSubmitDisabled, saveError } =
+      props;
+
+    return createElement(
       'div',
       null,
       createElement(
@@ -86,7 +85,8 @@ vi.mock('@/components/AddTransactionModal/AddTransactionModalView', () => ({
         'Submit',
       ),
       saveError && createElement('div', { role: 'alert' }, saveError),
-    ),
+    );
+  },
 }));
 
 afterEach(() => {
@@ -159,4 +159,47 @@ test('saving is guarded before rerender and rejected requests remain inline with
     expect(screen.getByRole('alert').textContent).toBe('Validation error'),
   );
   expect(mocks.save).toHaveBeenCalledTimes(2);
+});
+
+test('payment count recomputes with the start date and unlimited mode saves no end date', async () => {
+  mocks.save.mockResolvedValue({ data: source });
+  render(
+    createElement(
+      IntlProvider,
+      { locale: 'en-US', messages: messages['en-US'] },
+      createElement(AddTransactionModal),
+    ),
+  );
+  const latest = () =>
+    mocks.view.mock.lastCall![0] as ComponentProps<
+      typeof AddTransactionModalView
+    >;
+
+  act(() => {
+    latest().handleIsRecurringChange({
+      target: { checked: true },
+    } as React.ChangeEvent<HTMLInputElement>);
+    latest().onRecurrenceEndModeChange?.('count');
+    latest().onPaymentCountChange?.('10');
+    latest().handleDateChange(new Date(2026, 0, 15));
+  });
+
+  expect(latest().recurringEndDate).toEqual(
+    new Date(2026, 9, 15, 23, 59, 59, 999),
+  );
+
+  act(() => latest().handleDateChange(new Date(2026, 1, 15)));
+
+  expect(latest().recurringEndDate).toEqual(
+    new Date(2026, 10, 15, 23, 59, 59, 999),
+  );
+
+  act(() => latest().onPaymentCountChange?.('0'));
+
+  expect(latest().isSubmitDisabled).toBe(true);
+
+  act(() => latest().onRecurrenceEndModeChange?.('never'));
+  await act(async () => latest().onSubmit());
+
+  expect(mocks.save.mock.lastCall![0].recurringEndDate).toBeUndefined();
 });

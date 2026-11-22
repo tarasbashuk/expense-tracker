@@ -375,5 +375,12 @@
   "customCategories.icons.tools": "Інструменти",
   "customCategories.icons.sparkles": "Іскри",
   "customCategories.chooseActive": "Ця категорія архівована або недоступна. Оберіть активну категорію для створення цієї операції.",
-  "customCategories.archivedTemplate": "Цей шаблон використовує архівовану категорію. Її можна залишити під час редагування шаблону, але для нових операцій потрібна активна категорія."
+  "customCategories.archivedTemplate": "Цей шаблон використовує архівовану категорію. Її можна залишити під час редагування шаблону, але для нових операцій потрібна активна категорія.",
+  "recurrence.ending": "Завершення",
+  "recurrence.never": "Без кінцевої дати",
+  "recurrence.count": "Після визначеної кількості платежів",
+  "recurrence.date": "У визначену дату",
+  "recurrence.payments": "Кількість платежів",
+  "recurrence.summary": "{count} платежів · останній {date, date, medium}. Перший платіж включено.",
+  "recurrence.invalidCount": "Введіть ціле число від 1 до 1200."
 }

@@ -374,5 +374,12 @@
   "customCategories.icons.tools": "Tools",
   "customCategories.icons.sparkles": "Sparkles",
   "customCategories.chooseActive": "This category is archived or unavailable. Choose an active category to create this transaction.",
-  "customCategories.archivedTemplate": "This shortcut uses an archived category. You can keep it when editing the shortcut, but new transactions require an active category."
+  "customCategories.archivedTemplate": "This shortcut uses an archived category. You can keep it when editing the shortcut, but new transactions require an active category.",
+  "recurrence.ending": "Ends",
+  "recurrence.never": "No end date",
+  "recurrence.count": "After a number of payments",
+  "recurrence.date": "On a specific date",
+  "recurrence.payments": "Number of payments",
+  "recurrence.summary": "{count} payments · last on {date, date, medium}. Includes the first payment.",
+  "recurrence.invalidCount": "Enter a whole number from 1 to 1200."
 }

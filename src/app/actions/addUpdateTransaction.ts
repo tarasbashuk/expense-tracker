@@ -63,8 +63,8 @@ export async function addUpdateTransaction(
   }
 
   // Validation for recurring transactions
-  if (isRecurring && recurringEndDate && recurringEndDate <= date) {
-    return { error: 'End date must be after start date' };
+  if (isRecurring && recurringEndDate && recurringEndDate < date) {
+    return { error: 'End date must be on or after start date' };
   }
 
   if (!userId) {
