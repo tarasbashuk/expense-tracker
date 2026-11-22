@@ -50,6 +50,7 @@ interface Props {
   isEditMode: boolean;
   isCopyMode?: boolean;
   isSubmitDisabled: boolean;
+  isSaving?: boolean;
   saveError?: string;
   isBaseAmountShown: boolean;
   isCreditTransaction: boolean;
@@ -92,6 +93,7 @@ const AddTransactionModalView: React.FC<Props> = ({
   isCopyMode = false,
   transactionType,
   isSubmitDisabled,
+  isSaving = false,
   saveError,
   isBaseAmountShown,
   isCreditTransaction,
@@ -162,10 +164,10 @@ const AddTransactionModalView: React.FC<Props> = ({
       open
       maxWidth="sm"
       onClose={(_, reason) => {
-        if (reason !== 'backdropClick' && !isSubmitDisabled) handleClose();
+        if (reason !== 'backdropClick' && !isSaving) handleClose();
       }}
     >
-      <FormTitle onClose={handleClose} disabled={isSubmitDisabled}>
+      <FormTitle onClose={handleClose} disabled={isSaving}>
         {formatMessage({
           id: isCopyMode
             ? 'home.repeatTransaction'
@@ -400,7 +402,7 @@ const AddTransactionModalView: React.FC<Props> = ({
                       <TagPicker
                         value={tagIds}
                         onChange={onTagsChange}
-                        disabled={isSubmitDisabled}
+                        disabled={isSaving}
                       />
                     </Grid>
                   )}
@@ -505,15 +507,15 @@ const AddTransactionModalView: React.FC<Props> = ({
           form="transaction-form"
           variant="contained"
           disabled={isSubmitDisabled || categoryNotReady}
-          aria-busy={isSubmitDisabled}
+          aria-busy={isSaving}
           startIcon={
-            isSubmitDisabled ? (
+            isSaving ? (
               <CircularProgress size={18} color="inherit" aria-hidden="true" />
             ) : undefined
           }
         >
           {formatMessage({
-            id: isSubmitDisabled
+            id: isSaving
               ? 'common.saving'
               : isEditMode
                 ? 'addTransaction.save'

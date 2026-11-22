@@ -132,9 +132,13 @@ function show(element: ReactNode) {
 function TransactionForm({
   edit = false,
   initialRecurring = false,
+  disabled = false,
+  saving = false,
 }: {
   edit?: boolean;
   initialRecurring?: boolean;
+  disabled?: boolean;
+  saving?: boolean;
 }) {
   const [category, setCategory] = useState('custom:one');
   const [recurring, setRecurring] = useState(initialRecurring);
@@ -147,7 +151,8 @@ function TransactionForm({
     category,
     currency: 'EUR',
     isEditMode: edit,
-    isSubmitDisabled: false,
+    isSubmitDisabled: disabled,
+    isSaving: saving,
     isBaseAmountShown: false,
     isCreditTransaction: false,
     creditCardTrackingEnabled: false,
@@ -307,4 +312,21 @@ test('the transaction menu can save a custom category as a shortcut', async () =
       expect.objectContaining({ category: 'custom:one' }),
     ),
   );
+});
+
+test('invalid form keeps the add label without showing saving progress', () => {
+  show(createElement(TransactionForm, { disabled: true }));
+  const button = screen.getByRole('button', { name: 'Add transaction' });
+
+  expect(button.hasAttribute('disabled')).toBe(true);
+  expect(button.getAttribute('aria-busy')).toBe('false');
+  expect(screen.queryByRole('progressbar')).toBeNull();
+});
+
+test('active save shows saving progress', () => {
+  show(createElement(TransactionForm, { disabled: true, saving: true }));
+  const button = screen.getByRole('button', { name: /Saving/ });
+
+  expect(button.hasAttribute('disabled')).toBe(true);
+  expect(button.getAttribute('aria-busy')).toBe('true');
 });

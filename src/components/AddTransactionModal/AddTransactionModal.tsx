@@ -384,6 +384,7 @@ const AddTransactionModal: React.FC = () => {
       category={category}
       currency={currency}
       isSubmitDisabled={isSaving || recurrenceInvalid}
+      isSaving={isSaving}
       saveError={saveError}
       transactionType={transactionType}
       isEditMode={isEditMode}

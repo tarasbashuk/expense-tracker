@@ -65,8 +65,7 @@ vi.mock('@/lib/toast', () => ({
 vi.mock('@/components/AddTransactionModal/AddTransactionModalView', () => ({
   default: (props: ComponentProps<typeof AddTransactionModalView>) => {
     mocks.view(props);
-    const { isEditMode, isCopyMode, onSubmit, isSubmitDisabled, saveError } =
-      props;
+    const { isEditMode, isCopyMode, onSubmit, isSaving, saveError } = props;
 
     return createElement(
       'div',
@@ -80,7 +79,7 @@ vi.mock('@/components/AddTransactionModal/AddTransactionModalView', () => ({
           },
           'data-edit': String(isEditMode),
           'data-copy': String(isCopyMode),
-          'aria-busy': isSubmitDisabled,
+          'aria-busy': isSaving,
         },
         'Submit',
       ),
@@ -202,4 +201,33 @@ test('payment count recomputes with the start date and unlimited mode saves no e
   await act(async () => latest().onSubmit());
 
   expect(mocks.save.mock.lastCall![0].recurringEndDate).toBeUndefined();
+});
+
+test('choosing an end date blocks submission without starting a save', () => {
+  render(
+    createElement(
+      IntlProvider,
+      { locale: 'en-US', messages: messages['en-US'] },
+      createElement(AddTransactionModal),
+    ),
+  );
+  const latest = () =>
+    mocks.view.mock.lastCall![0] as ComponentProps<
+      typeof AddTransactionModalView
+    >;
+
+  act(() => {
+    latest().handleIsRecurringChange({
+      target: { checked: true },
+    } as React.ChangeEvent<HTMLInputElement>);
+    latest().onRecurrenceEndModeChange?.('date');
+  });
+
+  expect(latest().isSubmitDisabled).toBe(true);
+  expect(latest().isSaving).toBe(false);
+
+  act(() => latest().handleRecurringEndDateChange(new Date(2030, 0, 15)));
+
+  expect(latest().isSubmitDisabled).toBe(false);
+  expect(latest().isSaving).toBe(false);
 });
