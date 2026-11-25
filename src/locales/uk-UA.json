@@ -389,8 +389,11 @@
   "recurrence.invalidMode": "Оберіть спосіб завершення серії.",
   "recurrence.invalidTotal": "Введіть ціле число до 1200, не менше за найбільший номер уже створеного платежу.",
   "recurrence.invalidEndDate": "Оберіть кінцеву дату не раніше останнього платежу.",
-  "recurrence.lastDayOfMonth": "В останній день місяця",
-  "recurrence.lastDayHint": "Наступні платежі — в останній день кожного місяця. Дата цього платежу не змінюється.",
+  "recurrence.lastDayOfMonth": "Наступні платежі — в останній день місяця",
+  "recurrence.lastDayHint": "Дата цього платежу не змінюється.",
   "recurrence.dayOfMonthHint": "Щомісяця {day}-го. У коротших місяцях — останнього доступного дня, потім знову {day}-го.",
-  "recurrence.invalidMonthlyRule": "Оберіть коректне правило щомісячного повторення."
+  "recurrence.invalidMonthlyRule": "Оберіть коректне правило щомісячного повторення.",
+  "recurrence.dayOfMonthShortHint": "Щомісяця {day}-го.",
+  "recurrence.nextPayment": "Наступний платіж — {date, date, long}.",
+  "recurrence.noNextPayment": "Це останній платіж за обраними умовами."
 }

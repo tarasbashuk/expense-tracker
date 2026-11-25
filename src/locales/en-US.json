@@ -388,8 +388,11 @@
   "recurrence.invalidMode": "Choose how the series ends.",
   "recurrence.invalidTotal": "Enter a whole number up to 1200, no smaller than the highest payment number already created.",
   "recurrence.invalidEndDate": "Choose an end date on or after the latest payment.",
-  "recurrence.lastDayOfMonth": "On the last day of the month",
-  "recurrence.lastDayHint": "Future payments fall on the last day of each month. This payment keeps its date.",
+  "recurrence.lastDayOfMonth": "Future payments on the last day of the month",
+  "recurrence.lastDayHint": "This payment keeps its date.",
   "recurrence.dayOfMonthHint": "Monthly on day {day}. In shorter months, use the last available day, then return to day {day}.",
-  "recurrence.invalidMonthlyRule": "Choose a valid monthly recurrence rule."
+  "recurrence.invalidMonthlyRule": "Choose a valid monthly recurrence rule.",
+  "recurrence.dayOfMonthShortHint": "Monthly on day {day}.",
+  "recurrence.nextPayment": "Next payment: {date, date, long}.",
+  "recurrence.noNextPayment": "This is the final payment under the selected terms."
 }

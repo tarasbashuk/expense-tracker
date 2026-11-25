@@ -3,7 +3,8 @@ import { useCategoryCatalog } from '../categories/useCategoryCatalog';
 import { categoryOptions, isCustomCategory } from '@/lib/customCategories';
 import { CreditCardIcon } from '@/components/shared/icons';
 import ResponsiveDialog, { FormTitle } from '../shared/ResponsiveDialog';
-import type { RecurrenceEndMode } from '@/lib/recurrence';
+import { getNextPaymentDate, type RecurrenceEndMode } from '@/lib/recurrence';
+import { startOfDay } from 'date-fns';
 import TagsAndRecurrence from './TagsAndRecurrence';
 import TagPicker from '../tags/TagPicker';
 import {
@@ -134,6 +135,26 @@ const AddTransactionModalView: React.FC<Props> = ({
     error: categoryError,
     loading: categoriesLoading,
   } = useCategoryCatalog();
+  const scheduledDay = dayOfMonth ?? date.getDate();
+  const nextPaymentDate = getNextPaymentDate(date, {
+    isLastDayOfMonth,
+    dayOfMonth: scheduledDay,
+  });
+  const validSchedule =
+    Number.isFinite(nextPaymentDate.getTime()) &&
+    (recurrenceEndMode === 'never' ||
+      Boolean(
+        recurringEndDate && Number.isFinite(recurringEndDate.getTime()),
+      )) &&
+    (recurrenceEndMode !== 'count' ||
+      (Number.isInteger(Number(paymentCount)) &&
+        Number(paymentCount) >= paymentNumber));
+  const scheduleFinished =
+    (recurrenceEndMode === 'count' && Number(paymentCount) === paymentNumber) ||
+    (recurrenceEndMode !== 'never' &&
+      recurringEndDate &&
+      startOfDay(nextPaymentDate) > startOfDay(recurringEndDate));
+
   const activeCategories = categoryOptions(
     customCategories,
     transactionType,
@@ -474,11 +495,25 @@ const AddTransactionModalView: React.FC<Props> = ({
                               {
                                 id: isLastDayOfMonth
                                   ? 'recurrence.lastDayHint'
-                                  : 'recurrence.dayOfMonthHint',
+                                  : scheduledDay >= 29
+                                    ? 'recurrence.dayOfMonthHint'
+                                    : 'recurrence.dayOfMonthShortHint',
                               },
-                              { day: dayOfMonth ?? date.getDate() },
+                              { day: scheduledDay },
                             )}
                           </FormHelperText>
+                          {validSchedule && (
+                            <FormHelperText>
+                              {formatMessage(
+                                {
+                                  id: scheduleFinished
+                                    ? 'recurrence.noNextPayment'
+                                    : 'recurrence.nextPayment',
+                                },
+                                { date: nextPaymentDate },
+                              )}
+                            </FormHelperText>
+                          )}
                         </FormControl>
                         <TextField
                           select
