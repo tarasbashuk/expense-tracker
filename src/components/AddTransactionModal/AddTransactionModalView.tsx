@@ -3,6 +3,8 @@ import { useCategoryCatalog } from '../categories/useCategoryCatalog';
 import { categoryOptions, isCustomCategory } from '@/lib/customCategories';
 import { CreditCardIcon } from '@/components/shared/icons';
 import ResponsiveDialog, { FormTitle } from '../shared/ResponsiveDialog';
+import { getNextPaymentDate, type RecurrenceEndMode } from '@/lib/recurrence';
+import { startOfDay } from 'date-fns';
 import TagsAndRecurrence from './TagsAndRecurrence';
 import TagPicker from '../tags/TagPicker';
 import {
@@ -24,6 +26,7 @@ import {
   Grid,
   SelectChangeEvent,
   FormControlLabel,
+  FormHelperText,
   Checkbox,
   Switch,
 } from '@mui/material';
@@ -49,12 +52,22 @@ interface Props {
   isEditMode: boolean;
   isCopyMode?: boolean;
   isSubmitDisabled: boolean;
+  isSaving?: boolean;
   saveError?: string;
   isBaseAmountShown: boolean;
   isCreditTransaction: boolean;
   creditCardTrackingEnabled: boolean;
   isRecurring?: boolean;
   recurringEndDate?: Date;
+  isLastDayOfMonth?: boolean;
+  onLastDayOfMonthChange?: (value: boolean) => void;
+  dayOfMonth?: number;
+  recurrenceEndMode?: RecurrenceEndMode;
+  onRecurrenceEndModeChange?: (value: RecurrenceEndMode) => void;
+  paymentCount?: string;
+  paymentNumber?: number;
+  isSeries?: boolean;
+  onPaymentCountChange?: (value: string) => void;
   amountDefaultCurrency?: number;
   transactionType: TransactionType;
   handleClose: () => void;
@@ -87,12 +100,22 @@ const AddTransactionModalView: React.FC<Props> = ({
   isCopyMode = false,
   transactionType,
   isSubmitDisabled,
+  isSaving = false,
   saveError,
   isBaseAmountShown,
   isCreditTransaction,
   creditCardTrackingEnabled,
   isRecurring,
   recurringEndDate,
+  isLastDayOfMonth = false,
+  onLastDayOfMonthChange,
+  dayOfMonth,
+  recurrenceEndMode = 'never',
+  onRecurrenceEndModeChange,
+  paymentCount = '10',
+  paymentNumber = 1,
+  isSeries = false,
+  onPaymentCountChange,
   amountDefaultCurrency,
   onSubmit,
   handleClose,
@@ -112,6 +135,26 @@ const AddTransactionModalView: React.FC<Props> = ({
     error: categoryError,
     loading: categoriesLoading,
   } = useCategoryCatalog();
+  const scheduledDay = dayOfMonth ?? date.getDate();
+  const nextPaymentDate = getNextPaymentDate(date, {
+    isLastDayOfMonth,
+    dayOfMonth: scheduledDay,
+  });
+  const validSchedule =
+    Number.isFinite(nextPaymentDate.getTime()) &&
+    (recurrenceEndMode === 'never' ||
+      Boolean(
+        recurringEndDate && Number.isFinite(recurringEndDate.getTime()),
+      )) &&
+    (recurrenceEndMode !== 'count' ||
+      (Number.isInteger(Number(paymentCount)) &&
+        Number(paymentCount) >= paymentNumber));
+  const scheduleFinished =
+    (recurrenceEndMode === 'count' && Number(paymentCount) === paymentNumber) ||
+    (recurrenceEndMode !== 'never' &&
+      recurringEndDate &&
+      startOfDay(nextPaymentDate) > startOfDay(recurringEndDate));
+
   const activeCategories = categoryOptions(
     customCategories,
     transactionType,
@@ -153,10 +196,10 @@ const AddTransactionModalView: React.FC<Props> = ({
       open
       maxWidth="sm"
       onClose={(_, reason) => {
-        if (reason !== 'backdropClick' && !isSubmitDisabled) handleClose();
+        if (reason !== 'backdropClick' && !isSaving) handleClose();
       }}
     >
-      <FormTitle onClose={handleClose} disabled={isSubmitDisabled}>
+      <FormTitle onClose={handleClose} disabled={isSaving}>
         {formatMessage({
           id: isCopyMode
             ? 'home.repeatTransaction'
@@ -391,7 +434,7 @@ const AddTransactionModalView: React.FC<Props> = ({
                       <TagPicker
                         value={tagIds}
                         onChange={onTagsChange}
-                        disabled={isSubmitDisabled}
+                        disabled={isSaving}
                       />
                     </Grid>
                   )}
@@ -421,27 +464,119 @@ const AddTransactionModalView: React.FC<Props> = ({
                     />
                   </Grid>
 
+                  {isSeries && (
+                    <Grid item xs={12}>
+                      <Alert severity="info">
+                        {formatMessage({ id: 'recurrence.seriesHint' })}
+                      </Alert>
+                    </Grid>
+                  )}
+
                   {isRecurring && (
                     <Grid item xs={12}>
-                      <DatePicker
-                        label={formatMessage({
-                          id: 'addTransaction.endDate',
-                          defaultMessage: 'End date',
-                        })}
-                        name="recurringEndDate"
-                        value={recurringEndDate || null}
-                        onChange={handleRecurringEndDateChange}
-                        format={DATE_FORMATS.YYYY_MM_DD}
-                        slotProps={{
-                          textField: {
-                            helperText: formatMessage({
-                              id: 'addTransaction.recurringHint',
-                              defaultMessage:
-                                'Leave empty if you want the transaction to repeat indefinitely',
-                            }),
-                          },
-                        }}
-                      />
+                      <Stack spacing={2}>
+                        <FormControl disabled={isSaving}>
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={isLastDayOfMonth}
+                                onChange={(event) =>
+                                  onLastDayOfMonthChange?.(event.target.checked)
+                                }
+                                inputProps={{ role: 'switch' }}
+                              />
+                            }
+                            label={formatMessage({
+                              id: 'recurrence.lastDayOfMonth',
+                            })}
+                          />
+                          <FormHelperText>
+                            {formatMessage(
+                              {
+                                id: isLastDayOfMonth
+                                  ? 'recurrence.lastDayHint'
+                                  : scheduledDay >= 29
+                                    ? 'recurrence.dayOfMonthHint'
+                                    : 'recurrence.dayOfMonthShortHint',
+                              },
+                              { day: scheduledDay },
+                            )}
+                          </FormHelperText>
+                          {validSchedule && (
+                            <FormHelperText>
+                              {formatMessage(
+                                {
+                                  id: scheduleFinished
+                                    ? 'recurrence.noNextPayment'
+                                    : 'recurrence.nextPayment',
+                                },
+                                { date: nextPaymentDate },
+                              )}
+                            </FormHelperText>
+                          )}
+                        </FormControl>
+                        <TextField
+                          select
+                          fullWidth
+                          label={formatMessage({ id: 'recurrence.ending' })}
+                          value={recurrenceEndMode}
+                          onChange={(event) =>
+                            onRecurrenceEndModeChange?.(
+                              event.target.value as RecurrenceEndMode,
+                            )
+                          }
+                        >
+                          {(['never', 'count', 'date'] as const).map((mode) => (
+                            <MenuItem key={mode} value={mode}>
+                              {formatMessage({ id: `recurrence.${mode}` })}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                        {recurrenceEndMode === 'count' && (
+                          <TextField
+                            type="number"
+                            label={formatMessage({ id: 'recurrence.payments' })}
+                            value={paymentCount}
+                            onChange={(event) =>
+                              onPaymentCountChange?.(event.target.value)
+                            }
+                            inputProps={{
+                              min: paymentNumber,
+                              max: 1200,
+                              step: 1,
+                            }}
+                            required
+                            error={!recurringEndDate}
+                            helperText={
+                              recurringEndDate
+                                ? formatMessage(
+                                    { id: 'recurrence.seriesSummary' },
+                                    {
+                                      count: Number(paymentCount),
+                                      number: paymentNumber,
+                                      date: recurringEndDate,
+                                    },
+                                  )
+                                : formatMessage({
+                                    id: 'recurrence.invalidCount',
+                                  })
+                            }
+                          />
+                        )}
+                        {recurrenceEndMode === 'date' && (
+                          <DatePicker
+                            label={formatMessage({
+                              id: 'addTransaction.endDate',
+                            })}
+                            name="recurringEndDate"
+                            value={recurringEndDate || null}
+                            onChange={handleRecurringEndDateChange}
+                            minDate={date}
+                            format={DATE_FORMATS.YYYY_MM_DD}
+                            slotProps={{ textField: { required: true } }}
+                          />
+                        )}
+                      </Stack>
                     </Grid>
                   )}
                 </Grid>
@@ -457,15 +592,15 @@ const AddTransactionModalView: React.FC<Props> = ({
           form="transaction-form"
           variant="contained"
           disabled={isSubmitDisabled || categoryNotReady}
-          aria-busy={isSubmitDisabled}
+          aria-busy={isSaving}
           startIcon={
-            isSubmitDisabled ? (
+            isSaving ? (
               <CircularProgress size={18} color="inherit" aria-hidden="true" />
             ) : undefined
           }
         >
           {formatMessage({
-            id: isSubmitDisabled
+            id: isSaving
               ? 'common.saving'
               : isEditMode
                 ? 'addTransaction.save'

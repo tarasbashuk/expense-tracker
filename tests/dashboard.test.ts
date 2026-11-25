@@ -220,3 +220,28 @@ test('planned expenses decrypt amounts and include the recurrence end day', asyn
 
   expect(result.data!.monthlySummary.plannedExpense).toBe(9);
 });
+
+test('planned expenses follow month-end rules instead of a previously clamped date', async () => {
+  vi.setSystemTime(new Date('2026-03-29T12:00:00Z'));
+  records = [
+    transaction('2026-02-28', 10, {
+      isRecurring: true,
+      isLastDayOfMonth: true,
+      dayOfMonth: 28,
+    }),
+    transaction('2026-02-28', 20, {
+      isRecurring: true,
+      isLastDayOfMonth: false,
+      dayOfMonth: 31,
+    }),
+    transaction('2026-02-28', 100, {
+      isRecurring: true,
+      isLastDayOfMonth: false,
+      dayOfMonth: 28,
+    }),
+  ];
+
+  const result = await getHomeDashboard();
+
+  expect(result.data!.monthlySummary.plannedExpense).toBe(30);
+});

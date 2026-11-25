@@ -41,11 +41,19 @@ model Transaction {
   isCreditTransaction    Boolean?        @default(false)
   isRecurring            Boolean?        @default(false)
   recurringEndDate       DateTime?       @db.Date
+  isLastDayOfMonth       Boolean         @default(false)
+  dayOfMonth             Int?
+  recurringSeriesId      String?
+  recurrenceEndMode      RecurrenceEndMode?
+  recurringPaymentCount  Int?
+  recurringPaymentNumber Int?
   CCExpenseTransactionId String?         @unique
   user                   User            @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
 
   @@index([userId])
   @@index([isRecurring, recurringEndDate])
+  @@index([userId, recurringSeriesId])
+  @@unique([recurringSeriesId, recurringPaymentNumber])
 }
 
 model Settings {
@@ -145,4 +153,10 @@ model CustomCategory {
   user           User            @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
 
   @@unique([userId, type, normalizedName])
+}
+
+enum RecurrenceEndMode {
+  never
+  count
+  date
 }

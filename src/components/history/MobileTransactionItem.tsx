@@ -1,5 +1,6 @@
 'use client';
 
+import RecurringPaymentLabel from '@/components/RecurringPaymentLabel';
 import TagBadges from '../tags/TagBadges';
 import { Box, ButtonBase, ListItem, Tooltip, Typography } from '@mui/material';
 import { Transaction } from '@/lib/tags';
@@ -129,6 +130,7 @@ export default function MobileTransactionItem({
               </Tooltip>
             )}
           </Box>
+          <RecurringPaymentLabel transaction={transaction} />
           <TagBadges tags={transaction.tags} />
           {!transaction.tags?.length && !!tags?.length && (
             <TagBadges

@@ -1,9 +1,10 @@
 'use server';
+import { hasRemainingPayments } from '@/lib/recurrence';
 import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
 import { TransactionType } from '@prisma/client';
 import { Transaction } from '@/lib/tags';
-import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { startOfMonth, endOfMonth, subMonths, startOfDay } from 'date-fns';
 import { decrypt, decryptFloat } from '@/lib/crypto';
 import { IncomeCategory } from '@/constants/types';
 
@@ -50,7 +51,7 @@ async function getRecurringTransactions(): Promise<{
         // Check if the recurrence period hasn't ended
         OR: [
           { recurringEndDate: null }, // Infinite
-          { recurringEndDate: { gt: new Date() } }, // Not ended yet
+          { recurringEndDate: { gte: startOfDay(new Date()) } }, // Not ended yet
         ],
         NOT: {
           category: IncomeCategory.CreditReceived,
@@ -81,7 +82,7 @@ async function getRecurringTransactions(): Promise<{
 
       // Filter only expenses
       const expenseTransactions = decryptedTransactions.filter(
-        (t) => t.type === TransactionType.Expense,
+        (t) => t.type === TransactionType.Expense && hasRemainingPayments(t),
       );
 
       // Calculate total expenses
@@ -98,7 +99,7 @@ async function getRecurringTransactions(): Promise<{
 
     // Filter only expenses
     const expenseTransactions = transactions.filter(
-      (t) => t.type === TransactionType.Expense,
+      (t) => t.type === TransactionType.Expense && hasRemainingPayments(t),
     );
 
     // Calculate total expenses

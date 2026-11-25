@@ -315,3 +315,66 @@ test('deleted tag leaves a readable, usable template with no tag connections', a
       .error,
   ).toBeUndefined();
 });
+
+test('server assigns series identity and calculates the end date rather than trusting client metadata', async () => {
+  const result = await addUpdateTransaction(
+    {
+      ...input,
+      date: new Date(2026, 0, 15),
+      isRecurring: true,
+      recurrenceEndMode: 'count',
+      recurringPaymentCount: 10,
+      recurringEndDate: new Date(2099, 0, 1),
+      recurringSeriesId: 'foreign-series',
+      recurringPaymentNumber: 9,
+    } as typeof input,
+    false,
+  );
+
+  expect(result.error).toBeUndefined();
+  const saved = mocks.transaction.create.mock.calls[0][0].data;
+  expect(saved.recurringSeriesId).not.toBe('foreign-series');
+  expect(saved.recurringPaymentNumber).toBe(1);
+  expect(saved.recurringPaymentCount).toBe(10);
+  expect(saved.recurrenceEndMode).toBe('count');
+  expect(saved.recurringEndDate).toEqual(
+    new Date(2026, 9, 15, 23, 59, 59, 999),
+  );
+});
+
+test('invalid payment count is rejected by the server', async () => {
+  const result = await addUpdateTransaction(
+    {
+      ...input,
+      isRecurring: true,
+      recurrenceEndMode: 'count',
+      recurringPaymentCount: 0,
+    },
+    false,
+  );
+
+  expect(result.error).toBe('recurrence.invalidTotal');
+  expect(mocks.transaction.create).not.toHaveBeenCalled();
+});
+
+test('server persists the explicit month-end rule and derives its anchor from the first date', async () => {
+  const result = await addUpdateTransaction(
+    {
+      ...input,
+      date: new Date(2026, 3, 30),
+      isRecurring: true,
+      recurrenceEndMode: 'count',
+      recurringPaymentCount: 2,
+      isLastDayOfMonth: true,
+      dayOfMonth: 12,
+    } as typeof input,
+    false,
+  );
+
+  expect(result.error).toBeUndefined();
+  expect(mocks.transaction.create.mock.calls[0][0].data).toMatchObject({
+    isLastDayOfMonth: true,
+    dayOfMonth: 30,
+    recurringEndDate: new Date(2026, 4, 31, 23, 59, 59, 999),
+  });
+});

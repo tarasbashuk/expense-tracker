@@ -132,26 +132,44 @@ function show(element: ReactNode) {
 function TransactionForm({
   edit = false,
   initialRecurring = false,
+  disabled = false,
+  saving = false,
+  date = new Date(),
+  dayOfMonth,
+  finalPayment = false,
 }: {
   edit?: boolean;
   initialRecurring?: boolean;
+  disabled?: boolean;
+  saving?: boolean;
+  date?: Date;
+  dayOfMonth?: number;
+  finalPayment?: boolean;
 }) {
+  const [isLastDayOfMonth, setIsLastDayOfMonth] = useState(false);
   const [category, setCategory] = useState('custom:one');
   const [recurring, setRecurring] = useState(initialRecurring);
   const [type, setType] = useState<TransactionType>('Expense');
 
   return createElement(AddTransactionModalView, {
-    date: new Date(),
+    date,
+    dayOfMonth,
+    recurrenceEndMode: finalPayment ? 'count' : 'never',
+    paymentCount: finalPayment ? '1' : '10',
+    recurringEndDate: finalPayment ? date : undefined,
     text: 'Class',
     amount: 10,
     category,
     currency: 'EUR',
     isEditMode: edit,
-    isSubmitDisabled: false,
+    isSubmitDisabled: disabled,
+    isSaving: saving,
     isBaseAmountShown: false,
     isCreditTransaction: false,
     creditCardTrackingEnabled: false,
     isRecurring: recurring,
+    isLastDayOfMonth,
+    onLastDayOfMonthChange: setIsLastDayOfMonth,
     transactionType: type,
     handleClose: vi.fn(),
     onSubmit: () => mocks.submit({ category, recurring, type }),
@@ -307,4 +325,109 @@ test('the transaction menu can save a custom category as a shortcut', async () =
       expect.objectContaining({ category: 'custom:one' }),
     ),
   );
+});
+
+test('invalid form keeps the add label without showing saving progress', () => {
+  show(createElement(TransactionForm, { disabled: true }));
+  const button = screen.getByRole('button', { name: 'Add transaction' });
+
+  expect(button.hasAttribute('disabled')).toBe(true);
+  expect(button.getAttribute('aria-busy')).toBe('false');
+  expect(screen.queryByRole('progressbar')).toBeNull();
+});
+
+test('active save shows saving progress', () => {
+  show(createElement(TransactionForm, { disabled: true, saving: true }));
+  const button = screen.getByRole('button', { name: /Saving/ });
+
+  expect(button.hasAttribute('disabled')).toBe(true);
+  expect(button.getAttribute('aria-busy')).toBe('true');
+});
+
+test('the last-day switch is explicit and disabled during saving', async () => {
+  const user = userEvent.setup();
+  show(createElement(TransactionForm, { edit: true, initialRecurring: true }));
+  const toggle = screen.getByRole('switch', {
+    name: 'Future payments on the last day of the month',
+  });
+
+  expect(toggle).toHaveProperty('checked', false);
+
+  await user.click(toggle);
+
+  expect(toggle).toHaveProperty('checked', true);
+  expect(screen.getByText('This payment keeps its date.')).toBeTruthy();
+
+  cleanup();
+  show(
+    createElement(TransactionForm, {
+      edit: true,
+      initialRecurring: true,
+      saving: true,
+      disabled: true,
+    }),
+  );
+
+  expect(
+    screen.getByRole('switch', {
+      name: 'Future payments on the last day of the month',
+    }),
+  ).toHaveProperty('disabled', true);
+});
+
+test('ordinary monthly dates use a short hint and month-end previews the next month', async () => {
+  const user = userEvent.setup();
+  show(
+    createElement(TransactionForm, {
+      edit: true,
+      initialRecurring: true,
+      date: new Date(2026, 0, 25),
+    }),
+  );
+
+  expect(screen.getByText('Monthly on day 25.')).toBeTruthy();
+  expect(screen.queryByText(/In shorter months/)).toBeNull();
+  expect(screen.getByText('Next payment: February 25, 2026.')).toBeTruthy();
+
+  await user.click(
+    screen.getByRole('switch', {
+      name: 'Future payments on the last day of the month',
+    }),
+  );
+
+  expect(screen.getByText('Next payment: February 28, 2026.')).toBeTruthy();
+});
+
+test('short-month explanation uses the stored day even on a clamped February payment', () => {
+  show(
+    createElement(TransactionForm, {
+      edit: true,
+      initialRecurring: true,
+      date: new Date(2026, 1, 28),
+      dayOfMonth: 31,
+    }),
+  );
+
+  expect(
+    screen.getByText(
+      'Monthly on day 31. In shorter months, use the last available day, then return to day 31.',
+    ),
+  ).toBeTruthy();
+  expect(screen.getByText('Next payment: March 31, 2026.')).toBeTruthy();
+});
+
+test('a final installment does not promise another payment', () => {
+  show(
+    createElement(TransactionForm, {
+      edit: true,
+      initialRecurring: true,
+      date: new Date(2026, 0, 25),
+      finalPayment: true,
+    }),
+  );
+
+  expect(
+    screen.getByText('This is the final payment under the selected terms.'),
+  ).toBeTruthy();
+  expect(screen.queryByText(/Next payment:/)).toBeNull();
 });

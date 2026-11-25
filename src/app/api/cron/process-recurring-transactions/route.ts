@@ -4,15 +4,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateTransactionCategory } from '@/lib/categoryOwnership';
 import { isCustomCategory } from '@/lib/customCategories';
 import { db } from '@/lib/db';
-import { addMonths, startOfDay, endOfDay, subMonths } from 'date-fns';
+import { startOfDay, subMonths, endOfMonth, startOfMonth } from 'date-fns';
 import * as Sentry from '@sentry/nextjs';
 import Decimal from 'decimal.js';
 
 import { getCurrenciesFromMap } from '@/lib/currenciesRate.utils';
 import { CURRENCY_ISO_MAP } from '@/constants/constants';
-import { Currency, TransactionType } from '@prisma/client';
+import { Currency, TransactionType, Prisma } from '@prisma/client';
 import { getMonobankRates } from '@/lib/monobankRatesCache';
 import { sendRecurringTransactionsEmail } from '@/lib/email';
+import { getNextPaymentDate, hasRemainingPayments } from '@/lib/recurrence';
 import { IncomeCategory } from '@/constants/types';
 
 export async function GET(request: NextRequest) {
@@ -31,23 +32,10 @@ export async function GET(request: NextRequest) {
     const today = new Date();
     const oneMonthAgo = subMonths(today, 1);
 
-    // If previous month doesn't have today's day-of-month (e.g., 31 -> 30), skip run
-    if (today.getDate() !== oneMonthAgo.getDate()) {
-      console.log('Previous month does not have this day-of-month');
-
-      return NextResponse.json({
-        success: true,
-        processed: 0,
-        created: 0,
-        skipped: true,
-        reason: 'Previous month does not have this day-of-month',
-        date: oneMonthAgo.toISOString().split('T')[0],
-      });
-    }
-
-    // Always search for exactly one day (the day exactly one month ago)
-    const searchStartDate = startOfDay(oneMonthAgo);
-    const searchEndDate = endOfDay(oneMonthAgo);
+    // A February payment may be due on March 31. Search the previous month
+    // and filter by each series' persisted monthly rule, not its last date.
+    const searchStartDate = startOfMonth(oneMonthAgo);
+    const searchEndDate = endOfMonth(oneMonthAgo);
 
     // Fetch Monobank rates ONCE for all transactions (with cache)
     let rates;
@@ -80,7 +68,7 @@ export async function GET(request: NextRequest) {
         // Check if the recurrence period hasn't ended
         OR: [
           { recurringEndDate: null }, // Infinite
-          { recurringEndDate: { gt: new Date() } }, // Not ended yet
+          { recurringEndDate: { gte: startOfDay(new Date()) } }, // Not ended yet
         ],
         NOT: {
           category: IncomeCategory.CreditReceived,
@@ -113,6 +101,8 @@ export async function GET(request: NextRequest) {
     const createdTransactions = [];
 
     for (const transaction of recurringTransactions) {
+      if (!hasRemainingPayments(transaction)) continue;
+
       if (isCustomCategory(transaction.category)) {
         try {
           // Archiving hides new choices; it does not cancel an existing schedule.
@@ -141,32 +131,12 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Create a new transaction for the current month based on a recurring transaction from the previous month
-      let nextMonthDate = addMonths(transaction.date, 1);
+      const nextMonthDate = getNextPaymentDate(transaction.date, transaction);
 
-      // Handle different number of days in months
-      // If the original date was at the end of the month (28, 29, 30, 31),
-      // and the next month has fewer days, we take the last day of the month
-      const originalDay = transaction.date.getDate();
-      const nextMonthLastDay = new Date(
-        nextMonthDate.getFullYear(),
-        nextMonthDate.getMonth() + 1,
-        0,
-      ).getDate();
-
-      if (originalDay > nextMonthLastDay) {
-        // If the original day is greater than the number of days in the next month
-        nextMonthDate = new Date(
-          nextMonthDate.getFullYear(),
-          nextMonthDate.getMonth(),
-          nextMonthLastDay,
-        );
-      }
-
-      // Check if we haven't exceeded the end date
       if (
-        transaction.recurringEndDate &&
-        nextMonthDate > transaction.recurringEndDate
+        startOfDay(nextMonthDate).getTime() !== startOfDay(today).getTime() ||
+        (transaction.recurringEndDate &&
+          startOfDay(nextMonthDate) > startOfDay(transaction.recurringEndDate))
       ) {
         continue;
       }
@@ -186,88 +156,153 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      let amountDefaultCurrency = transaction.amountDefaultCurrency;
+      const createPayment = async (tx: Prisma.TransactionClient) => {
+        let current = transaction;
 
-      // --- If currency differs, recalc by actual rate ---
-      if (defaultCurrency && transaction.currency !== defaultCurrency) {
-        const from = CURRENCY_ISO_MAP[transaction.currency];
-        const to = CURRENCY_ISO_MAP[defaultCurrency];
-        const rateKey = `${from}-${to}`;
-        const rate = currenciesMap[rateKey];
+        if (transaction.recurringSeriesId) {
+          const latest = await tx.transaction.findFirst({
+            include: { tags: true },
+            where: {
+              userId: transaction.userId,
+              recurringSeriesId: transaction.recurringSeriesId,
+            },
+            orderBy: { recurringPaymentNumber: 'desc' },
+          });
 
-        if (rate) {
+          // Only the current tail may generate a successor. Recheck edits in the
+          // same transaction; the unique series/number key also protects retries.
           if (
-            transaction.currency === Currency.UAH ||
-            defaultCurrency === Currency.UAH
-          ) {
-            amountDefaultCurrency = new Decimal(transaction.amount)
-              .div(rate)
-              .toDecimalPlaces(2)
-              .toNumber();
-          } else {
-            amountDefaultCurrency = new Decimal(transaction.amount)
-              .mul(rate)
-              .toDecimalPlaces(2)
-              .toNumber();
-          }
+            !latest ||
+            latest.id !== transaction.id ||
+            !latest.isRecurring ||
+            !hasRemainingPayments(latest)
+          )
+            return null;
 
-          Sentry.captureMessage(
-            `Recurring transaction currency conversion: userId=${transaction.userId}, from=${transaction.currency}, to=${defaultCurrency}, rate=${rate}, originalAmount=${transaction.amount}, convertedAmount=${amountDefaultCurrency}`,
-            'info',
-          );
+          current = latest;
         }
-      }
 
-      const newTransaction = await db.transaction.create({
-        data: {
-          tags: {
-            connect: (transaction.tags || [])
-              .filter((tag) => tag.userId === transaction.userId)
-              .slice(0, 2)
-              .map(({ id }) => ({ id })),
-          },
-          text: transaction.text,
-          amount: transaction.amount,
-          amountDefaultCurrency,
-          date: nextMonthDate,
-          category: transaction.category,
-          currency: transaction.currency,
-          type: transaction.type,
-          isCreditTransaction:
-            creditCardTrackingEnabled && transaction.isCreditTransaction,
-          isRecurring: true,
-          recurringEndDate: transaction.recurringEndDate,
-          userId: transaction.userId,
-        },
-      });
+        const paymentDate = getNextPaymentDate(current.date, current);
 
-      createdTransactions.push(newTransaction);
+        if (
+          startOfDay(paymentDate).getTime() !== startOfDay(today).getTime() ||
+          (current.recurringEndDate &&
+            startOfDay(paymentDate) > startOfDay(current.recurringEndDate))
+        ) {
+          return null;
+        }
 
-      // If this is a credit expense transaction, create corresponding income transaction
-      const isCreditExpenseTransaction =
-        creditCardTrackingEnabled &&
-        transaction.isCreditTransaction &&
-        transaction.type === TransactionType.Expense;
+        let amountDefaultCurrency = current.amountDefaultCurrency;
 
-      if (isCreditExpenseTransaction) {
-        const creditIncomeText = `Credit income for: ${transaction.text}`;
+        // --- If currency differs, recalc by actual rate ---
+        if (defaultCurrency && current.currency !== defaultCurrency) {
+          const from = CURRENCY_ISO_MAP[current.currency];
+          const to = CURRENCY_ISO_MAP[defaultCurrency];
+          const rateKey = `${from}-${to}`;
+          const rate = currenciesMap[rateKey];
 
-        await db.transaction.create({
+          if (rate) {
+            if (
+              current.currency === Currency.UAH ||
+              defaultCurrency === Currency.UAH
+            ) {
+              amountDefaultCurrency = new Decimal(current.amount)
+                .div(rate)
+                .toDecimalPlaces(2)
+                .toNumber();
+            } else {
+              amountDefaultCurrency = new Decimal(current.amount)
+                .mul(rate)
+                .toDecimalPlaces(2)
+                .toNumber();
+            }
+
+            Sentry.captureMessage(
+              `Recurring transaction currency conversion: userId=${current.userId}, from=${current.currency}, to=${defaultCurrency}, rate=${rate}, originalAmount=${current.amount}, convertedAmount=${amountDefaultCurrency}`,
+              'info',
+            );
+          }
+        }
+
+        const newTransaction = await tx.transaction.create({
           data: {
-            text: creditIncomeText,
-            amount: transaction.amount,
+            tags: {
+              connect: (current.tags || [])
+                .filter((tag) => tag.userId === current.userId)
+                .slice(0, 2)
+                .map(({ id }) => ({ id })),
+            },
+            text: current.text,
+            amount: current.amount,
             amountDefaultCurrency,
-            date: nextMonthDate,
-            category: IncomeCategory.CreditReceived,
-            currency: transaction.currency,
-            type: TransactionType.Income,
-            isCreditTransaction: true,
+            date: paymentDate,
+            category: current.category,
+            currency: current.currency,
+            type: current.type,
+            isCreditTransaction:
+              creditCardTrackingEnabled && current.isCreditTransaction,
             isRecurring: true,
-            recurringEndDate: transaction.recurringEndDate,
-            userId: transaction.userId,
-            CCExpenseTransactionId: newTransaction.id,
+            recurringEndDate: current.recurringEndDate,
+            isLastDayOfMonth: current.isLastDayOfMonth,
+            dayOfMonth: current.dayOfMonth,
+            recurringSeriesId: current.recurringSeriesId,
+            recurrenceEndMode: current.recurrenceEndMode,
+            recurringPaymentCount: current.recurringPaymentCount,
+            recurringPaymentNumber: current.recurringSeriesId
+              ? (current.recurringPaymentNumber ?? 0) + 1
+              : null,
+            userId: current.userId,
           },
         });
+
+        // If this is a credit expense transaction, create corresponding income transaction
+        const isCreditExpenseTransaction =
+          creditCardTrackingEnabled &&
+          current.isCreditTransaction &&
+          current.type === TransactionType.Expense;
+
+        if (isCreditExpenseTransaction) {
+          const creditIncomeText = `Credit income for: ${current.text}`;
+
+          await tx.transaction.create({
+            data: {
+              text: creditIncomeText,
+              amount: current.amount,
+              amountDefaultCurrency,
+              date: paymentDate,
+              category: IncomeCategory.CreditReceived,
+              currency: current.currency,
+              type: TransactionType.Income,
+              isCreditTransaction: true,
+              isRecurring: false,
+              recurringEndDate: null,
+              userId: current.userId,
+              CCExpenseTransactionId: newTransaction.id,
+            },
+          });
+        }
+
+        return newTransaction;
+      };
+
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          const created = await db.$transaction(createPayment, {
+            isolationLevel: 'Serializable',
+          });
+
+          if (created) createdTransactions.push(created);
+
+          break;
+        } catch (error) {
+          if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === 'P2002') break;
+
+            if (error.code === 'P2034' && attempt < 2) continue;
+          }
+
+          throw error;
+        }
       }
     }
 
