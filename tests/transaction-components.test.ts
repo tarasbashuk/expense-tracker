@@ -165,6 +165,12 @@ const transaction: Transaction = {
   updatedAt: new Date('2026-09-27T12:00:00Z'),
   isRecurring: false,
   recurringEndDate: null,
+  isLastDayOfMonth: false,
+  dayOfMonth: null,
+  recurringSeriesId: null,
+  recurrenceEndMode: null,
+  recurringPaymentCount: null,
+  recurringPaymentNumber: null,
   isCreditTransaction: false,
   CCExpenseTransactionId: null,
 };
@@ -980,3 +986,26 @@ test('mobile reset clears applied URL filters and disappears', async () => {
   expect(screen.getByRole('button', { name: 'Filters (0)' })).toBeTruthy();
   expect(new URLSearchParams(window.location.search).get('type')).toBe(null);
 });
+
+test.each([true, false])(
+  'mobile history shows payment progress even for a stopped series (active=%s)',
+  (active) => {
+    renderWithIntl(
+      createElement(MobileTransactionItem, {
+        transaction: {
+          ...transaction,
+          isRecurring: active,
+          recurringSeriesId: 'series',
+          recurrenceEndMode: 'count',
+          recurringPaymentNumber: 3,
+          recurringPaymentCount: 10,
+        },
+        handleEdit: vi.fn(),
+        handleCopy: vi.fn(),
+        handleDelete: vi.fn(),
+      }),
+    );
+
+    expect(screen.getByText('Payment 3 of 10')).toBeTruthy();
+  },
+);

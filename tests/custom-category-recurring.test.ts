@@ -10,12 +10,17 @@ const mocks = vi.hoisted(() => ({
   email: vi.fn(),
   warning: vi.fn(),
   settings: vi.fn(),
+  latest: vi.fn(),
 }));
 
 vi.mock('@/lib/db', () => ({
   db: {
     customCategory: { findFirst: mocks.categories },
     transaction: { findMany: mocks.sources, create: mocks.create },
+    $transaction: async (callback: any) =>
+      callback({
+        transaction: { findFirst: mocks.latest, create: mocks.create },
+      }),
     settings: { findMany: mocks.settings },
     user: {
       findMany: async () => [
@@ -232,6 +237,160 @@ test('cron includes the final payment on its end date', async () => {
 test('cron does not create a payment after the end date', async () => {
   mocks.sources.mockResolvedValue([
     { ...source, recurringEndDate: new Date('2026-10-23T00:00:00Z') },
+  ]);
+
+  const response = await GET(request());
+
+  expect((await response.json()).created).toBe(0);
+  expect(mocks.create).not.toHaveBeenCalled();
+});
+
+const seriesSource = {
+  ...source,
+  recurringSeriesId: 'series',
+  recurrenceEndMode: 'count' as const,
+  recurringPaymentCount: 10,
+  recurringPaymentNumber: 3,
+};
+
+test('cron advances the payment number within its original series', async () => {
+  mocks.sources.mockResolvedValue([seriesSource]);
+  mocks.latest.mockResolvedValue(seriesSource);
+
+  const response = await GET(request());
+
+  expect((await response.json()).created).toBe(1);
+  expect(mocks.create).toHaveBeenCalledWith({
+    data: expect.objectContaining({
+      recurringSeriesId: 'series',
+      recurringPaymentNumber: 4,
+      recurringPaymentCount: 10,
+      recurrenceEndMode: 'count',
+    }),
+  });
+});
+
+test('cron does not generate an eleventh payment', async () => {
+  mocks.sources.mockResolvedValue([
+    { ...seriesSource, recurringPaymentNumber: 10 },
+  ]);
+
+  const response = await GET(request());
+
+  expect((await response.json()).created).toBe(0);
+  expect(mocks.create).not.toHaveBeenCalled();
+});
+
+test('cron retry skips a source that already has a successor', async () => {
+  mocks.sources.mockResolvedValue([seriesSource]);
+  mocks.latest.mockResolvedValue({
+    ...seriesSource,
+    id: 'successor',
+    recurringPaymentNumber: 4,
+  });
+
+  const response = await GET(request());
+
+  expect((await response.json()).created).toBe(0);
+  expect(mocks.create).not.toHaveBeenCalled();
+});
+
+test('cron rechecks stopped series inside the creation transaction', async () => {
+  mocks.sources.mockResolvedValue([seriesSource]);
+  mocks.latest.mockResolvedValue({ ...seriesSource, isRecurring: false });
+
+  const response = await GET(request());
+
+  expect((await response.json()).created).toBe(0);
+  expect(mocks.create).not.toHaveBeenCalled();
+});
+
+test('month end includes January 29–31 and creates February 28 payments', async () => {
+  vi.setSystemTime(new Date(2026, 1, 28, 12));
+  mocks.sources.mockResolvedValue([{ ...source, date: new Date(2026, 0, 31) }]);
+
+  const response = await GET(request());
+
+  expect((await response.json()).created).toBe(1);
+  expect(mocks.sources.mock.calls[0][0].where.date).toEqual({
+    gte: new Date(2026, 0, 1),
+    lte: new Date(2026, 0, 31, 23, 59, 59, 999),
+  });
+  expect(mocks.create.mock.calls[0][0].data.date).toEqual(
+    new Date(2026, 1, 28),
+  );
+});
+
+test('cron uses edits committed before its creation transaction', async () => {
+  mocks.sources.mockResolvedValue([seriesSource]);
+  mocks.latest.mockResolvedValue({
+    ...seriesSource,
+    amount: 99,
+    text: 'Updated payment',
+    updatedAt: new Date(),
+  });
+
+  const response = await GET(request());
+
+  expect((await response.json()).created).toBe(1);
+  expect(mocks.create.mock.calls[0][0].data).toMatchObject({
+    amount: 99,
+    text: 'Updated payment',
+    recurringPaymentNumber: 4,
+  });
+});
+
+test.each([
+  [false, 31, new Date(2026, 2, 31, 12), new Date(2026, 1, 28)],
+  [true, 30, new Date(2026, 4, 31, 12), new Date(2026, 3, 30)],
+  [true, 31, new Date(2024, 1, 29, 12), new Date(2024, 0, 31)],
+])(
+  'cron generates payments using persisted rules (month-end=%s, anchor=%s)',
+  async (isLastDayOfMonth, dayOfMonth, today, date) => {
+    vi.setSystemTime(today);
+    const current = { ...seriesSource, date, isLastDayOfMonth, dayOfMonth };
+    mocks.sources.mockResolvedValue([current]);
+    mocks.latest.mockResolvedValue(current);
+
+    const response = await GET(request());
+
+    expect((await response.json()).created).toBe(1);
+    expect(mocks.create.mock.calls[0][0].data).toMatchObject({
+      date: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+      isLastDayOfMonth,
+      dayOfMonth,
+      recurringPaymentNumber: 4,
+    });
+  },
+);
+
+test('cron does not generate a month-end payment on March 28', async () => {
+  vi.setSystemTime(new Date(2026, 2, 28, 12));
+  const current = {
+    ...seriesSource,
+    date: new Date(2026, 1, 28),
+    isLastDayOfMonth: true,
+    dayOfMonth: 28,
+  };
+  mocks.sources.mockResolvedValue([current]);
+  mocks.latest.mockResolvedValue(current);
+
+  const response = await GET(request());
+
+  expect((await response.json()).created).toBe(0);
+  expect(mocks.create).not.toHaveBeenCalled();
+});
+
+test('cron respects an end date before the scheduled month-end day', async () => {
+  vi.setSystemTime(new Date(2026, 2, 31, 12));
+  mocks.sources.mockResolvedValue([
+    {
+      ...seriesSource,
+      date: new Date(2026, 1, 28),
+      isLastDayOfMonth: true,
+      dayOfMonth: 31,
+      recurringEndDate: new Date(2026, 2, 30),
+    },
   ]);
 
   const response = await GET(request());

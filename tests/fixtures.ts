@@ -17,6 +17,12 @@ export const transaction = (
   isCreditTransaction: false,
   isRecurring: false,
   recurringEndDate: null,
+  isLastDayOfMonth: false,
+  dayOfMonth: null,
+  recurringSeriesId: null,
+  recurrenceEndMode: null,
+  recurringPaymentCount: null,
+  recurringPaymentNumber: null,
   CCExpenseTransactionId: null,
   ...overrides,
 });

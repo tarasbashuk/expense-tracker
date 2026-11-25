@@ -1,4 +1,5 @@
 'use client';
+import RecurringPaymentLabel from '@/components/RecurringPaymentLabel';
 import { RepeatIcon } from '@/components/shared/icons';
 import TagBadges from './tags/TagBadges';
 import { FC } from 'react';
@@ -146,6 +147,7 @@ const TransactionItem: FC<Props> = ({
           secondary={
             <>
               {formattedDate}
+              <RecurringPaymentLabel transaction={transaction} />
               <TagBadges tags={transaction.tags} />
             </>
           }

@@ -138,6 +138,80 @@ export function validateBackupData(data) {
     }
   }
 
+  const series = new Map();
+
+  for (const row of data.transactions) {
+    if (
+      (row.isLastDayOfMonth !== undefined &&
+        typeof row.isLastDayOfMonth !== 'boolean') ||
+      (row.dayOfMonth != null &&
+        (!Number.isInteger(row.dayOfMonth) ||
+          row.dayOfMonth < 1 ||
+          row.dayOfMonth > 31))
+    ) {
+      throw new Error('Invalid monthly recurrence rule');
+    }
+
+    const metadata = [
+      row.recurringSeriesId,
+      row.recurrenceEndMode,
+      row.recurringPaymentCount,
+      row.recurringPaymentNumber,
+    ];
+
+    // Legacy backups predate series metadata and remain restorable.
+    if (metadata.every((value) => value == null)) continue;
+
+    if (
+      typeof row.recurringSeriesId !== 'string' ||
+      !row.recurringSeriesId ||
+      !['never', 'count', 'date'].includes(row.recurrenceEndMode) ||
+      !Number.isInteger(row.recurringPaymentNumber) ||
+      row.recurringPaymentNumber < 1
+    ) {
+      throw new Error('Invalid recurring series metadata');
+    }
+
+    if (row.recurrenceEndMode === 'count') {
+      if (
+        !Number.isInteger(row.recurringPaymentCount) ||
+        row.recurringPaymentCount < row.recurringPaymentNumber ||
+        row.recurringPaymentCount > 1200
+      ) {
+        throw new Error('Invalid recurring payment count');
+      }
+    } else if (row.recurringPaymentCount != null) {
+      throw new Error('Unexpected recurring payment count');
+    }
+
+    const schedule = JSON.stringify([
+      row.userId,
+      row.recurrenceEndMode,
+      row.isLastDayOfMonth ?? false,
+      row.dayOfMonth ?? null,
+      row.recurringPaymentCount ?? null,
+      row.isRecurring,
+      row.recurringEndDate
+        ? new Date(row.recurringEndDate).toISOString()
+        : null,
+    ]);
+    const group = series.get(row.recurringSeriesId) ?? {
+      schedule,
+      numbers: new Set(),
+    };
+
+    if (
+      !users.has(row.userId) ||
+      group.schedule !== schedule ||
+      group.numbers.has(row.recurringPaymentNumber)
+    ) {
+      throw new Error('Inconsistent recurring series');
+    }
+
+    group.numbers.add(row.recurringPaymentNumber);
+    series.set(row.recurringSeriesId, group);
+  }
+
   return data;
 }
 

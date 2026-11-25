@@ -140,6 +140,7 @@ function TransactionForm({
   disabled?: boolean;
   saving?: boolean;
 }) {
+  const [isLastDayOfMonth, setIsLastDayOfMonth] = useState(false);
   const [category, setCategory] = useState('custom:one');
   const [recurring, setRecurring] = useState(initialRecurring);
   const [type, setType] = useState<TransactionType>('Expense');
@@ -157,6 +158,8 @@ function TransactionForm({
     isCreditTransaction: false,
     creditCardTrackingEnabled: false,
     isRecurring: recurring,
+    isLastDayOfMonth,
+    onLastDayOfMonthChange: setIsLastDayOfMonth,
     transactionType: type,
     handleClose: vi.fn(),
     onSubmit: () => mocks.submit({ category, recurring, type }),
@@ -329,4 +332,37 @@ test('active save shows saving progress', () => {
 
   expect(button.hasAttribute('disabled')).toBe(true);
   expect(button.getAttribute('aria-busy')).toBe('true');
+});
+
+test('the last-day switch is explicit and disabled during saving', async () => {
+  const user = userEvent.setup();
+  show(createElement(TransactionForm, { edit: true, initialRecurring: true }));
+  const toggle = screen.getByRole('switch', {
+    name: 'On the last day of the month',
+  });
+
+  expect(toggle).toHaveProperty('checked', false);
+
+  await user.click(toggle);
+
+  expect(toggle).toHaveProperty('checked', true);
+  expect(
+    screen.getByText(
+      'Future payments fall on the last day of each month. This payment keeps its date.',
+    ),
+  ).toBeTruthy();
+
+  cleanup();
+  show(
+    createElement(TransactionForm, {
+      edit: true,
+      initialRecurring: true,
+      saving: true,
+      disabled: true,
+    }),
+  );
+
+  expect(
+    screen.getByRole('switch', { name: 'On the last day of the month' }),
+  ).toHaveProperty('disabled', true);
 });

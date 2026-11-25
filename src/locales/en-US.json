@@ -381,5 +381,15 @@
   "recurrence.date": "On a specific date",
   "recurrence.payments": "Number of payments",
   "recurrence.summary": "{count} payments · last on {date, date, medium}. Includes the first payment.",
-  "recurrence.invalidCount": "Enter a whole number from 1 to 1200."
+  "recurrence.invalidCount": "Enter a whole number from 1 to 1200.",
+  "recurrence.seriesHint": "Repeat settings apply to the entire series. Amount, description and category apply to this payment; future payments inherit the latest payment. Turning repeat off stops the series.",
+  "recurrence.seriesSummary": "Payment {number} of {count} · last on {date, date, medium}. The total includes payments already created.",
+  "recurrence.paymentProgress": "Payment {number} of {count}",
+  "recurrence.invalidMode": "Choose how the series ends.",
+  "recurrence.invalidTotal": "Enter a whole number up to 1200, no smaller than the highest payment number already created.",
+  "recurrence.invalidEndDate": "Choose an end date on or after the latest payment.",
+  "recurrence.lastDayOfMonth": "On the last day of the month",
+  "recurrence.lastDayHint": "Future payments fall on the last day of each month. This payment keeps its date.",
+  "recurrence.dayOfMonthHint": "Monthly on day {day}. In shorter months, use the last available day, then return to day {day}.",
+  "recurrence.invalidMonthlyRule": "Choose a valid monthly recurrence rule."
 }

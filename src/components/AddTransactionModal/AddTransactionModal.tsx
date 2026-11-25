@@ -171,14 +171,30 @@ const AddTransactionModal: React.FC = () => {
   );
 
   const [recurrenceEndMode, setRecurrenceEndMode] = useState<RecurrenceEndMode>(
-    initialRecurringEndDate ? 'date' : 'never',
+    selectedTransaction?.recurrenceEndMode ??
+      (initialRecurringEndDate ? 'date' : 'never'),
   );
-  const [paymentCount, setPaymentCount] = useState('10');
+  const [paymentCount, setPaymentCount] = useState(
+    String(selectedTransaction?.recurringPaymentCount ?? 10),
+  );
+  const [isLastDayOfMonth, setIsLastDayOfMonth] = useState(
+    selectedTransaction?.isLastDayOfMonth ?? false,
+  );
+  const dayOfMonth =
+    !isCopyTransactionFlow && selectedTransaction?.dayOfMonth
+      ? selectedTransaction.dayOfMonth
+      : date.getDate();
+  const paymentNumber = isCopyTransactionFlow
+    ? 1
+    : (selectedTransaction?.recurringPaymentNumber ?? 1);
   const recurringEndDate =
     !isRecurring || recurrenceEndMode === 'never'
       ? undefined
       : recurrenceEndMode === 'count'
-        ? getLastPaymentDate(date, Number(paymentCount))
+        ? getLastPaymentDate(date, Number(paymentCount) - paymentNumber + 1, {
+            isLastDayOfMonth,
+            dayOfMonth,
+          })
         : customEndDate;
   const recurrenceInvalid =
     isRecurring &&
@@ -293,6 +309,10 @@ const AddTransactionModal: React.FC = () => {
         isCreditTransaction,
         isRecurring,
         recurringEndDate,
+        recurrenceEndMode,
+        isLastDayOfMonth,
+        recurringPaymentCount:
+          recurrenceEndMode === 'count' ? Number(paymentCount) : undefined,
         text: text as string,
         type: transactionType,
         amount: amount as number,
@@ -310,7 +330,9 @@ const AddTransactionModal: React.FC = () => {
 
       if (error) {
         setSaveError(
-          error.startsWith('tags.') || error.startsWith('customCategories.')
+          error.startsWith('tags.') ||
+            error.startsWith('customCategories.') ||
+            error.startsWith('recurrence.')
             ? formatMessage({ id: error })
             : error,
         );
@@ -394,9 +416,17 @@ const AddTransactionModal: React.FC = () => {
       creditCardTrackingEnabled={creditCardTrackingEnabled}
       isRecurring={isRecurring}
       recurringEndDate={recurringEndDate}
+      isLastDayOfMonth={isLastDayOfMonth}
+      onLastDayOfMonthChange={setIsLastDayOfMonth}
+      dayOfMonth={dayOfMonth}
       recurrenceEndMode={recurrenceEndMode}
       onRecurrenceEndModeChange={setRecurrenceEndMode}
       paymentCount={paymentCount}
+      paymentNumber={paymentNumber}
+      isSeries={
+        Boolean(selectedTransaction?.recurringSeriesId) &&
+        !isCopyTransactionFlow
+      }
       onPaymentCountChange={setPaymentCount}
       amountDefaultCurrency={amountDefaultCurrency}
       onSubmit={clientAction}

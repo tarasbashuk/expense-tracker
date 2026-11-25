@@ -25,6 +25,7 @@ import {
   Grid,
   SelectChangeEvent,
   FormControlLabel,
+  FormHelperText,
   Checkbox,
   Switch,
 } from '@mui/material';
@@ -57,9 +58,14 @@ interface Props {
   creditCardTrackingEnabled: boolean;
   isRecurring?: boolean;
   recurringEndDate?: Date;
+  isLastDayOfMonth?: boolean;
+  onLastDayOfMonthChange?: (value: boolean) => void;
+  dayOfMonth?: number;
   recurrenceEndMode?: RecurrenceEndMode;
   onRecurrenceEndModeChange?: (value: RecurrenceEndMode) => void;
   paymentCount?: string;
+  paymentNumber?: number;
+  isSeries?: boolean;
   onPaymentCountChange?: (value: string) => void;
   amountDefaultCurrency?: number;
   transactionType: TransactionType;
@@ -100,9 +106,14 @@ const AddTransactionModalView: React.FC<Props> = ({
   creditCardTrackingEnabled,
   isRecurring,
   recurringEndDate,
+  isLastDayOfMonth = false,
+  onLastDayOfMonthChange,
+  dayOfMonth,
   recurrenceEndMode = 'never',
   onRecurrenceEndModeChange,
   paymentCount = '10',
+  paymentNumber = 1,
+  isSeries = false,
   onPaymentCountChange,
   amountDefaultCurrency,
   onSubmit,
@@ -432,9 +443,43 @@ const AddTransactionModalView: React.FC<Props> = ({
                     />
                   </Grid>
 
+                  {isSeries && (
+                    <Grid item xs={12}>
+                      <Alert severity="info">
+                        {formatMessage({ id: 'recurrence.seriesHint' })}
+                      </Alert>
+                    </Grid>
+                  )}
+
                   {isRecurring && (
                     <Grid item xs={12}>
                       <Stack spacing={2}>
+                        <FormControl disabled={isSaving}>
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={isLastDayOfMonth}
+                                onChange={(event) =>
+                                  onLastDayOfMonthChange?.(event.target.checked)
+                                }
+                                inputProps={{ role: 'switch' }}
+                              />
+                            }
+                            label={formatMessage({
+                              id: 'recurrence.lastDayOfMonth',
+                            })}
+                          />
+                          <FormHelperText>
+                            {formatMessage(
+                              {
+                                id: isLastDayOfMonth
+                                  ? 'recurrence.lastDayHint'
+                                  : 'recurrence.dayOfMonthHint',
+                              },
+                              { day: dayOfMonth ?? date.getDate() },
+                            )}
+                          </FormHelperText>
+                        </FormControl>
                         <TextField
                           select
                           fullWidth
@@ -460,15 +505,20 @@ const AddTransactionModalView: React.FC<Props> = ({
                             onChange={(event) =>
                               onPaymentCountChange?.(event.target.value)
                             }
-                            inputProps={{ min: 1, max: 1200, step: 1 }}
+                            inputProps={{
+                              min: paymentNumber,
+                              max: 1200,
+                              step: 1,
+                            }}
                             required
                             error={!recurringEndDate}
                             helperText={
                               recurringEndDate
                                 ? formatMessage(
-                                    { id: 'recurrence.summary' },
+                                    { id: 'recurrence.seriesSummary' },
                                     {
                                       count: Number(paymentCount),
+                                      number: paymentNumber,
                                       date: recurringEndDate,
                                     },
                                   )

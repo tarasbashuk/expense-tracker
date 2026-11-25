@@ -90,6 +90,14 @@ vi.mock('@/components/AddTransactionModal/AddTransactionModalView', () => ({
 
 afterEach(() => {
   cleanup();
+  source.isLastDayOfMonth = false;
+  source.dayOfMonth = null;
+  source.recurringSeriesId = null;
+  source.recurrenceEndMode = null;
+  source.recurringPaymentCount = null;
+  source.recurringPaymentNumber = null;
+  source.isRecurring = false;
+  source.recurringEndDate = null;
 });
 
 test.each([true, false])(
@@ -230,4 +238,114 @@ test('choosing an end date blocks submission without starting a save', () => {
 
   expect(latest().isSubmitDisabled).toBe(false);
   expect(latest().isSaving).toBe(false);
+});
+
+test.each([false, true])(
+  'editing restores count mode; copying starts a new series (copy=%s)',
+  async (copy) => {
+    mocks.copy = copy;
+    Object.assign(source, {
+      isRecurring: true,
+      recurringSeriesId: 'series',
+      recurrenceEndMode: 'count',
+      recurringPaymentCount: 10,
+      recurringPaymentNumber: 3,
+    });
+    mocks.save.mockResolvedValue({ data: source });
+    render(
+      createElement(
+        IntlProvider,
+        { locale: 'en-US', messages: messages['en-US'] },
+        createElement(AddTransactionModal),
+      ),
+    );
+    const latest = () =>
+      mocks.view.mock.lastCall![0] as ComponentProps<
+        typeof AddTransactionModalView
+      >;
+
+    expect(latest().recurrenceEndMode).toBe('count');
+    expect(latest().paymentCount).toBe('10');
+    expect(latest().paymentNumber).toBe(copy ? 1 : 3);
+
+    await act(async () => latest().onSubmit());
+
+    const saved = mocks.save.mock.lastCall![0];
+    expect(saved.recurrenceEndMode).toBe('count');
+    expect(saved.recurringPaymentCount).toBe(10);
+    expect(saved).not.toHaveProperty('recurringSeriesId');
+    expect(saved).not.toHaveProperty('recurringPaymentNumber');
+  },
+);
+
+test('month-end opt-in updates the preview and persists through saving', async () => {
+  mocks.copy = true;
+  mocks.save.mockResolvedValue({ data: source });
+  render(
+    createElement(
+      IntlProvider,
+      { locale: 'en-US', messages: messages['en-US'] },
+      createElement(AddTransactionModal),
+    ),
+  );
+  const latest = () =>
+    mocks.view.mock.lastCall![0] as ComponentProps<
+      typeof AddTransactionModalView
+    >;
+
+  act(() => {
+    latest().handleIsRecurringChange({
+      target: { checked: true },
+    } as React.ChangeEvent<HTMLInputElement>);
+    latest().handleDateChange(new Date(2026, 3, 30));
+    latest().onRecurrenceEndModeChange?.('count');
+    latest().onPaymentCountChange?.('2');
+  });
+
+  expect(latest().isLastDayOfMonth).toBe(false);
+  expect(latest().recurringEndDate).toEqual(
+    new Date(2026, 4, 30, 23, 59, 59, 999),
+  );
+
+  act(() => latest().onLastDayOfMonthChange?.(true));
+
+  expect(latest().recurringEndDate).toEqual(
+    new Date(2026, 4, 31, 23, 59, 59, 999),
+  );
+
+  await act(async () => latest().onSubmit());
+
+  expect(mocks.save.mock.lastCall![0].isLastDayOfMonth).toBe(true);
+});
+
+test('editing a clamped February installment restores its original day and monthly rule', () => {
+  mocks.copy = false;
+  Object.assign(source, {
+    isRecurring: true,
+    recurringSeriesId: 'series',
+    recurrenceEndMode: 'count',
+    recurringPaymentCount: 4,
+    recurringPaymentNumber: 3,
+    dayOfMonth: 31,
+    isLastDayOfMonth: true,
+  });
+  render(
+    createElement(
+      IntlProvider,
+      { locale: 'en-US', messages: messages['en-US'] },
+      createElement(AddTransactionModal),
+    ),
+  );
+  const latest = () =>
+    mocks.view.mock.lastCall![0] as ComponentProps<
+      typeof AddTransactionModalView
+    >;
+
+  act(() => latest().handleDateChange(new Date(2026, 1, 28)));
+
+  expect(latest().isLastDayOfMonth).toBe(true);
+  expect(latest().dayOfMonth).toBe(31);
+  expect(latest().recurringEndDate).toEqual(
+    new Date(2026, 2, 31, 23, 59, 59, 999),
+  );
 });

@@ -68,6 +68,9 @@ export interface TransactionFormData {
   isCreditTransaction: boolean;
   isRecurring?: boolean;
   recurringEndDate?: Date;
+  isLastDayOfMonth?: boolean;
+  recurrenceEndMode?: 'never' | 'count' | 'date';
+  recurringPaymentCount?: number;
   amountDefaultCurrency?: number;
 }
 

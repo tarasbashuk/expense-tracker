@@ -239,3 +239,94 @@ test('custom shortcut categories are restored and their owner/type links are che
     }),
   ).toThrow('Invalid custom category relation');
 });
+
+const seriesBackup = {
+  ...oldData,
+  transactions: [1, 2].map((number) => ({
+    ...oldData.transactions[0],
+    id: `payment-${number}`,
+    recurringSeriesId: 'series',
+    recurrenceEndMode: 'count',
+    recurringPaymentCount: 10,
+    recurringPaymentNumber: number,
+    isRecurring: true,
+    recurringEndDate: '2027-07-11T00:00:00.000Z',
+  })),
+};
+
+test('backup restore preserves series membership, mode and payment numbers', async () => {
+  const { tx, prisma } = database();
+
+  await restoreBackupData(prisma, seriesBackup);
+
+  expect(tx.transaction.createMany).toHaveBeenCalledWith({
+    data: seriesBackup.transactions.map((row) => ({
+      ...row,
+      date: new Date(row.date),
+      recurringEndDate: new Date(row.recurringEndDate),
+    })),
+  });
+});
+
+test.each([
+  { recurringPaymentNumber: 1 },
+  { recurringPaymentCount: 1 },
+  { userId: 'another-owner' },
+  { recurrenceEndMode: 'never' },
+])(
+  'invalid series backup fails before deleting any data: %j',
+  async (override) => {
+    const { tx, prisma } = database();
+    const invalid = {
+      ...seriesBackup,
+      transactions: [
+        seriesBackup.transactions[0],
+        { ...seriesBackup.transactions[1], ...override },
+      ],
+    };
+
+    await expect(restoreBackupData(prisma, invalid)).rejects.toThrow();
+    expect(tx.transaction.deleteMany).not.toHaveBeenCalled();
+  },
+);
+
+test('backup restore retains both monthly rule fields', async () => {
+  const { tx, prisma } = database();
+  const withRule = {
+    ...seriesBackup,
+    transactions: seriesBackup.transactions.map((row) => ({
+      ...row,
+      isLastDayOfMonth: true,
+      dayOfMonth: 30,
+    })),
+  };
+
+  await restoreBackupData(prisma, withRule);
+
+  expect(tx.transaction.createMany.mock.calls[0][0].data[0]).toMatchObject({
+    isLastDayOfMonth: true,
+    dayOfMonth: 30,
+  });
+});
+
+test.each([
+  { dayOfMonth: 32 },
+  { dayOfMonth: 0 },
+  { isLastDayOfMonth: 'true' },
+  { isLastDayOfMonth: true },
+])(
+  'invalid or inconsistent monthly rules are rejected before restore (%j)',
+  async (rule) => {
+    const { tx, prisma } = database();
+    const invalid = {
+      ...seriesBackup,
+      transactions: [
+        seriesBackup.transactions[0],
+        { ...seriesBackup.transactions[1], ...rule },
+      ],
+    };
+
+    await expect(restoreBackupData(prisma, invalid)).rejects.toThrow();
+    expect(tx.transaction.deleteMany).not.toHaveBeenCalled();
+  },
+);

@@ -6,6 +6,7 @@ import { Transaction } from '@/lib/tags';
 import Decimal from 'decimal.js';
 import * as Sentry from '@sentry/nextjs';
 
+import { getMonthlyPaymentDay, hasRemainingPayments } from '@/lib/recurrence';
 import { db } from '@/lib/db';
 import { decrypt, decryptFloat } from '@/lib/crypto';
 import {
@@ -117,13 +118,11 @@ export default async function getHomeDashboard(): Promise<{
       ({ date }) => date < previousPeriodEndUtc,
     );
     const today = getUtcDate(current.end);
-    const monthEnd = new Date(
-      Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 0),
-    );
     const plannedExpense = readableMonthlyTransactions.reduce(
       (total, transaction) => {
         if (
           !transaction.isRecurring ||
+          !hasRemainingPayments(transaction) ||
           transaction.type !== TransactionType.Expense ||
           isLegacyCreditEntry(transaction) ||
           transaction.date >= currentMonthStartUtc
@@ -135,7 +134,12 @@ export default async function getHomeDashboard(): Promise<{
           Date.UTC(
             today.getUTCFullYear(),
             today.getUTCMonth(),
-            Math.min(transaction.date.getUTCDate(), monthEnd.getUTCDate()),
+            getMonthlyPaymentDay(
+              today.getUTCFullYear(),
+              today.getUTCMonth(),
+              transaction.date.getUTCDate(),
+              transaction,
+            ),
           ),
         );
 

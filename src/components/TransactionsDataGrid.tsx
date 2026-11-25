@@ -1,4 +1,5 @@
 'use client';
+import RecurringPaymentLabel from '@/components/RecurringPaymentLabel';
 import { RepeatIcon } from '@/components/shared/icons';
 import TagBadges from './tags/TagBadges';
 import { cardRadius } from './history/tokens';
@@ -144,12 +145,13 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
           id: 'grid.recurring',
           defaultMessage: 'Recurring',
         }),
-        width: 80,
+        width: 140,
         align: 'center',
         headerAlign: 'center',
         sortable: false,
         renderCell: ({ row }) => {
-          if (!row.isRecurring) return null;
+          if (!row.isRecurring)
+            return <RecurringPaymentLabel transaction={row} />;
 
           const recurringEndDateFormatted = row.recurringEndDate
             ? formatDate(new Date(row.recurringEndDate), locale as Locale)
@@ -164,15 +166,18 @@ const TransactionsDataGrid: FC<TransactionsDataGridProps> = ({
               : ` (${formatMessage({ id: 'grid.infinite', defaultMessage: 'infinite' })})`);
 
           return (
-            <Tooltip title={tooltip} arrow>
-              <RepeatIcon
-                sx={{
-                  color: 'success.main',
-                  fontSize: '1.2rem',
-                  cursor: 'help',
-                }}
-              />
-            </Tooltip>
+            <Box sx={{ textAlign: 'center', lineHeight: 1 }}>
+              <Tooltip title={tooltip} arrow>
+                <RepeatIcon
+                  sx={{
+                    color: 'success.main',
+                    fontSize: '1.2rem',
+                    cursor: 'help',
+                  }}
+                />
+              </Tooltip>
+              <RecurringPaymentLabel transaction={row} />
+            </Box>
           );
         },
       },
